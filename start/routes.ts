@@ -34,5 +34,15 @@ router
           .use([middleware.auth()])
       })
       .prefix('/auth')
+    // Onboarding routes
+    router
+      .group(() => {
+        router.post('/register-domain', [controllers.Onboarding, 'registerDomain'])
+        router.post('/setup-mail-account', [controllers.Onboarding, 'setupMailAccount'])
+        router.get('/get-dns-records', [controllers.Onboarding, 'getDNSRecords'])
+        router.get('/check-domain-status', [controllers.Onboarding, 'checkDomainStatus'])
+      })
+      .prefix('/onboarding')
+      .use([middleware.auth()])
   })
   .prefix('/api')

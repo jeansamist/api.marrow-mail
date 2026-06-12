@@ -3,19 +3,20 @@ import type { routes } from './index.ts'
 
 export interface ApiDefinition {
   auth: {
-    newAccount: {
-      store: typeof routes['auth.new_account.store']
-    }
-    accessTokens: {
-      store: typeof routes['auth.access_tokens.store']
-    }
+    signUp: typeof routes['auth.sign_up']
+    verifyEmail: typeof routes['auth.verify_email']
+    signIn: typeof routes['auth.sign_in']
+    forgotPassword: typeof routes['auth.forgot_password']
+    resetPassword: typeof routes['auth.reset_password']
+    logout: typeof routes['auth.logout']
+    deleteAccount: typeof routes['auth.delete_account']
+    profile: typeof routes['auth.profile']
+    updateProfile: typeof routes['auth.update_profile']
   }
-  profile: {
-    profile: {
-      show: typeof routes['profile.profile.show']
-    }
-    accessTokens: {
-      destroy: typeof routes['profile.access_tokens.destroy']
-    }
+  onboarding: {
+    registerDomain: typeof routes['onboarding.register_domain']
+    setupMailAccount: typeof routes['onboarding.setup_mail_account']
+    getDnsRecords: typeof routes['onboarding.get_dns_records']
+    checkDomainStatus: typeof routes['onboarding.check_domain_status']
   }
 }

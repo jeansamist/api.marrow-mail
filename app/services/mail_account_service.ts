@@ -13,6 +13,11 @@ interface MailAccountPayload {
   domainId: number
 }
 
+type SetupEmailAddressPayload = {
+  data: { username: string; owner: string }[]
+  domainId: number
+}
+
 interface LoginMailAccountPayload {
   email: string
   password: string
@@ -66,5 +71,26 @@ export class MailAccountService {
     if (hashedPassword !== mailAccount.password) throw httpError(400, 'Invalid email or password')
 
     return mailAccount
+  }
+
+  generatePassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let token = ''
+    for (let i = 0; i < 32; i++) {
+      token += chars[Math.floor(Math.random() * chars.length)]
+    }
+    return token
+  }
+
+  async setupEmailAddress(data: SetupEmailAddressPayload) {
+    const createMailAccountsPayload: MailAccountPayload[] = data.data.map((_) => ({
+      domainId: data.domainId,
+      ownerEmail: _.owner,
+      username: _.username,
+      password: this.generatePassword(),
+    }))
+    const mailAccounts = await this.createManyMailAccount(createMailAccountsPayload)
+    // TODO: Send creation notification to owner email that he has to setup his account
+    return mailAccounts
   }
 }

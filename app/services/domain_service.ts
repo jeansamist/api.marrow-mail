@@ -70,6 +70,30 @@ export class DomainService {
     return domain
   }
 
+  async findDomainByName(domainName: string): Promise<Domain | null> {
+    this.logger.info(`[DomainService]: Find domain by name`)
+    const domain = await this.repository.findByName(domainName)
+    if (!domain) return null
+    this.checkOwnership(domain)
+    return domain
+  }
+
+  async findDomainByNameOrFail(domainName: string) {
+    this.logger.info(`[DomainService]: Find domain by name or fail`)
+    const domain = await this.findDomainByName(domainName)
+    if (!domain) {
+      throw httpError(404, 'Domain not found')
+    }
+    return domain
+  }
+
+  async checkDomainStatusByName(domainName: string) {
+    this.logger.info(`[DomainService]: Check domain satus by name`)
+    const domain = await this.findDomainByNameOrFail(domainName)
+    const verified = await this.sesService.checkEmailIdentity(domain.name)
+    return verified
+  }
+
   async updateDomain(domainId: number, data: Partial<DomainPayload>): Promise<Domain> {
     this.logger.info(`[DomainService]: Update domain`)
     const domain = await this.findDomainById(domainId)

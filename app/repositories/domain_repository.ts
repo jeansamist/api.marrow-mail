@@ -18,6 +18,9 @@ export default class DomainRepository {
   async findById(id: number): Promise<Domain | null> {
     return this.model.find(id)
   }
+  async findByName(name: string) {
+    return this.model.findBy('name', name)
+  }
   async update(
     domain: Domain,
     data: Partial<ModelProps<Domain>>,

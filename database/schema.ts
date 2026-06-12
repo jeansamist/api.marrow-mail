@@ -8,18 +8,7 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = [
-    'abilities',
-    'createdAt',
-    'expiresAt',
-    'hash',
-    'id',
-    'lastUsedAt',
-    'name',
-    'tokenableId',
-    'type',
-    'updatedAt',
-  ] as const
+  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -43,19 +32,98 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class DomainSchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'name', 'updatedAt', 'userId', 'verified'] as const
+  $columns = DomainSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+  @column()
+  declare verified: boolean | null
+}
+
+export class MailAccountSchema extends BaseModel {
+  static $columns = ['createdAt', 'domainId', 'id', 'ownerEmail', 'password', 'updatedAt', 'userId', 'username'] as const
+  $columns = MailAccountSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare domainId: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare ownerEmail: string | null
+  @column({ serializeAs: null })
+  declare password: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+  @column()
+  declare username: string
+}
+
+export class RecordSchema extends BaseModel {
+  static $columns = ['createdAt', 'domainId', 'id', 'name', 'priority', 'type', 'updatedAt', 'userId', 'value'] as const
+  $columns = RecordSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare domainId: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column()
+  declare priority: number | null
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+  @column()
+  declare value: string
+}
+
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
+  static $columns = ['avatar', 'createdAt', 'email', 'emailVerificationCode', 'emailVerificationCodeExpiresAt', 'emailVerified', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'updatedAt'] as const
   $columns = UserSchema.$columns
+  @column()
+  declare avatar: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
   declare email: string
   @column()
-  declare fullName: string | null
+  declare emailVerificationCode: string | null
+  @column.dateTime()
+  declare emailVerificationCodeExpiresAt: DateTime | null
+  @column()
+  declare emailVerified: boolean
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+  @column()
+  declare firstName: string
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare lastName: string
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare resetPasswordToken: string | null
+  @column.dateTime()
+  declare resetPasswordTokenExpiresAt: DateTime | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

@@ -34,7 +34,9 @@ export default class AuthController {
     const user = await this.authService.verifyEmail(email, emailVerificationCode)
     if (user) {
       const accessToken = await this.authService.generateAccessToken(user, auth)
-      return response.ok(ApiResponse.success({ accessToken }, 'Email verified successfully'))
+      return response.ok(
+        ApiResponse.success({ ...accessToken.toJSON() }, 'Email verified successfully')
+      )
     }
     return response.badRequest(ApiResponse.failure(null, 'Invalid email verification code'))
   }
@@ -46,7 +48,7 @@ export default class AuthController {
     const data = await request.validateUsing(signInValidator)
     const user = await this.authService.signIn(data)
     const accessToken = await this.authService.generateAccessToken(user, auth)
-    return response.ok(ApiResponse.success({ accessToken }, 'Signed in successfully'))
+    return response.ok(ApiResponse.success({ ...accessToken.toJSON() }, 'Signed in successfully'))
   }
 
   async forgotPassword({ request, response, auth }: HttpContext) {
