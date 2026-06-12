@@ -10,8 +10,4 @@ export default class MailAccount extends MailAccountSchema {
 
   @belongsTo(() => Domain)
   declare domain: BelongsTo<typeof Domain>
-
-  get email() {
-    return `${this.username}@${this.domain.name}`
-  }
 }

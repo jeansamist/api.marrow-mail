@@ -3,6 +3,6 @@ import { BaseTransformer } from '@adonisjs/core/transformers'
 
 export default class MailAccountTransformer extends BaseTransformer<MailAccount> {
   toObject() {
-    return this.pick(this.resource, ['id', 'email', 'username', 'ownerEmail'])
+    return this.pick(this.resource, ['id', 'username', 'ownerEmail'])
   }
 }
