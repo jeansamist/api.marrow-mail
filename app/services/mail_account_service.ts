@@ -165,7 +165,6 @@ export class MailAccountService {
       password: this.randText(),
     }))
     const mailAccounts = await this.createManyMailAccount(createMailAccountsPayload)
-    // TODO: Send creation notification to owner email that he has to setup his account
     return mailAccounts
   }
 }
