@@ -7,6 +7,9 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
 
+      table.string('cuid').notNullable()
+      table.boolean('setuped').notNullable().defaultTo(false)
+
       table.string('username').notNullable()
       table.string('password').notNullable()
 
@@ -14,6 +17,8 @@ export default class extends BaseSchema {
 
       table.integer('domain_id').unsigned().references('id').inTable('domains').onDelete('CASCADE')
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
+
+      table.unique(['username', 'domain_id'])
 
       table.timestamp('created_at')
       table.timestamp('updated_at')

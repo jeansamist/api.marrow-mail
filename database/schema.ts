@@ -52,10 +52,12 @@ export class DomainSchema extends BaseModel {
 }
 
 export class MailAccountSchema extends BaseModel {
-  static $columns = ['createdAt', 'domainId', 'id', 'ownerEmail', 'password', 'updatedAt', 'userId', 'username'] as const
+  static $columns = ['createdAt', 'cuid', 'domainId', 'id', 'ownerEmail', 'password', 'setuped', 'updatedAt', 'userId', 'username'] as const
   $columns = MailAccountSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
+  @column()
+  declare cuid: string
   @column()
   declare domainId: number | null
   @column({ isPrimary: true })
@@ -64,6 +66,8 @@ export class MailAccountSchema extends BaseModel {
   declare ownerEmail: string | null
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare setuped: boolean
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
