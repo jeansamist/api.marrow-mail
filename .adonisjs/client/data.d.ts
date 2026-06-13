@@ -8,6 +8,7 @@ import type { InferData, InferVariants } from '@adonisjs/core/types/transformers
 import type MailAccountTransformer from '#transformers/mail_account_transformer'
 import type RecordTransformer from '#transformers/record_transformer'
 import type UserTransformer from '#transformers/user_transformer'
+import type MailAccountProfileTransformer from '#transformers/mail_account_profile_transformer'
 
 export namespace Data {
   export type MailAccount = InferData<MailAccountTransformer>
@@ -21,5 +22,9 @@ export namespace Data {
   export type User = InferData<UserTransformer>
   export namespace User {
     export type Variants = InferVariants<UserTransformer>
+  }
+  export type MailAccountProfile = InferData<MailAccountProfileTransformer>
+  export namespace MailAccountProfile {
+    export type Variants = InferVariants<MailAccountProfileTransformer>
   }
 }

@@ -1,6 +1,7 @@
 import MailAccountCreatedNotification from '#mails/mail_account_created_notification'
 import MailAccount from '#models/mail_account'
 import MailAccountRepository from '#repositories/mail_account_repository'
+import { MailAccountProfileService } from '#services/mail_account_profile_service'
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
@@ -26,16 +27,35 @@ interface LoginMailAccountPayload {
   password: string
 }
 
+interface SetupMailAccountProfilePayload {
+  firstName: string
+  lastName: string
+  avatar?: string | null
+}
+
 @inject()
 export class MailAccountService {
   constructor(
     private readonly repository: MailAccountRepository,
     private readonly ctx: HttpContext,
     private readonly logger: Logger,
-    private readonly cronManager: CronManager
+    private readonly cronManager: CronManager,
+    private readonly mailAccountProfileService: MailAccountProfileService
   ) {}
+
   private get userId() {
     return this.ctx.auth.user!.id
+  }
+
+  async findById(id: number): Promise<MailAccount | null> {
+    return this.repository.findById(id)
+  }
+
+  async setupMailAccountProfile(mailAccount: MailAccount, data: SetupMailAccountProfilePayload) {
+    return this.mailAccountProfileService.setupMailAccountProfile(mailAccount, {
+      ...data,
+      mailAccountId: mailAccount.id,
+    })
   }
 
   checkOwnership(mailAccount: MailAccount) {

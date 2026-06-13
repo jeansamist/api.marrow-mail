@@ -8,4 +8,5 @@ export const controllers = {
   Domains: () => import('#controllers/domains_controller'),
   MailAccounts: () => import('#controllers/mail_accounts_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
+  MailAccountProfiles: () => import('#controllers/mail_account_profiles_controller'),
 }

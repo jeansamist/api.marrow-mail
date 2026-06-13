@@ -13,6 +13,12 @@ export interface ApiDefinition {
     profile: typeof routes['auth.profile']
     updateProfile: typeof routes['auth.update_profile']
   }
+  mailAccountProfiles: {
+    store: typeof routes['mail_account_profiles.store']
+    show: typeof routes['mail_account_profiles.show']
+    update: typeof routes['mail_account_profiles.update']
+    destroy: typeof routes['mail_account_profiles.destroy']
+  }
   onboarding: {
     registerDomain: typeof routes['onboarding.register_domain']
     setupMailAccount: typeof routes['onboarding.setup_mail_account']

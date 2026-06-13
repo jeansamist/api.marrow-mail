@@ -34,6 +34,13 @@ router
           .use([middleware.auth()])
       })
       .prefix('/auth')
+    // Mail account profiles routes
+    router
+      .group(() => {
+        router.get('/:mailAccountId/profile', [controllers.MailAccountProfiles, 'show'])
+      })
+      .prefix('/mail-accounts')
+      .use([middleware.auth()])
     // Onboarding routes
     router
       .group(() => {

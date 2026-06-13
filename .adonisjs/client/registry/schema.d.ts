@@ -115,6 +115,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_controller').default['updateProfile']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'mail_account_profiles.store': {
+    methods: ["POST"]
+    pattern: '/api/mail-accounts/:mailAccountId/profile'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
+      paramsTuple: [ParamValue]
+      params: { mailAccountId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_account_profiles.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail-accounts/:mailAccountId/profile'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { mailAccountId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
+    }
+  }
+  'mail_account_profiles.update': {
+    methods: ["PUT"]
+    pattern: '/api/mail-accounts/:mailAccountId/profile'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
+      paramsTuple: [ParamValue]
+      params: { mailAccountId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_account_profiles.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/mail-accounts/:mailAccountId/profile'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { mailAccountId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['destroy']>>>
+    }
+  }
   'onboarding.register_domain': {
     methods: ["POST"]
     pattern: '/api/onboarding/register-domain'

@@ -51,6 +51,25 @@ export class DomainSchema extends BaseModel {
   declare verified: boolean | null
 }
 
+export class MailAccountProfileSchema extends BaseModel {
+  static $columns = ['avatar', 'createdAt', 'firstName', 'id', 'lastName', 'mailAccountId', 'updatedAt'] as const
+  $columns = MailAccountProfileSchema.$columns
+  @column()
+  declare avatar: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare firstName: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare lastName: string
+  @column()
+  declare mailAccountId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class MailAccountSchema extends BaseModel {
   static $columns = ['createdAt', 'cuid', 'domainId', 'id', 'ownerEmail', 'password', 'setuped', 'updatedAt', 'userId', 'username'] as const
   $columns = MailAccountSchema.$columns
