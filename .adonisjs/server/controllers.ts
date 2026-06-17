@@ -5,6 +5,7 @@
 
 export const controllers = {
   Auth: () => import('#controllers/auth_controller'),
+  AuthMailAccounts: () => import('#controllers/auth_mail_accounts_controller'),
   Domains: () => import('#controllers/domains_controller'),
   MailAccountProfiles: () => import('#controllers/mail_account_profiles_controller'),
   MailAccounts: () => import('#controllers/mail_accounts_controller'),

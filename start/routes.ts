@@ -58,7 +58,7 @@ router
       .group(() => {
         router
           .group(() => {
-            // router.post('/login', [controllers.Onboarding, 'registerDomain'])
+            router.post('/login', [controllers.AuthMailAccounts, 'login'])
             // router.get('/profile', [controllers.Onboarding, 'registerDomain'])
             // router.put('/update-profile', [controllers.Auth, 'updateProfile'])
             // router.post('/logout', [controllers.Auth, 'logout'])

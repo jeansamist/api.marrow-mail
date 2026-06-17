@@ -175,6 +175,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/onboarding_controller').default['checkDomainStatus']>>>
     }
   }
+  'auth_mail_accounts.login': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/login'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').signInValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').signInValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['login']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['login']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"]
     pattern: '/api/mail/setup-profile'

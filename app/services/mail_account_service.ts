@@ -8,6 +8,8 @@ import { HttpContext } from '@adonisjs/core/http'
 import { Logger } from '@adonisjs/core/logger'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import jwt from 'jsonwebtoken'
+import { DateTime } from 'luxon'
 import CronManager from '../managers/crons_manager.js'
 interface MailAccountPayload {
   username: string
@@ -139,10 +141,25 @@ export class MailAccountService {
     if (!mailAccount) throw httpError(400, 'Invalid email or password')
 
     // Check password
-    const hashedPassword = await hash.make(data.password)
-    if (hashedPassword !== mailAccount.password) throw httpError(400, 'Invalid email or password')
+    const isPasswordValid = await hash.verify(mailAccount.password, data.password)
+
+    if (!isPasswordValid) throw httpError(400, 'Invalid  or password')
 
     return mailAccount
+  }
+
+  async generateJWT(mailAccount: MailAccount) {
+    const expiresAt = DateTime.now().plus({ day: 1 }).toISO()
+    return {
+      token: jwt.sign(
+        {
+          id: mailAccount.id,
+        },
+        env.get('JWT_SECRET', 'key'),
+        { expiresIn: '1d' }
+      ),
+      expiresAt,
+    }
   }
 
   randText(

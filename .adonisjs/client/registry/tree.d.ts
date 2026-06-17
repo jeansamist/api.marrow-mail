@@ -23,4 +23,7 @@ export interface ApiDefinition {
     getDnsRecords: typeof routes['onboarding.get_dns_records']
     checkDomainStatus: typeof routes['onboarding.check_domain_status']
   }
+  authMailAccounts: {
+    login: typeof routes['auth_mail_accounts.login']
+  }
 }

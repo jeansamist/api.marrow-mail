@@ -90,6 +90,12 @@ const routes = {
     tokens: [{"old":"/api/onboarding/check-domain-status","type":0,"val":"api","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"onboarding","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"check-domain-status","end":""}],
     types: placeholder as Registry['onboarding.check_domain_status']['types'],
   },
+  'auth_mail_accounts.login': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/login',
+    tokens: [{"old":"/api/mail/auth/login","type":0,"val":"api","end":""},{"old":"/api/mail/auth/login","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/login","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/login","type":0,"val":"login","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.login']['types'],
+  },
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"],
     pattern: '/api/mail/setup-profile',

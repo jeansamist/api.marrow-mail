@@ -18,6 +18,7 @@ export type ScannedRoutes = {
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.setup_mail_account_profile': { paramsTuple?: []; params?: {} }
   }
   GET: {
@@ -42,6 +43,7 @@ export type ScannedRoutes = {
     'auth.delete_account': { paramsTuple?: []; params?: {} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.setup_mail_account_profile': { paramsTuple?: []; params?: {} }
   }
   PUT: {
