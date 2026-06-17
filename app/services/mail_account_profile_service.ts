@@ -7,14 +7,15 @@ import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
 import { Logger } from '@adonisjs/core/logger'
+import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import CronManager from '../managers/crons_manager.js'
 
 interface SetupMailAccountProfilePayload {
   firstName: string
   lastName: string
-  avatar?: string | null
-  mailAccountId: number
+  avatar: string | null
+  newPassword: string
 }
 
 @inject()
@@ -45,24 +46,25 @@ export class MailAccountProfileService {
     mailAccount: MailAccount,
     data: SetupMailAccountProfilePayload
   ): Promise<MailAccountProfile> {
-    const existing = await this.repository.findByMailAccountId(data.mailAccountId)
+    // destructre the data payload
+    const { newPassword, ...profileData } = data
 
-    let profile: MailAccountProfile
-    if (existing) {
-      profile = await this.repository.update(existing, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        avatar: data.avatar ?? null,
-      })
-    } else {
-      profile = await this.repository.create({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        avatar: data.avatar ?? null,
-        mailAccountId: data.mailAccountId,
-      })
-    }
+    // create a mail account profile
+    const profile = await this.repository.create({
+      ...profileData,
+      mailAccountId: mailAccount.id,
+    })
 
+    // hash the user new mail account password provided
+    const hashedPassword = await hash.make(newPassword)
+
+    // Update the mail account to status setuped wit te new password
+    await this.mailAccountRepository.update(mailAccount, {
+      setuped: true,
+      password: hashedPassword,
+    })
+
+    // Send setup notification email
     if (mailAccount.ownerEmail) {
       await mailAccount.load('domain')
       this.queueMailAccountProfileSetupedNotification(mailAccount, profile)

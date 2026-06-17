@@ -60,29 +60,11 @@ const routes = {
     tokens: [{"old":"/api/auth/update-profile","type":0,"val":"api","end":""},{"old":"/api/auth/update-profile","type":0,"val":"auth","end":""},{"old":"/api/auth/update-profile","type":0,"val":"update-profile","end":""}],
     types: placeholder as Registry['auth.update_profile']['types'],
   },
-  'mail_account_profiles.store': {
-    methods: ["POST"],
-    pattern: '/api/mail-accounts/:mailAccountId/profile',
-    tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
-    types: placeholder as Registry['mail_account_profiles.store']['types'],
-  },
   'mail_account_profiles.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/mail-accounts/:mailAccountId/profile',
     tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.show']['types'],
-  },
-  'mail_account_profiles.update': {
-    methods: ["PUT"],
-    pattern: '/api/mail-accounts/:mailAccountId/profile',
-    tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
-    types: placeholder as Registry['mail_account_profiles.update']['types'],
-  },
-  'mail_account_profiles.destroy': {
-    methods: ["DELETE"],
-    pattern: '/api/mail-accounts/:mailAccountId/profile',
-    tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
-    types: placeholder as Registry['mail_account_profiles.destroy']['types'],
   },
   'onboarding.register_domain': {
     methods: ["POST"],
@@ -107,6 +89,12 @@ const routes = {
     pattern: '/api/onboarding/check-domain-status',
     tokens: [{"old":"/api/onboarding/check-domain-status","type":0,"val":"api","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"onboarding","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"check-domain-status","end":""}],
     types: placeholder as Registry['onboarding.check_domain_status']['types'],
+  },
+  'mail_account_profiles.setup_mail_account_profile': {
+    methods: ["POST"],
+    pattern: '/api/mail/setup-profile',
+    tokens: [{"old":"/api/mail/setup-profile","type":0,"val":"api","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"mail","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"setup-profile","end":""}],
+    types: placeholder as Registry['mail_account_profiles.setup_mail_account_profile']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

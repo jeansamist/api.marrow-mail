@@ -21,6 +21,10 @@ export default class MailAccountRepository {
   async findById(id: number): Promise<MailAccount | null> {
     return this.model.find(id)
   }
+
+  async findByCuid(cuid: string) {
+    return this.model.findBy('cuid', cuid)
+  }
   async update(
     mailAccount: MailAccount,
     data: Partial<ModelProps<MailAccount>>

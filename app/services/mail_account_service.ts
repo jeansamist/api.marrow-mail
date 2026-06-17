@@ -1,7 +1,6 @@
 import MailAccountCreatedNotification from '#mails/mail_account_created_notification'
 import MailAccount from '#models/mail_account'
 import MailAccountRepository from '#repositories/mail_account_repository'
-import { MailAccountProfileService } from '#services/mail_account_profile_service'
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
@@ -39,8 +38,7 @@ export class MailAccountService {
     private readonly repository: MailAccountRepository,
     private readonly ctx: HttpContext,
     private readonly logger: Logger,
-    private readonly cronManager: CronManager,
-    private readonly mailAccountProfileService: MailAccountProfileService
+    private readonly cronManager: CronManager
   ) {}
 
   private get userId() {
@@ -51,11 +49,15 @@ export class MailAccountService {
     return this.repository.findById(id)
   }
 
-  async setupMailAccountProfile(mailAccount: MailAccount, data: SetupMailAccountProfilePayload) {
-    return this.mailAccountProfileService.setupMailAccountProfile(mailAccount, {
-      ...data,
-      mailAccountId: mailAccount.id,
-    })
+  async findMailAccountByCuid(cuid: string) {
+    return this.repository.findByCuid(cuid)
+  }
+  async findMailAccountByCuidOrFail(cuid: string) {
+    const mailAccount = await this.findMailAccountByCuid(cuid)
+    if (!mailAccount) {
+      throw httpError(400, 'Mail account not found by CUID')
+    }
+    return mailAccount
   }
 
   checkOwnership(mailAccount: MailAccount) {
@@ -66,9 +68,7 @@ export class MailAccountService {
 
   private queueMailAccountCreatedNotification(mailAccount: MailAccount, ownerEmail: string) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
-    const setupLink =
-      `${env.get('FRONTEND_APP_URL')}/en/${mailAccount.domain.name}/setup-account` +
-      `?cuid=${mailAccount.cuid}`
+    const setupLink = `${env.get('FRONTEND_APP_URL')}/en/domain/${mailAccount.domain.name}/setup-profile?cuid=${mailAccount.cuid}`
     const notification = new MailAccountCreatedNotification(ownerEmail, mailAccountEmail, setupLink)
 
     this.cronManager.addQueueJob(

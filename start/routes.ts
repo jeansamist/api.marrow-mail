@@ -51,5 +51,23 @@ router
       })
       .prefix('/onboarding')
       .use([middleware.auth()])
+
+    // Mail APP routes
+
+    router
+      .group(() => {
+        router
+          .group(() => {
+            // router.post('/login', [controllers.Onboarding, 'registerDomain'])
+            // router.get('/profile', [controllers.Onboarding, 'registerDomain'])
+            // router.put('/update-profile', [controllers.Auth, 'updateProfile'])
+            // router.post('/logout', [controllers.Auth, 'logout'])
+            // router.post('/forgot-password', [controllers.Auth, 'forgotPassword'])
+            // router.post('/reset-password', [controllers.Auth, 'resetPassword'])
+          })
+          .prefix('/auth')
+        router.post('/setup-profile', [controllers.MailAccountProfiles, 'setupMailAccountProfile'])
+      })
+      .prefix('/mail')
   })
   .prefix('/api')
