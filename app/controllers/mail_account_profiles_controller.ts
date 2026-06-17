@@ -22,6 +22,8 @@ export default class MailAccountProfilesController {
   async setupMailAccountProfile({ request, response, serialize }: HttpContext) {
     const { cuid, ...data } = await request.validateUsing(setupMailAccountProfileValidator)
     const mailAccount = await this.mailAccountService.findMailAccountByCuidOrFail(cuid)
-    const profile = this.mailAccountProfileService.setupMailAccountProfile(mailAccount, data)
+    const profile = await this.mailAccountProfileService.setupMailAccountProfile(mailAccount, data)
+    const serialized = await serialize(MailAccountProfileTransformer.transform(profile))
+    return response.ok(ApiResponse.success(serialized.data, 'Profile'))
   }
 }

@@ -5,7 +5,7 @@ export const setupMailAccountProfileValidator = vine.create(
     firstName: vine.string().minLength(1).maxLength(255),
     lastName: vine.string().minLength(1).maxLength(255),
     avatar: vine.string().nullable(),
-    cuid: vine.string().minLength(1).maxLength(20),
+    cuid: vine.string().minLength(1),
     newPassword: vine.string().minLength(8),
   })
 )
