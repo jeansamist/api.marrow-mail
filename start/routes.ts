@@ -15,6 +15,9 @@ router.get('/', () => {
   return { hello: 'world' }
 })
 
+// SES inbound webhook — no auth, public endpoint for AWS SNS
+router.post('/api/webhooks/ses', [controllers.SesWebhook, 'handle'])
+
 router
   .group(() => {
     router

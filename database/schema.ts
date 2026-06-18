@@ -7,30 +7,6 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
-export class FileSchema extends BaseModel {
-  static table = 'files'
-  static $columns = ['bucket', 'createdAt', 'id', 'key', 'mailAccountId', 'mimeType', 'originalName', 'size', 'updatedAt'] as const
-  $columns = FileSchema.$columns
-  @column()
-  declare bucket: string
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime | null
-  @column({ isPrimary: true })
-  declare id: number
-  @column()
-  declare key: string
-  @column()
-  declare mailAccountId: number | null
-  @column()
-  declare mimeType: string | null
-  @column()
-  declare originalName: string
-  @column()
-  declare size: number | null
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
-}
-
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
@@ -75,6 +51,29 @@ export class DomainSchema extends BaseModel {
   declare verified: boolean | null
 }
 
+export class FileSchema extends BaseModel {
+  static $columns = ['bucket', 'createdAt', 'id', 'key', 'mailAccountId', 'mimeType', 'originalName', 'size', 'updatedAt'] as const
+  $columns = FileSchema.$columns
+  @column()
+  declare bucket: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare key: string
+  @column()
+  declare mailAccountId: number | null
+  @column()
+  declare mimeType: string | null
+  @column()
+  declare originalName: string
+  @column()
+  declare size: bigint | number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class MailAccountProfileSchema extends BaseModel {
   static $columns = ['avatar', 'createdAt', 'firstName', 'id', 'lastName', 'mailAccountId', 'updatedAt'] as const
   $columns = MailAccountProfileSchema.$columns
@@ -109,7 +108,7 @@ export class MailAccountSchema extends BaseModel {
   declare ownerEmail: string | null
   @column({ serializeAs: null })
   declare password: string
-  @column({ serializeAs: null })
+  @column()
   declare resetPasswordToken: string | null
   @column.dateTime()
   declare resetPasswordTokenExpiresAt: DateTime | null
@@ -124,23 +123,22 @@ export class MailAccountSchema extends BaseModel {
 }
 
 export class MailSchema extends BaseModel {
-  static table = 'mails'
   static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'direction', 'fromEmail', 'id', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
   $columns = MailSchema.$columns
   @column()
-  declare attachmentIds: number[] | null
+  declare attachmentIds: any | null
   @column()
-  declare bccAddresses: string[] | null
+  declare bccAddresses: any | null
   @column()
   declare bodyHtml: string | null
   @column()
   declare bodyText: string | null
   @column()
-  declare ccAddresses: string[] | null
+  declare ccAddresses: any | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
-  declare direction: 'sent' | 'received'
+  declare direction: string
   @column()
   declare fromEmail: string
   @column({ isPrimary: true })
@@ -152,11 +150,11 @@ export class MailSchema extends BaseModel {
   @column()
   declare sesMessageId: string | null
   @column()
-  declare status: 'queued' | 'sent' | 'failed' | 'received'
+  declare status: string
   @column()
   declare subject: string
   @column()
-  declare toAddresses: string[]
+  declare toAddresses: any
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

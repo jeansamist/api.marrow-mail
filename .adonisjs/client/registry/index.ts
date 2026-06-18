@@ -6,6 +6,12 @@ import type { ApiDefinition } from './tree.d.ts'
 const placeholder: any = {}
 
 const routes = {
+  'ses_webhook': {
+    methods: ["POST"],
+    pattern: '/api/webhooks/ses',
+    tokens: [{"old":"/api/webhooks/ses","type":0,"val":"api","end":""},{"old":"/api/webhooks/ses","type":0,"val":"webhooks","end":""},{"old":"/api/webhooks/ses","type":0,"val":"ses","end":""}],
+    types: placeholder as Registry['ses_webhook']['types'],
+  },
   'auth.sign_up': {
     methods: ["POST"],
     pattern: '/api/auth/sign-up',
@@ -96,11 +102,83 @@ const routes = {
     tokens: [{"old":"/api/mail/auth/login","type":0,"val":"api","end":""},{"old":"/api/mail/auth/login","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/login","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/login","type":0,"val":"login","end":""}],
     types: placeholder as Registry['auth_mail_accounts.login']['types'],
   },
+  'auth_mail_accounts.forgot_password': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/forgot-password',
+    tokens: [{"old":"/api/mail/auth/forgot-password","type":0,"val":"api","end":""},{"old":"/api/mail/auth/forgot-password","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/forgot-password","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/forgot-password","type":0,"val":"forgot-password","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.forgot_password']['types'],
+  },
+  'auth_mail_accounts.reset_password': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/reset-password',
+    tokens: [{"old":"/api/mail/auth/reset-password","type":0,"val":"api","end":""},{"old":"/api/mail/auth/reset-password","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/reset-password","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/reset-password","type":0,"val":"reset-password","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.reset_password']['types'],
+  },
+  'auth_mail_accounts.profile': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/auth/profile',
+    tokens: [{"old":"/api/mail/auth/profile","type":0,"val":"api","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.profile']['types'],
+  },
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"],
     pattern: '/api/mail/setup-profile',
     tokens: [{"old":"/api/mail/setup-profile","type":0,"val":"api","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"mail","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"setup-profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.setup_mail_account_profile']['types'],
+  },
+  'storage.create_upload_link': {
+    methods: ["POST"],
+    pattern: '/api/mail/storage/upload-link',
+    tokens: [{"old":"/api/mail/storage/upload-link","type":0,"val":"api","end":""},{"old":"/api/mail/storage/upload-link","type":0,"val":"mail","end":""},{"old":"/api/mail/storage/upload-link","type":0,"val":"storage","end":""},{"old":"/api/mail/storage/upload-link","type":0,"val":"upload-link","end":""}],
+    types: placeholder as Registry['storage.create_upload_link']['types'],
+  },
+  'storage.create_upload_links': {
+    methods: ["POST"],
+    pattern: '/api/mail/storage/upload-links',
+    tokens: [{"old":"/api/mail/storage/upload-links","type":0,"val":"api","end":""},{"old":"/api/mail/storage/upload-links","type":0,"val":"mail","end":""},{"old":"/api/mail/storage/upload-links","type":0,"val":"storage","end":""},{"old":"/api/mail/storage/upload-links","type":0,"val":"upload-links","end":""}],
+    types: placeholder as Registry['storage.create_upload_links']['types'],
+  },
+  'storage.files': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/storage/files',
+    tokens: [{"old":"/api/mail/storage/files","type":0,"val":"api","end":""},{"old":"/api/mail/storage/files","type":0,"val":"mail","end":""},{"old":"/api/mail/storage/files","type":0,"val":"storage","end":""},{"old":"/api/mail/storage/files","type":0,"val":"files","end":""}],
+    types: placeholder as Registry['storage.files']['types'],
+  },
+  'storage.delete_file': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/storage/files/*',
+    tokens: [{"old":"/api/mail/storage/files/*","type":0,"val":"api","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"mail","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"storage","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"files","end":""},{"old":"/api/mail/storage/files/*","type":2,"val":"*","end":""}],
+    types: placeholder as Registry['storage.delete_file']['types'],
+  },
+  'storage.get_file': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/storage/files/*',
+    tokens: [{"old":"/api/mail/storage/files/*","type":0,"val":"api","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"mail","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"storage","end":""},{"old":"/api/mail/storage/files/*","type":0,"val":"files","end":""},{"old":"/api/mail/storage/files/*","type":2,"val":"*","end":""}],
+    types: placeholder as Registry['storage.get_file']['types'],
+  },
+  'mail.send': {
+    methods: ["POST"],
+    pattern: '/api/mail/mails',
+    tokens: [{"old":"/api/mail/mails","type":0,"val":"api","end":""},{"old":"/api/mail/mails","type":0,"val":"mail","end":""},{"old":"/api/mail/mails","type":0,"val":"mails","end":""}],
+    types: placeholder as Registry['mail.send']['types'],
+  },
+  'mail.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails',
+    tokens: [{"old":"/api/mail/mails","type":0,"val":"api","end":""},{"old":"/api/mail/mails","type":0,"val":"mail","end":""},{"old":"/api/mail/mails","type":0,"val":"mails","end":""}],
+    types: placeholder as Registry['mail.index']['types'],
+  },
+  'mail.sent': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/sent',
+    tokens: [{"old":"/api/mail/mails/sent","type":0,"val":"api","end":""},{"old":"/api/mail/mails/sent","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/sent","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/sent","type":0,"val":"sent","end":""}],
+    types: placeholder as Registry['mail.sent']['types'],
+  },
+  'mail.received': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/received',
+    tokens: [{"old":"/api/mail/mails/received","type":0,"val":"api","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/received","type":0,"val":"received","end":""}],
+    types: placeholder as Registry['mail.received']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

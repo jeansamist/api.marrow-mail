@@ -1,6 +1,7 @@
 import Domain from '#models/domain'
 import Record from '#models/record'
 import DomainRepository from '#repositories/domain_repository'
+import { InboundEmailSetupService } from '#services/inbound_email_setup_service'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
@@ -26,7 +27,8 @@ export class DomainService {
     private readonly sesService: SESService,
     private readonly recordService: RecordService,
     private readonly logger: Logger,
-    protected readonly cronManager: CronManager
+    protected readonly cronManager: CronManager,
+    private readonly inboundEmailSetupService: InboundEmailSetupService
   ) {
     // Verification job to check each 10s to change domains status
     // setInterval(() => {
@@ -89,6 +91,16 @@ export class DomainService {
     this.logger.info(`[DomainService]: Check domain satus by name`)
     const domain = await this.findDomainByNameOrFail(domainName)
     const verified = await this.sesService.checkEmailIdentity(domain.name)
+
+    if (verified && !domain.verified) {
+      await this.changeDomainToVerify(domain.id)
+      this.inboundEmailSetupService.setupDomainReceiving(domain.name).catch((error: unknown) => {
+        this.logger.error(
+          `[DomainService]: Failed to setup inbound email for ${domain.name}: ${error instanceof Error ? error.message : String(error)}`
+        )
+      })
+    }
+
     return verified
   }
 

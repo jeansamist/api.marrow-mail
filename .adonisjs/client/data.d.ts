@@ -5,12 +5,18 @@
 
 /// <reference path="./manifest.d.ts" />
 import type { InferData, InferVariants } from '@adonisjs/core/types/transformers'
+import type FileTransformer from '#transformers/file_transformer'
 import type MailAccountProfileTransformer from '#transformers/mail_account_profile_transformer'
 import type MailAccountTransformer from '#transformers/mail_account_transformer'
+import type MailTransformer from '#transformers/mail_transformer'
 import type RecordTransformer from '#transformers/record_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 
 export namespace Data {
+  export type File = InferData<FileTransformer>
+  export namespace File {
+    export type Variants = InferVariants<FileTransformer>
+  }
   export type MailAccountProfile = InferData<MailAccountProfileTransformer>
   export namespace MailAccountProfile {
     export type Variants = InferVariants<MailAccountProfileTransformer>
@@ -18,6 +24,10 @@ export namespace Data {
   export type MailAccount = InferData<MailAccountTransformer>
   export namespace MailAccount {
     export type Variants = InferVariants<MailAccountTransformer>
+  }
+  export type Mail = InferData<MailTransformer>
+  export namespace Mail {
+    export type Variants = InferVariants<MailTransformer>
   }
   export type Record = InferData<RecordTransformer>
   export namespace Record {

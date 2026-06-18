@@ -2,6 +2,7 @@
 import type { routes } from './index.ts'
 
 export interface ApiDefinition {
+  sesWebhook: typeof routes['ses_webhook']
   auth: {
     signUp: typeof routes['auth.sign_up']
     verifyEmail: typeof routes['auth.verify_email']
@@ -25,5 +26,21 @@ export interface ApiDefinition {
   }
   authMailAccounts: {
     login: typeof routes['auth_mail_accounts.login']
+    forgotPassword: typeof routes['auth_mail_accounts.forgot_password']
+    resetPassword: typeof routes['auth_mail_accounts.reset_password']
+    profile: typeof routes['auth_mail_accounts.profile']
+  }
+  storage: {
+    createUploadLink: typeof routes['storage.create_upload_link']
+    createUploadLinks: typeof routes['storage.create_upload_links']
+    files: typeof routes['storage.files']
+    deleteFile: typeof routes['storage.delete_file']
+    getFile: typeof routes['storage.get_file']
+  }
+  mail: {
+    send: typeof routes['mail.send']
+    index: typeof routes['mail.index']
+    sent: typeof routes['mail.sent']
+    received: typeof routes['mail.received']
   }
 }

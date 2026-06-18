@@ -7,6 +7,18 @@ import type { InferInput, SimpleError } from '@vinejs/vine/types'
 export type ParamValue = string | number | bigint | boolean
 
 export interface Registry {
+  'ses_webhook': {
+    methods: ["POST"]
+    pattern: '/api/webhooks/ses'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/ses_webhook_controller').default['handle']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/ses_webhook_controller').default['handle']>>>
+    }
+  }
   'auth.sign_up': {
     methods: ["POST"]
     pattern: '/api/auth/sign-up'
@@ -187,6 +199,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['login']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'auth_mail_accounts.forgot_password': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/forgot-password'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').forgotPasswordValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').forgotPasswordValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['forgotPassword']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['forgotPassword']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'auth_mail_accounts.reset_password': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/reset-password'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').resetPasswordValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').resetPasswordValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['resetPassword']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['resetPassword']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'auth_mail_accounts.profile': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/auth/profile'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['profile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['profile']>>>
+    }
+  }
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"]
     pattern: '/api/mail/setup-profile'
@@ -197,6 +245,114 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['setupMailAccountProfile']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['setupMailAccountProfile']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage.create_upload_link': {
+    methods: ["POST"]
+    pattern: '/api/mail/storage/upload-link'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/storage').createUploadLinkValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/storage').createUploadLinkValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['createUploadLink']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['createUploadLink']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage.create_upload_links': {
+    methods: ["POST"]
+    pattern: '/api/mail/storage/upload-links'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/storage').createUploadLinksValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/storage').createUploadLinksValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['createUploadLinks']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['createUploadLinks']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage.files': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/storage/files'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['files']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['files']>>>
+    }
+  }
+  'storage.delete_file': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/storage/files/*'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { '*': ParamValue[] }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['deleteFile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['deleteFile']>>>
+    }
+  }
+  'storage.get_file': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/storage/files/*'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { '*': ParamValue[] }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['getFile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_controller').default['getFile']>>>
+    }
+  }
+  'mail.send': {
+    methods: ["POST"]
+    pattern: '/api/mail/mails'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').sendMailValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').sendMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['send']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['send']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['index']>>>
+    }
+  }
+  'mail.sent': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/sent'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['sent']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['sent']>>>
+    }
+  }
+  'mail.received': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/received'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['received']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['received']>>>
     }
   }
 }

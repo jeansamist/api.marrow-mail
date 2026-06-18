@@ -5,8 +5,10 @@ import { Logger } from '@adonisjs/core/logger'
 import {
   CreateBucketCommand,
   DeleteBucketCommand,
+  GetBucketPolicyCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
@@ -140,6 +142,72 @@ export class S3Service {
         )
         throw error
       })
+  }
+
+  async putObject(bucketName: string, key: string, body: Buffer, contentType?: string) {
+    return this.client
+      .send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+        })
+      )
+      .then((response) => {
+        this.logger.info(`Uploaded object to ${bucketName}/${key}`)
+        return response
+      })
+      .catch((error) => {
+        this.logger.error(`Failed to upload object to ${bucketName}/${key}: ${error.message}`)
+        throw error
+      })
+  }
+
+  async getObjectBuffer(bucketName: string, key: string): Promise<Buffer> {
+    const result = await this.client
+      .send(new GetObjectCommand({ Bucket: bucketName, Key: key }))
+      .catch((error) => {
+        this.logger.error(`Failed to get object from ${bucketName}/${key}: ${error.message}`)
+        throw error
+      })
+    if (!result.Body) throw new Error(`No body returned for ${bucketName}/${key}`)
+    const bytes = await (
+      result.Body as { transformToByteArray(): Promise<Uint8Array> }
+    ).transformToByteArray()
+    this.logger.info(`Retrieved object buffer from ${bucketName}/${key}`)
+    return Buffer.from(bytes)
+  }
+
+  async configureSESBucketPolicy(bucketName: string) {
+    const sesSid = 'AllowSESPuts-MarrowMail'
+    const sesStatement = {
+      Sid: sesSid,
+      Effect: 'Allow',
+      Principal: { Service: 'ses.amazonaws.com' },
+      Action: 's3:PutObject',
+      Resource: `arn:aws:s3:::${bucketName}/received/*`,
+    }
+
+    let policy: { Version: string; Statement: Record<string, unknown>[] } = {
+      Version: '2012-10-17',
+      Statement: [],
+    }
+
+    try {
+      const existing = await this.client.send(new GetBucketPolicyCommand({ Bucket: bucketName }))
+      if (existing.Policy) policy = JSON.parse(existing.Policy)
+    } catch (error) {
+      if ((error as { name?: string }).name !== 'NoSuchBucketPolicy') throw error
+    }
+
+    policy.Statement = policy.Statement.filter((s) => s['Sid'] !== sesSid)
+    policy.Statement.push(sesStatement)
+
+    await this.client.send(
+      new PutBucketPolicyCommand({ Bucket: bucketName, Policy: JSON.stringify(policy) })
+    )
+    this.logger.info(`S3 bucket policy updated to allow SES writes on ${bucketName}`)
   }
 
   async emptyBucket(bucketName: string) {

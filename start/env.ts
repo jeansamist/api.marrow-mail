@@ -67,4 +67,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   AWS_SECRET_ACCESS_KEY: Env.schema.string(),
   AWS_REGION: Env.schema.string(),
   AWS_BUCKET: Env.schema.string(),
+  AWS_SES_RULE_SET_NAME: Env.schema.string(),
 })

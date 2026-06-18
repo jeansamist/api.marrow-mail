@@ -40,6 +40,7 @@ const bodyParserConfig = defineConfig({
       'application/json-patch+json',
       'application/vnd.api+json',
       'application/csp-report',
+      'text/plain', // AWS SNS sends webhook notifications with this content-type
     ],
   },
 
