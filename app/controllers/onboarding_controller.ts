@@ -33,7 +33,7 @@ export default class OnboardingController {
     return await response.ok(ApiResponse.success(serialized.data, 'DNS Records'))
   }
 
-  async checkDomainStatus({ request, response, serialize }: HttpContext) {
+  async checkDomainStatus({ request, response }: HttpContext) {
     const domainName = request.input('domainName')
     const verified = await this.domainService.checkDomainStatusByName(domainName)
     return await response.ok(ApiResponse.success({ verified }, 'Domain status'))

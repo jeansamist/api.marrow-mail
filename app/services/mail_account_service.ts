@@ -21,12 +21,6 @@ type SetupEmailAddressPayload = {
   domainId: number
 }
 
-interface SetupMailAccountProfilePayload {
-  firstName: string
-  lastName: string
-  avatar?: string | null
-}
-
 @inject()
 export class MailAccountService {
   constructor(
@@ -89,6 +83,8 @@ export class MailAccountService {
       password: hashedPassword,
       cuid,
       setuped: false,
+      resetPasswordToken: null,
+      resetPasswordTokenExpiresAt: null,
     })
 
     if (data.ownerEmail) {
@@ -108,7 +104,15 @@ export class MailAccountService {
           chunks: { separator: '-', size: 5 },
         })
         const password = await hash.make(item.password)
-        return { ...item, password, userId: this.userId, cuid, setuped: false }
+        return {
+          ...item,
+          password,
+          userId: this.userId,
+          cuid,
+          setuped: false,
+          resetPasswordToken: null,
+          resetPasswordTokenExpiresAt: null,
+        }
       })
     )
     const mailAccounts = await this.repository.createMany(hashedData)

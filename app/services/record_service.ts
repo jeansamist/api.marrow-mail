@@ -4,8 +4,6 @@ import RecordRepository from '#repositories/record_repository'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
-import { Logger } from '@adonisjs/core/logger'
-
 interface RecordPayload {
   name: string
   type: string
@@ -19,8 +17,7 @@ export class RecordService {
   // Your code here
   constructor(
     private readonly repository: RecordRepository,
-    private readonly ctx: HttpContext,
-    private readonly logger: Logger
+    private readonly ctx: HttpContext
   ) {}
   private get userId() {
     return this.ctx.auth.user!.id

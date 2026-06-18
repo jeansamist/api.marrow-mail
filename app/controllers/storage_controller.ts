@@ -13,7 +13,9 @@ export default class StorageController {
     const data = await request.validateUsing(createUploadLinkValidator)
     const { uploadUrl, file } = await this.storageService.createUploadLink(data)
     const serialized = await serialize(FileTransformer.transform(file))
-    return response.ok(ApiResponse.success({ uploadUrl, file: serialized.data }, 'Upload link created'))
+    return response.ok(
+      ApiResponse.success({ uploadUrl, file: serialized.data }, 'Upload link created')
+    )
   }
 
   async createUploadLinks({ request, response, serialize }: HttpContext) {
@@ -29,7 +31,7 @@ export default class StorageController {
 
   async files({ response, serialize }: HttpContext) {
     const files = await this.storageService.listFiles()
-    const serialized = await serialize(FileTransformer.transformMany(files))
+    const serialized = await serialize(FileTransformer.transform(files))
     return response.ok(ApiResponse.success(serialized.data, 'Files retrieved'))
   }
 

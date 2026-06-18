@@ -7,7 +7,6 @@ import { HttpContext } from '@adonisjs/core/http'
 import { Logger } from '@adonisjs/core/logger'
 import CronManager from '../managers/crons_manager.ts'
 import { RecordService } from './record_service.ts'
-import { Route53Service } from './route53_service.ts'
 import { SESService } from './ses_service.ts'
 
 interface DomainPayload {
@@ -24,7 +23,6 @@ export class DomainService {
   constructor(
     private readonly repository: DomainRepository,
     private readonly ctx: HttpContext,
-    private readonly route53Service: Route53Service,
     private readonly sesService: SESService,
     private readonly recordService: RecordService,
     private readonly logger: Logger,
