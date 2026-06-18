@@ -59,11 +59,9 @@ router
         router
           .group(() => {
             router.post('/login', [controllers.AuthMailAccounts, 'login'])
-            // router.get('/profile', [controllers.Onboarding, 'registerDomain'])
-            // router.put('/update-profile', [controllers.Auth, 'updateProfile'])
-            // router.post('/logout', [controllers.Auth, 'logout'])
-            // router.post('/forgot-password', [controllers.Auth, 'forgotPassword'])
-            // router.post('/reset-password', [controllers.Auth, 'resetPassword'])
+            router.post('/forgot-password', [controllers.AuthMailAccounts, 'forgotPassword'])
+            router.post('/reset-password', [controllers.AuthMailAccounts, 'resetPassword'])
+            router.get('/profile', [controllers.AuthMailAccounts, 'profile'])
           })
           .prefix('/auth')
         router.post('/setup-profile', [controllers.MailAccountProfiles, 'setupMailAccountProfile'])

@@ -71,7 +71,7 @@ export class MailAccountProfileSchema extends BaseModel {
 }
 
 export class MailAccountSchema extends BaseModel {
-  static $columns = ['createdAt', 'cuid', 'domainId', 'id', 'ownerEmail', 'password', 'setuped', 'updatedAt', 'userId', 'username'] as const
+  static $columns = ['createdAt', 'cuid', 'domainId', 'id', 'ownerEmail', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'setuped', 'updatedAt', 'userId', 'username'] as const
   $columns = MailAccountSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -85,6 +85,10 @@ export class MailAccountSchema extends BaseModel {
   declare ownerEmail: string | null
   @column({ serializeAs: null })
   declare password: string
+  @column({ serializeAs: null })
+  declare resetPasswordToken: string | null
+  @column.dateTime()
+  declare resetPasswordTokenExpiresAt: DateTime | null
   @column()
   declare setuped: boolean
   @column.dateTime({ autoCreate: true, autoUpdate: true })

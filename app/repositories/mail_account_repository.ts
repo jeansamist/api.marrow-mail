@@ -41,4 +41,19 @@ export default class MailAccountRepository {
       })
       .first()
   }
+
+  findByUsernameAndDomainAndResetPasswordToken(
+    username: string,
+    domainName: string,
+    resetPasswordToken: string
+  ): Promise<MailAccount | null> {
+    return this.model
+      .query()
+      .where('username', username)
+      .where('reset_password_token', resetPasswordToken)
+      .whereHas('domain', (query) => {
+        query.andWhere('name', domainName)
+      })
+      .first()
+  }
 }
