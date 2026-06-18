@@ -213,6 +213,49 @@ export class SESService {
       })
     return output
   }
+  async sendRichEmail(config: {
+    from: string
+    to: string[]
+    cc?: string[]
+    bcc?: string[]
+    replyTo?: string
+    subject: string
+    bodyHtml?: string
+    bodyText?: string
+  }) {
+    return this.client
+      .send(
+        new SendEmailCommand({
+          FromEmailAddress: config.from,
+          Destination: {
+            ToAddresses: config.to,
+            CcAddresses: config.cc,
+            BccAddresses: config.bcc,
+          },
+          ReplyToAddresses: config.replyTo ? [config.replyTo] : undefined,
+          Content: {
+            Simple: {
+              Subject: { Data: config.subject },
+              Body: {
+                ...(config.bodyHtml ? { Html: { Data: config.bodyHtml } } : {}),
+                ...(config.bodyText ? { Text: { Data: config.bodyText } } : {}),
+              },
+            },
+          },
+        })
+      )
+      .then((response) => {
+        this.logger.info(
+          `Rich email sent to ${config.to.join(', ')}. Message ID: ${response.MessageId}`
+        )
+        return response
+      })
+      .catch((error) => {
+        this.logger.error(`Failed to send rich email to ${config.to.join(', ')}: ${error.message}`)
+        throw error
+      })
+  }
+
   async getDKIMRecordsForEmailIdentity(domainName: string): Promise<DNSRecord[]> {
     // Your code here
     const emailIdentity = await this.getEmailIdentity(domainName)

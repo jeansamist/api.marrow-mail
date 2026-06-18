@@ -123,6 +123,44 @@ export class MailAccountSchema extends BaseModel {
   declare username: string
 }
 
+export class MailSchema extends BaseModel {
+  static table = 'mails'
+  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'direction', 'fromEmail', 'id', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
+  $columns = MailSchema.$columns
+  @column()
+  declare attachmentIds: number[] | null
+  @column()
+  declare bccAddresses: string[] | null
+  @column()
+  declare bodyHtml: string | null
+  @column()
+  declare bodyText: string | null
+  @column()
+  declare ccAddresses: string[] | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare direction: 'sent' | 'received'
+  @column()
+  declare fromEmail: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare mailAccountId: number
+  @column()
+  declare replyTo: string | null
+  @column()
+  declare sesMessageId: string | null
+  @column()
+  declare status: 'queued' | 'sent' | 'failed' | 'received'
+  @column()
+  declare subject: string
+  @column()
+  declare toAddresses: string[]
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class RecordSchema extends BaseModel {
   static $columns = ['createdAt', 'domainId', 'id', 'name', 'priority', 'type', 'updatedAt', 'userId', 'value'] as const
   $columns = RecordSchema.$columns

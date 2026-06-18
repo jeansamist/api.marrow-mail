@@ -11,4 +11,5 @@ export const controllers = {
   MailAccounts: () => import('#controllers/mail_accounts_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
   Storage: () => import('#controllers/storage_controller'),
+  Mail: () => import('#controllers/mail_controller'),
 }

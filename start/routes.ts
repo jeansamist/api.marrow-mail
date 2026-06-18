@@ -76,6 +76,16 @@ router
           })
           .prefix('/storage')
         router.get('/storage/files/*', [controllers.Storage, 'getFile'])
+
+        // Mails routes (JWT auth via Authorization: Bearer)
+        router
+          .group(() => {
+            router.post('/', [controllers.Mail, 'send'])
+            router.get('/', [controllers.Mail, 'index'])
+            router.get('/sent', [controllers.Mail, 'sent'])
+            router.get('/received', [controllers.Mail, 'received'])
+          })
+          .prefix('/mails')
       })
       .prefix('/mail')
   })
