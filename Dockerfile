@@ -6,8 +6,8 @@ RUN npm install -g pnpm
 # ----------------------------
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
 # ----------------------------
 # Stage 2: Build the application
@@ -25,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/build ./
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod
 
 EXPOSE 80
 CMD ["node", "bin/server.js"]
