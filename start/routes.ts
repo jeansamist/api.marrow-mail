@@ -65,6 +65,17 @@ router
           })
           .prefix('/auth')
         router.post('/setup-profile', [controllers.MailAccountProfiles, 'setupMailAccountProfile'])
+
+        // Storage routes
+        router
+          .group(() => {
+            router.post('/upload-link', [controllers.Storage, 'createUploadLink'])
+            router.post('/upload-links', [controllers.Storage, 'createUploadLinks'])
+            router.get('/files', [controllers.Storage, 'files'])
+            router.delete('/files/*', [controllers.Storage, 'deleteFile'])
+          })
+          .prefix('/storage')
+        router.get('/storage/files/*', [controllers.Storage, 'getFile'])
       })
       .prefix('/mail')
   })

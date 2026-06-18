@@ -71,12 +71,18 @@ export class S3Service {
     }
   }
 
-  async generateUploadURL(bucketName: string, key: string, expiresIn: number = 3600) {
+  async generateUploadURL(
+    bucketName: string,
+    key: string,
+    expiresIn: number = 3600,
+    contentType?: string
+  ) {
     return await getSignedUrl(
       this.client,
       new PutObjectCommand({
         Bucket: bucketName,
         Key: key,
+        ...(contentType ? { ContentType: contentType } : {}),
       }),
       { expiresIn: expiresIn }
     )
@@ -112,6 +118,28 @@ export class S3Service {
         throw error
       })
     return result
+  }
+
+  async generateGetSignedUrl(bucketName: string, key: string, expiresIn: number = 3600) {
+    return await getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      }),
+      { expiresIn }
+    )
+      .then((url) => {
+        this.logger.info(`Generated GET signed URL for bucket ${bucketName} and key ${key}`)
+        return url
+      })
+      .catch((error) => {
+        this.logger.error(
+          `Failed to generate GET signed URL for bucket ${bucketName} and key ${key}:`,
+          error
+        )
+        throw error
+      })
   }
 
   async emptyBucket(bucketName: string) {

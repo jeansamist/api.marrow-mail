@@ -7,6 +7,30 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class FileSchema extends BaseModel {
+  static table = 'files'
+  static $columns = ['bucket', 'createdAt', 'id', 'key', 'mailAccountId', 'mimeType', 'originalName', 'size', 'updatedAt'] as const
+  $columns = FileSchema.$columns
+  @column()
+  declare bucket: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare key: string
+  @column()
+  declare mailAccountId: number | null
+  @column()
+  declare mimeType: string | null
+  @column()
+  declare originalName: string
+  @column()
+  declare size: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
