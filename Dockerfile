@@ -1,5 +1,5 @@
 FROM node:lts-bookworm-slim AS base
-RUN npm install -g pnpm
+RUN npm install -g pnpm && pnpm config set minimum-release-age 0 --global
 
 # ----------------------------
 # Stage 1: Install all dependencies
