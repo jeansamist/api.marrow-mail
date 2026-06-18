@@ -1,5 +1,5 @@
 FROM node:lts-bookworm-slim AS base
-RUN npm install -g pnpm && pnpm config set minimum-release-age 0 --global
+RUN npm install -g pnpm
 
 # ----------------------------
 # Stage 1: Install all dependencies
@@ -7,7 +7,7 @@ RUN npm install -g pnpm && pnpm config set minimum-release-age 0 --global
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --force
+RUN echo "minimum-release-age=0" > .npmrc && pnpm install --force
 
 # ----------------------------
 # Stage 2: Build the application
@@ -25,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/build ./
-RUN pnpm install --prod --force
+RUN echo "minimum-release-age=0" > .npmrc && pnpm install --prod --force
 
 EXPOSE 80
 CMD ["node", "bin/server.js"]
