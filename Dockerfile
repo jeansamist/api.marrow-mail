@@ -27,5 +27,5 @@ ENV NODE_ENV=production
 COPY --from=build /app/build ./
 RUN pnpm install --prod
 
-EXPOSE 80
+EXPOSE 3333
 CMD ["node", "bin/server.js"]
