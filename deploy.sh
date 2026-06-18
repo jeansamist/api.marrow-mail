@@ -32,7 +32,8 @@ ENV_FILE="${3:-.env}"
 # ── config ─────────────────────────────────────────────────────────────────
 IMAGE_NAME="marrow-mail-api"
 CONTAINER_NAME="marrow-mail-api"
-APP_PORT="3333"           # port the app listens on inside the container
+APP_PORT="$(grep -m1 '^EXPOSE' "$(dirname "$0")/Dockerfile" | awk '{print $2}')"
+[[ -n "$APP_PORT" ]] || die "Could not read EXPOSE port from Dockerfile"
 
 NGINX_AVAILABLE="/etc/nginx/sites-available/$DOMAIN"
 NGINX_ENABLED="/etc/nginx/sites-enabled/$DOMAIN"
