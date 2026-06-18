@@ -1,5 +1,5 @@
 FROM node:lts-bookworm-slim AS base
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.32.1
 
 # ----------------------------
 # Stage 1: Install all dependencies
@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN echo "minimum-release-age=0" > .npmrc && pnpm install --force
+RUN pnpm install
 
 # ----------------------------
 # Stage 2: Build the application
@@ -25,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/build ./
-RUN echo "minimum-release-age=0" > .npmrc && pnpm install --prod --force
+RUN pnpm install --prod
 
 EXPOSE 80
 CMD ["node", "bin/server.js"]
