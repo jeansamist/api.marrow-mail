@@ -161,12 +161,21 @@ export class SESService {
   }
   getMailFromDNS(domainName: string): DNSRecord[] {
     const sub = `mail.${domainName}`
+    const region = env.get('AWS_REGION')
 
     return [
+      // Inbound MX — routes incoming mail for the root domain into SES
+      {
+        Name: domainName,
+        Type: 'MX',
+        Value: `inbound-smtp.${region}.amazonaws.com`,
+        Priority: 10,
+      },
+      // MAIL FROM subdomain — for outbound bounce/feedback handling
       {
         Name: sub,
         Type: 'MX',
-        Value: `feedback-smtp.${env.get('AWS_REGION')}.amazonses.com`,
+        Value: `feedback-smtp.${region}.amazonses.com`,
         Priority: 10,
       },
       {
