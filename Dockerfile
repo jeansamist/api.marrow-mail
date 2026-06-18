@@ -1,12 +1,13 @@
 FROM node:lts-bookworm-slim AS base
+RUN npm install -g pnpm
 
 # ----------------------------
 # Stage 1: Install all dependencies
 # ----------------------------
 FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # ----------------------------
 # Stage 2: Build the application
@@ -24,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/build ./
-RUN npm ci --omit=dev
+RUN pnpm install --prod --frozen-lockfile
 
 EXPOSE 80
 CMD ["node", "bin/server.js"]
