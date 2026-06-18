@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+RUN pnpm install --force
 
 # ----------------------------
 # Stage 2: Build the application
@@ -25,7 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/build ./
-RUN pnpm install --prod
+RUN pnpm install --prod --force
 
 EXPOSE 80
 CMD ["node", "bin/server.js"]
