@@ -1,7 +1,14 @@
 import { MailService } from '#services/mail_service'
 import MailTransformer from '#transformers/mail_transformer'
 import { ApiResponse } from '#utils/api_response'
-import { draftMailValidator, sendMailValidator } from '#validators/mail'
+import {
+  draftMailValidator,
+  forwardMailValidator,
+  markImportantValidator,
+  markSpamValidator,
+  moveMailToFolderValidator,
+  sendMailValidator,
+} from '#validators/mail'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -63,5 +70,37 @@ export default class MailController {
     const mail = await this.mailService.sendDraft(params.id)
     const serialized = await serialize(MailTransformer.transform(mail))
     return response.ok(ApiResponse.success(serialized.data, 'Draft queued for sending'))
+  }
+
+  async moveToFolder({ params, request, response, serialize }: HttpContext) {
+    const { folderId } = await request.validateUsing(moveMailToFolderValidator)
+    const mail = await this.mailService.moveToFolder(params.id, folderId)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Mail moved'))
+  }
+
+  async markSpam({ params, request, response, serialize }: HttpContext) {
+    const { isSpam } = await request.validateUsing(markSpamValidator)
+    const mail = await this.mailService.markSpam(params.id, isSpam)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(
+      ApiResponse.success(serialized.data, isSpam ? 'Marked as spam' : 'Marked as not spam')
+    )
+  }
+
+  async markImportant({ params, request, response, serialize }: HttpContext) {
+    const { important } = await request.validateUsing(markImportantValidator)
+    const mail = await this.mailService.markImportant(params.id, important)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(
+      ApiResponse.success(serialized.data, important ? 'Marked as important' : 'Unstarred')
+    )
+  }
+
+  async forward({ params, request, response, serialize }: HttpContext) {
+    const data = await request.validateUsing(forwardMailValidator)
+    const mail = await this.mailService.forwardMail(params.id, data)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Mail forwarded'))
   }
 }

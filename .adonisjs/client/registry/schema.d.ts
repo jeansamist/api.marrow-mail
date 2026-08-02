@@ -355,4 +355,172 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['received']>>>
     }
   }
+  'mail.drafts': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/drafts'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['drafts']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['drafts']>>>
+    }
+  }
+  'mail.save_draft': {
+    methods: ["POST"]
+    pattern: '/api/mail/mails/drafts'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').draftMailValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').draftMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['saveDraft']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['saveDraft']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.update_draft': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/drafts/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').draftMailValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').draftMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['updateDraft']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['updateDraft']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.delete_draft': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/mails/drafts/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['deleteDraft']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['deleteDraft']>>>
+    }
+  }
+  'mail.send_draft': {
+    methods: ["POST"]
+    pattern: '/api/mail/mails/drafts/:id/send'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['sendDraft']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['sendDraft']>>>
+    }
+  }
+  'mail.move_to_folder': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/folder'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').moveMailToFolderValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').moveMailToFolderValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['moveToFolder']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['moveToFolder']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.mark_spam': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/spam'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').markSpamValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').markSpamValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markSpam']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markSpam']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.mark_important': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/star'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').markImportantValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').markImportantValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markImportant']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markImportant']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.forward': {
+    methods: ["POST"]
+    pattern: '/api/mail/mails/:id/forward'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').forwardMailValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').forwardMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['forward']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['forward']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'folders.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/folders'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['index']>>>
+    }
+  }
+  'folders.store': {
+    methods: ["POST"]
+    pattern: '/api/mail/folders'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/folder').folderValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/folder').folderValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'folders.update': {
+    methods: ["PUT"]
+    pattern: '/api/mail/folders/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/folder').folderValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/folder').folderValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'folders.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/folders/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['destroy']>>>
+    }
+  }
+  'folders.mails': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/folders/:id/mails'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['mails']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['mails']>>>
+    }
+  }
 }

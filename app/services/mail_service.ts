@@ -1,5 +1,6 @@
 import type MailAccount from '#models/mail_account'
 import type Mail from '#models/mail'
+import FolderRepository from '#repositories/folder_repository'
 import MailRepository from '#repositories/mail_repository'
 import { AuthMailAccountService } from '#services/auth_mail_account_service'
 import { SESService } from '#services/ses_service'
@@ -28,10 +29,20 @@ interface DraftMailPayload {
   bodyText?: string
 }
 
+interface ForwardMailPayload {
+  to: string[]
+  cc?: string[]
+  bcc?: string[]
+  replyTo?: string
+  bodyHtml?: string
+  bodyText?: string
+}
+
 @inject()
 export class MailService {
   constructor(
     private readonly mailRepository: MailRepository,
+    private readonly folderRepository: FolderRepository,
     private readonly authMailAccountService: AuthMailAccountService,
     private readonly sesService: SESService,
     private readonly logger: Logger,
@@ -59,6 +70,7 @@ export class MailService {
       important: false,
       isSpam: false,
       deleted: false,
+      folderId: null,
     })
 
     this.queueSesSend(mail, fromDisplay, data)
@@ -107,6 +119,7 @@ export class MailService {
       important: false,
       isSpam: false,
       deleted: false,
+      folderId: null,
     })
   }
 
@@ -157,13 +170,80 @@ export class MailService {
     return mail
   }
 
-  private async getOwnedDraft(id: number): Promise<{ mailAccount: MailAccount; draft: Mail }> {
-    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
-    const draft = await this.mailRepository.findById(id)
-    if (!draft || draft.mailAccountId !== mailAccount.id || draft.status !== 'draft') {
-      throw httpError(404, 'Draft not found')
+  async moveToFolder(id: number, folderId: number | null) {
+    const { mailAccount, mail } = await this.getOwnedMail(id)
+
+    if (folderId !== null) {
+      const folder = await this.folderRepository.findById(folderId)
+      if (!folder || folder.mailAccountId !== mailAccount.id) {
+        throw httpError(404, 'Folder not found')
+      }
     }
-    return { mailAccount, draft }
+
+    return this.mailRepository.update(mail, { folderId })
+  }
+
+  async markSpam(id: number, isSpam: boolean) {
+    const { mail } = await this.getOwnedMail(id)
+    return this.mailRepository.update(mail, { isSpam })
+  }
+
+  async markImportant(id: number, important: boolean) {
+    const { mail } = await this.getOwnedMail(id)
+    return this.mailRepository.update(mail, { important })
+  }
+
+  async forwardMail(id: number, data: ForwardMailPayload) {
+    const { mail: original } = await this.getOwnedMail(id)
+
+    const subject = original.subject?.trim().toLowerCase().startsWith('fwd:')
+      ? original.subject
+      : `Fwd: ${original.subject ?? '(no subject)'}`
+
+    const forwardedHeaderText = [
+      '---------- Forwarded message ----------',
+      `From: ${original.fromEmail}`,
+      original.subject ? `Subject: ${original.subject}` : null,
+    ]
+      .filter((line): line is string => !!line)
+      .join('\n')
+
+    const bodyText = [data.bodyText, forwardedHeaderText, original.bodyText]
+      .filter((part): part is string => !!part)
+      .join('\n\n')
+
+    const bodyHtml = [
+      data.bodyHtml,
+      `<p>${forwardedHeaderText.replace(/\n/g, '<br/>')}</p>`,
+      original.bodyHtml,
+    ]
+      .filter((part): part is string => !!part)
+      .join('<br/><br/>')
+
+    return this.sendMail({
+      to: data.to,
+      cc: data.cc,
+      bcc: data.bcc,
+      replyTo: data.replyTo,
+      subject,
+      bodyHtml: original.bodyHtml || data.bodyHtml ? bodyHtml : undefined,
+      bodyText: original.bodyText || data.bodyText ? bodyText : undefined,
+    })
+  }
+
+  private async getOwnedMail(id: number): Promise<{ mailAccount: MailAccount; mail: Mail }> {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    const mail = await this.mailRepository.findById(id)
+    if (!mail || mail.mailAccountId !== mailAccount.id) {
+      throw httpError(404, 'Mail not found')
+    }
+    return { mailAccount, mail }
+  }
+
+  private async getOwnedDraft(id: number): Promise<{ mailAccount: MailAccount; draft: Mail }> {
+    const { mailAccount, mail } = await this.getOwnedMail(id)
+    if (mail.status !== 'draft') throw httpError(404, 'Draft not found')
+    return { mailAccount, draft: mail }
   }
 
   private async buildFromDisplay(mailAccount: MailAccount) {

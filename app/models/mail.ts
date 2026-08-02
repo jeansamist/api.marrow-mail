@@ -1,6 +1,7 @@
 import { MailSchema } from '#database/schema'
 import { belongsTo, column } from '@adonisjs/lucid/orm'
 import { type BelongsTo } from '@adonisjs/lucid/types/relations'
+import Folder from './folder.ts'
 import MailAccount from './mail_account.ts'
 
 const prepareJsonColumn = (value: unknown) =>
@@ -23,4 +24,7 @@ export default class Mail extends MailSchema {
 
   @belongsTo(() => MailAccount)
   declare mailAccount: BelongsTo<typeof MailAccount>
+
+  @belongsTo(() => Folder)
+  declare folder: BelongsTo<typeof Folder>
 }

@@ -44,6 +44,14 @@ export default class MailRepository {
       .orderBy('updated_at', 'desc')
   }
 
+  async findByFolder(folderId: number): Promise<Mail[]> {
+    return this.model
+      .query()
+      .where('folder_id', folderId)
+      .where('deleted', false)
+      .orderBy('created_at', 'desc')
+  }
+
   async update(mail: Mail, data: Partial<ModelProps<MailSchema>>): Promise<Mail> {
     return mail.merge(data).save()
   }

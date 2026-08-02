@@ -108,6 +108,7 @@ export class EmailReceivingService {
         important: false,
         isSpam: false,
         deleted: false,
+        folderId: null,
       })
 
       this.logger.info(

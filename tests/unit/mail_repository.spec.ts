@@ -1,3 +1,4 @@
+import Folder from '#models/folder'
 import MailAccount from '#models/mail_account'
 import User from '#models/user'
 import MailRepository from '#repositories/mail_repository'
@@ -29,6 +30,7 @@ test.group('MailRepository', (group) => {
       important: false,
       isSpam: false,
       deleted: false,
+      folderId: null,
       ...overrides,
     }
   }
@@ -126,5 +128,22 @@ test.group('MailRepository', (group) => {
 
     assert.isFalse(all.some((mail) => mail.id === draft.id))
     assert.isFalse(sent.some((mail) => mail.id === draft.id))
+  })
+
+  test('findByFolder only returns mail filed into that folder', async ({ assert }) => {
+    const folder = await Folder.create({
+      name: 'Clients',
+      mailAccountId: mailAccount.id,
+    })
+
+    const filed = await mailRepository.create(mailProps({ subject: 'Filed', folderId: folder.id }))
+    const unfiled = await mailRepository.create(mailProps({ subject: 'Unfiled' }))
+
+    const result = await mailRepository.findByFolder(folder.id)
+
+    assert.isTrue(result.some((mail) => mail.id === filed.id))
+    assert.isFalse(result.some((mail) => mail.id === unfiled.id))
+
+    await folder.delete()
   })
 })

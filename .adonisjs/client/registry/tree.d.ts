@@ -42,5 +42,21 @@ export interface ApiDefinition {
     index: typeof routes['mail.index']
     sent: typeof routes['mail.sent']
     received: typeof routes['mail.received']
+    drafts: typeof routes['mail.drafts']
+    saveDraft: typeof routes['mail.save_draft']
+    updateDraft: typeof routes['mail.update_draft']
+    deleteDraft: typeof routes['mail.delete_draft']
+    sendDraft: typeof routes['mail.send_draft']
+    moveToFolder: typeof routes['mail.move_to_folder']
+    markSpam: typeof routes['mail.mark_spam']
+    markImportant: typeof routes['mail.mark_important']
+    forward: typeof routes['mail.forward']
+  }
+  folders: {
+    index: typeof routes['folders.index']
+    store: typeof routes['folders.store']
+    update: typeof routes['folders.update']
+    destroy: typeof routes['folders.destroy']
+    mails: typeof routes['folders.mails']
   }
 }

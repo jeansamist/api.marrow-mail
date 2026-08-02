@@ -74,6 +74,21 @@ export class FileSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class FolderSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'mailAccountId', 'name', 'updatedAt'] as const
+  $columns = FolderSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare mailAccountId: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class MailAccountProfileSchema extends BaseModel {
   static $columns = ['avatar', 'createdAt', 'firstName', 'id', 'lastName', 'mailAccountId', 'updatedAt'] as const
   $columns = MailAccountProfileSchema.$columns
@@ -123,7 +138,7 @@ export class MailAccountSchema extends BaseModel {
 }
 
 export class MailSchema extends BaseModel {
-  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
+  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'folderId', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
   $columns = MailSchema.$columns
   @column()
   declare attachmentIds: any | null
@@ -141,6 +156,8 @@ export class MailSchema extends BaseModel {
   declare deleted: boolean
   @column()
   declare direction: string
+  @column()
+  declare folderId: number | null
   @column()
   declare fromEmail: string
   @column({ isPrimary: true })
@@ -160,7 +177,7 @@ export class MailSchema extends BaseModel {
   @column()
   declare subject: string | null
   @column()
-  declare toAddresses: any
+  declare toAddresses: any | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

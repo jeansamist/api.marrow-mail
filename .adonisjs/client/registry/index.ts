@@ -180,6 +180,90 @@ const routes = {
     tokens: [{"old":"/api/mail/mails/received","type":0,"val":"api","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/received","type":0,"val":"received","end":""}],
     types: placeholder as Registry['mail.received']['types'],
   },
+  'mail.drafts': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/drafts',
+    tokens: [{"old":"/api/mail/mails/drafts","type":0,"val":"api","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"drafts","end":""}],
+    types: placeholder as Registry['mail.drafts']['types'],
+  },
+  'mail.save_draft': {
+    methods: ["POST"],
+    pattern: '/api/mail/mails/drafts',
+    tokens: [{"old":"/api/mail/mails/drafts","type":0,"val":"api","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/drafts","type":0,"val":"drafts","end":""}],
+    types: placeholder as Registry['mail.save_draft']['types'],
+  },
+  'mail.update_draft': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/drafts/:id',
+    tokens: [{"old":"/api/mail/mails/drafts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"drafts","end":""},{"old":"/api/mail/mails/drafts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['mail.update_draft']['types'],
+  },
+  'mail.delete_draft': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/mails/drafts/:id',
+    tokens: [{"old":"/api/mail/mails/drafts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/drafts/:id","type":0,"val":"drafts","end":""},{"old":"/api/mail/mails/drafts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['mail.delete_draft']['types'],
+  },
+  'mail.send_draft': {
+    methods: ["POST"],
+    pattern: '/api/mail/mails/drafts/:id/send',
+    tokens: [{"old":"/api/mail/mails/drafts/:id/send","type":0,"val":"api","end":""},{"old":"/api/mail/mails/drafts/:id/send","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/drafts/:id/send","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/drafts/:id/send","type":0,"val":"drafts","end":""},{"old":"/api/mail/mails/drafts/:id/send","type":1,"val":"id","end":""},{"old":"/api/mail/mails/drafts/:id/send","type":0,"val":"send","end":""}],
+    types: placeholder as Registry['mail.send_draft']['types'],
+  },
+  'mail.move_to_folder': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/folder',
+    tokens: [{"old":"/api/mail/mails/:id/folder","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/folder","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/folder","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/folder","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/folder","type":0,"val":"folder","end":""}],
+    types: placeholder as Registry['mail.move_to_folder']['types'],
+  },
+  'mail.mark_spam': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/spam',
+    tokens: [{"old":"/api/mail/mails/:id/spam","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/spam","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/spam","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/spam","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/spam","type":0,"val":"spam","end":""}],
+    types: placeholder as Registry['mail.mark_spam']['types'],
+  },
+  'mail.mark_important': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/star',
+    tokens: [{"old":"/api/mail/mails/:id/star","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/star","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"star","end":""}],
+    types: placeholder as Registry['mail.mark_important']['types'],
+  },
+  'mail.forward': {
+    methods: ["POST"],
+    pattern: '/api/mail/mails/:id/forward',
+    tokens: [{"old":"/api/mail/mails/:id/forward","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/forward","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"forward","end":""}],
+    types: placeholder as Registry['mail.forward']['types'],
+  },
+  'folders.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/folders',
+    tokens: [{"old":"/api/mail/folders","type":0,"val":"api","end":""},{"old":"/api/mail/folders","type":0,"val":"mail","end":""},{"old":"/api/mail/folders","type":0,"val":"folders","end":""}],
+    types: placeholder as Registry['folders.index']['types'],
+  },
+  'folders.store': {
+    methods: ["POST"],
+    pattern: '/api/mail/folders',
+    tokens: [{"old":"/api/mail/folders","type":0,"val":"api","end":""},{"old":"/api/mail/folders","type":0,"val":"mail","end":""},{"old":"/api/mail/folders","type":0,"val":"folders","end":""}],
+    types: placeholder as Registry['folders.store']['types'],
+  },
+  'folders.update': {
+    methods: ["PUT"],
+    pattern: '/api/mail/folders/:id',
+    tokens: [{"old":"/api/mail/folders/:id","type":0,"val":"api","end":""},{"old":"/api/mail/folders/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/folders/:id","type":0,"val":"folders","end":""},{"old":"/api/mail/folders/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['folders.update']['types'],
+  },
+  'folders.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/folders/:id',
+    tokens: [{"old":"/api/mail/folders/:id","type":0,"val":"api","end":""},{"old":"/api/mail/folders/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/folders/:id","type":0,"val":"folders","end":""},{"old":"/api/mail/folders/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['folders.destroy']['types'],
+  },
+  'folders.mails': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/folders/:id/mails',
+    tokens: [{"old":"/api/mail/folders/:id/mails","type":0,"val":"api","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"mail","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"folders","end":""},{"old":"/api/mail/folders/:id/mails","type":1,"val":"id","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"mails","end":""}],
+    types: placeholder as Registry['folders.mails']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

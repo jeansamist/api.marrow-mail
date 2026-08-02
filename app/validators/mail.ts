@@ -25,3 +25,34 @@ export const draftMailValidator = vine.create(
     bodyText: vine.string().optional(),
   })
 )
+
+export const moveMailToFolderValidator = vine.create(
+  vine.object({
+    folderId: vine.number().nullable(),
+  })
+)
+
+export const markSpamValidator = vine.create(
+  vine.object({
+    isSpam: vine.boolean(),
+  })
+)
+
+export const markImportantValidator = vine.create(
+  vine.object({
+    important: vine.boolean(),
+  })
+)
+
+// Forwarding always needs at least one recipient; everything else (an extra
+// note from the forwarder) is optional, same shape as sendMailValidator minus subject.
+export const forwardMailValidator = vine.create(
+  vine.object({
+    to: vine.array(vine.string().email().trim().toLowerCase()).minLength(1),
+    cc: vine.array(vine.string().email().trim().toLowerCase()).optional(),
+    bcc: vine.array(vine.string().email().trim().toLowerCase()).optional(),
+    replyTo: vine.string().email().trim().toLowerCase().optional(),
+    bodyHtml: vine.string().optional(),
+    bodyText: vine.string().optional(),
+  })
+)

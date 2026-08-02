@@ -92,8 +92,23 @@ router
             router.put('/drafts/:id', [controllers.Mail, 'updateDraft'])
             router.delete('/drafts/:id', [controllers.Mail, 'deleteDraft'])
             router.post('/drafts/:id/send', [controllers.Mail, 'sendDraft'])
+            router.put('/:id/folder', [controllers.Mail, 'moveToFolder'])
+            router.put('/:id/spam', [controllers.Mail, 'markSpam'])
+            router.put('/:id/star', [controllers.Mail, 'markImportant'])
+            router.post('/:id/forward', [controllers.Mail, 'forward'])
           })
           .prefix('/mails')
+
+        // Folders routes
+        router
+          .group(() => {
+            router.get('/', [controllers.Folders, 'index'])
+            router.post('/', [controllers.Folders, 'store'])
+            router.put('/:id', [controllers.Folders, 'update'])
+            router.delete('/:id', [controllers.Folders, 'destroy'])
+            router.get('/:id/mails', [controllers.Folders, 'mails'])
+          })
+          .prefix('/folders')
       })
       .prefix('/mail')
   })
