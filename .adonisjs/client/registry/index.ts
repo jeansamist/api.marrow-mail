@@ -264,6 +264,36 @@ const routes = {
     tokens: [{"old":"/api/mail/folders/:id/mails","type":0,"val":"api","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"mail","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"folders","end":""},{"old":"/api/mail/folders/:id/mails","type":1,"val":"id","end":""},{"old":"/api/mail/folders/:id/mails","type":0,"val":"mails","end":""}],
     types: placeholder as Registry['folders.mails']['types'],
   },
+  'contacts.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/contacts',
+    tokens: [{"old":"/api/mail/contacts","type":0,"val":"api","end":""},{"old":"/api/mail/contacts","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts","type":0,"val":"contacts","end":""}],
+    types: placeholder as Registry['contacts.index']['types'],
+  },
+  'contacts.store': {
+    methods: ["POST"],
+    pattern: '/api/mail/contacts',
+    tokens: [{"old":"/api/mail/contacts","type":0,"val":"api","end":""},{"old":"/api/mail/contacts","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts","type":0,"val":"contacts","end":""}],
+    types: placeholder as Registry['contacts.store']['types'],
+  },
+  'contacts.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/contacts/:id',
+    tokens: [{"old":"/api/mail/contacts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"contacts","end":""},{"old":"/api/mail/contacts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['contacts.show']['types'],
+  },
+  'contacts.update': {
+    methods: ["PUT"],
+    pattern: '/api/mail/contacts/:id',
+    tokens: [{"old":"/api/mail/contacts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"contacts","end":""},{"old":"/api/mail/contacts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['contacts.update']['types'],
+  },
+  'contacts.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/contacts/:id',
+    tokens: [{"old":"/api/mail/contacts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"contacts","end":""},{"old":"/api/mail/contacts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['contacts.destroy']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

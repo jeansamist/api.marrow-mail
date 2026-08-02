@@ -47,6 +47,11 @@ export type ScannedRoutes = {
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.index': { paramsTuple?: []; params?: {} }
+    'contacts.store': { paramsTuple?: []; params?: {} }
+    'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   GET: {
     'auth.profile': { paramsTuple?: []; params?: {} }
@@ -62,6 +67,8 @@ export type ScannedRoutes = {
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.index': { paramsTuple?: []; params?: {} }
+    'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   HEAD: {
     'auth.profile': { paramsTuple?: []; params?: {} }
@@ -77,6 +84,8 @@ export type ScannedRoutes = {
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.index': { paramsTuple?: []; params?: {} }
+    'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   POST: {
     'ses_webhook': { paramsTuple?: []; params?: {} }
@@ -100,6 +109,7 @@ export type ScannedRoutes = {
     'mail.send_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.forward': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.store': { paramsTuple?: []; params?: {} }
+    'contacts.store': { paramsTuple?: []; params?: {} }
   }
   PUT: {
     'auth.update_profile': { paramsTuple?: []; params?: {} }
@@ -108,11 +118,13 @@ export type ScannedRoutes = {
     'mail.mark_spam': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_important': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   DELETE: {
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'mail.delete_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'contacts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

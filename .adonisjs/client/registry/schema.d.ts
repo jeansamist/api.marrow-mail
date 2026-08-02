@@ -523,4 +523,64 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/folders_controller').default['mails']>>>
     }
   }
+  'contacts.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/contacts'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['index']>>>
+    }
+  }
+  'contacts.store': {
+    methods: ["POST"]
+    pattern: '/api/mail/contacts'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/contact').createContactValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/contact').createContactValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'contacts.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/contacts/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['show']>>>
+    }
+  }
+  'contacts.update': {
+    methods: ["PUT"]
+    pattern: '/api/mail/contacts/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/contact').updateContactValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/contact').updateContactValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'contacts.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/contacts/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['destroy']>>>
+    }
+  }
 }

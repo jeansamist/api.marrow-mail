@@ -12,6 +12,7 @@ import type MailAccountTransformer from '#transformers/mail_account_transformer'
 import type MailTransformer from '#transformers/mail_transformer'
 import type RecordTransformer from '#transformers/record_transformer'
 import type UserTransformer from '#transformers/user_transformer'
+import type ContactTransformer from '#transformers/contact_transformer'
 
 export namespace Data {
   export type File = InferData<FileTransformer>
@@ -41,5 +42,9 @@ export namespace Data {
   export type User = InferData<UserTransformer>
   export namespace User {
     export type Variants = InferVariants<UserTransformer>
+  }
+  export type Contact = InferData<ContactTransformer>
+  export namespace Contact {
+    export type Variants = InferVariants<ContactTransformer>
   }
 }

@@ -14,4 +14,5 @@ export const controllers = {
   Onboarding: () => import('#controllers/onboarding_controller'),
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
   Storage: () => import('#controllers/storage_controller'),
+  Contacts: () => import('#controllers/contacts_controller'),
 }

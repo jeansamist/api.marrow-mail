@@ -109,6 +109,17 @@ router
             router.get('/:id/mails', [controllers.Folders, 'mails'])
           })
           .prefix('/folders')
+
+        // Contacts routes
+        router
+          .group(() => {
+            router.get('/', [controllers.Contacts, 'index'])
+            router.post('/', [controllers.Contacts, 'store'])
+            router.get('/:id', [controllers.Contacts, 'show'])
+            router.put('/:id', [controllers.Contacts, 'update'])
+            router.delete('/:id', [controllers.Contacts, 'destroy'])
+          })
+          .prefix('/contacts')
       })
       .prefix('/mail')
   })

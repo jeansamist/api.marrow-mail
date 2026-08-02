@@ -59,4 +59,11 @@ export interface ApiDefinition {
     destroy: typeof routes['folders.destroy']
     mails: typeof routes['folders.mails']
   }
+  contacts: {
+    index: typeof routes['contacts.index']
+    store: typeof routes['contacts.store']
+    show: typeof routes['contacts.show']
+    update: typeof routes['contacts.update']
+    destroy: typeof routes['contacts.destroy']
+  }
 }
