@@ -631,4 +631,28 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/contacts_controller').default['destroy']>>>
     }
   }
+  'signatures.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/signature'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/signatures_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/signatures_controller').default['show']>>>
+    }
+  }
+  'signatures.update': {
+    methods: ["PUT"]
+    pattern: '/api/mail/signature'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/signature').signatureValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/signature').signatureValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/signatures_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/signatures_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
 }

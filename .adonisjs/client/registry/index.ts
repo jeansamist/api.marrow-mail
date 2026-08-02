@@ -318,6 +318,18 @@ const routes = {
     tokens: [{"old":"/api/mail/contacts/:id","type":0,"val":"api","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/contacts/:id","type":0,"val":"contacts","end":""},{"old":"/api/mail/contacts/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['contacts.destroy']['types'],
   },
+  'signatures.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/signature',
+    tokens: [{"old":"/api/mail/signature","type":0,"val":"api","end":""},{"old":"/api/mail/signature","type":0,"val":"mail","end":""},{"old":"/api/mail/signature","type":0,"val":"signature","end":""}],
+    types: placeholder as Registry['signatures.show']['types'],
+  },
+  'signatures.update': {
+    methods: ["PUT"],
+    pattern: '/api/mail/signature',
+    tokens: [{"old":"/api/mail/signature","type":0,"val":"api","end":""},{"old":"/api/mail/signature","type":0,"val":"mail","end":""},{"old":"/api/mail/signature","type":0,"val":"signature","end":""}],
+    types: placeholder as Registry['signatures.update']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

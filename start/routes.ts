@@ -124,6 +124,14 @@ router
             router.delete('/:id', [controllers.Contacts, 'destroy'])
           })
           .prefix('/contacts')
+
+        // Signature routes
+        router
+          .group(() => {
+            router.get('/', [controllers.Signatures, 'show'])
+            router.put('/', [controllers.Signatures, 'update'])
+          })
+          .prefix('/signature')
       })
       .prefix('/mail')
   })

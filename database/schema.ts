@@ -232,6 +232,41 @@ export class RecordSchema extends BaseModel {
   declare value: string
 }
 
+export class SignatureSchema extends BaseModel {
+  static $columns = ['address', 'createdAt', 'facebook', 'id', 'includeInNewEmails', 'includeInReplies', 'includePhoto', 'instagram', 'jobTitle', 'linkedin', 'mailAccountId', 'name', 'phone', 'updatedAt', 'website'] as const
+  $columns = SignatureSchema.$columns
+  @column()
+  declare address: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare facebook: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare includeInNewEmails: boolean
+  @column()
+  declare includeInReplies: boolean
+  @column()
+  declare includePhoto: boolean
+  @column()
+  declare instagram: string | null
+  @column()
+  declare jobTitle: string | null
+  @column()
+  declare linkedin: string | null
+  @column()
+  declare mailAccountId: number
+  @column()
+  declare name: string | null
+  @column()
+  declare phone: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare website: string | null
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['avatar', 'createdAt', 'email', 'emailVerificationCode', 'emailVerificationCodeExpiresAt', 'emailVerified', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'updatedAt'] as const
   $columns = UserSchema.$columns

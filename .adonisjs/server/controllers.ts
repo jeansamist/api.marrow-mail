@@ -6,6 +6,7 @@
 export const controllers = {
   Auth: () => import('#controllers/auth_controller'),
   AuthMailAccounts: () => import('#controllers/auth_mail_accounts_controller'),
+  Contacts: () => import('#controllers/contacts_controller'),
   Domains: () => import('#controllers/domains_controller'),
   Folders: () => import('#controllers/folders_controller'),
   MailAccountProfiles: () => import('#controllers/mail_account_profiles_controller'),
@@ -13,6 +14,6 @@ export const controllers = {
   Mail: () => import('#controllers/mail_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
+  Signatures: () => import('#controllers/signatures_controller'),
   Storage: () => import('#controllers/storage_controller'),
-  Contacts: () => import('#controllers/contacts_controller'),
 }

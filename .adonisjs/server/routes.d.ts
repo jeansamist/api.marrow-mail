@@ -56,6 +56,8 @@ export type ScannedRoutes = {
     'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'signatures.show': { paramsTuple?: []; params?: {} }
+    'signatures.update': { paramsTuple?: []; params?: {} }
   }
   GET: {
     'auth.profile': { paramsTuple?: []; params?: {} }
@@ -74,6 +76,7 @@ export type ScannedRoutes = {
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
     'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'signatures.show': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
     'auth.profile': { paramsTuple?: []; params?: {} }
@@ -92,6 +95,7 @@ export type ScannedRoutes = {
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
     'contacts.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'signatures.show': { paramsTuple?: []; params?: {} }
   }
   POST: {
     'ses_webhook': { paramsTuple?: []; params?: {} }
@@ -127,6 +131,7 @@ export type ScannedRoutes = {
     'mail.reschedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'signatures.update': { paramsTuple?: []; params?: {} }
   }
   DELETE: {
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }

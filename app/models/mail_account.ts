@@ -3,6 +3,7 @@ import { belongsTo, hasOne } from '@adonisjs/lucid/orm'
 import { type BelongsTo, type HasOne } from '@adonisjs/lucid/types/relations'
 import Domain from './domain.ts'
 import MailAccountProfile from './mail_account_profile.ts'
+import Signature from './signature.ts'
 import User from './user.ts'
 
 export default class MailAccount extends MailAccountSchema {
@@ -14,4 +15,7 @@ export default class MailAccount extends MailAccountSchema {
 
   @hasOne(() => MailAccountProfile)
   declare profile?: HasOne<typeof MailAccountProfile>
+
+  @hasOne(() => Signature)
+  declare signature?: HasOne<typeof Signature>
 }

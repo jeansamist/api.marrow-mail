@@ -70,4 +70,8 @@ export interface ApiDefinition {
     update: typeof routes['contacts.update']
     destroy: typeof routes['contacts.destroy']
   }
+  signatures: {
+    show: typeof routes['signatures.show']
+    update: typeof routes['signatures.update']
+  }
 }
