@@ -1,7 +1,7 @@
 import { MailService } from '#services/mail_service'
 import MailTransformer from '#transformers/mail_transformer'
 import { ApiResponse } from '#utils/api_response'
-import { sendMailValidator } from '#validators/mail'
+import { draftMailValidator, sendMailValidator } from '#validators/mail'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -32,5 +32,36 @@ export default class MailController {
     const mails = await this.mailService.fetchAllReceivedMail()
     const serialized = await serialize(MailTransformer.transform(mails))
     return response.ok(ApiResponse.success(serialized.data, 'Received mails retrieved'))
+  }
+
+  async drafts({ response, serialize }: HttpContext) {
+    const mails = await this.mailService.fetchDrafts()
+    const serialized = await serialize(MailTransformer.transform(mails))
+    return response.ok(ApiResponse.success(serialized.data, 'Drafts retrieved'))
+  }
+
+  async saveDraft({ request, response, serialize }: HttpContext) {
+    const data = await request.validateUsing(draftMailValidator)
+    const draft = await this.mailService.saveDraft(data)
+    const serialized = await serialize(MailTransformer.transform(draft))
+    return response.created(ApiResponse.success(serialized.data, 'Draft saved'))
+  }
+
+  async updateDraft({ params, request, response, serialize }: HttpContext) {
+    const data = await request.validateUsing(draftMailValidator)
+    const draft = await this.mailService.updateDraft(params.id, data)
+    const serialized = await serialize(MailTransformer.transform(draft))
+    return response.ok(ApiResponse.success(serialized.data, 'Draft updated'))
+  }
+
+  async deleteDraft({ params, response }: HttpContext) {
+    await this.mailService.deleteDraft(params.id)
+    return response.ok(ApiResponse.success(null, 'Draft deleted'))
+  }
+
+  async sendDraft({ params, response, serialize }: HttpContext) {
+    const mail = await this.mailService.sendDraft(params.id)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Draft queued for sending'))
   }
 }

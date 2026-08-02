@@ -17,6 +17,8 @@ export default class MailRepository {
     return this.model
       .query()
       .where('mail_account_id', mailAccountId)
+      .where('deleted', false)
+      .whereNot('status', 'draft')
       .orderBy('created_at', 'desc')
   }
 
@@ -28,7 +30,18 @@ export default class MailRepository {
       .query()
       .where('mail_account_id', mailAccountId)
       .where('direction', direction)
+      .where('deleted', false)
+      .whereNot('status', 'draft')
       .orderBy('created_at', 'desc')
+  }
+
+  async findDraftsByMailAccount(mailAccountId: number): Promise<Mail[]> {
+    return this.model
+      .query()
+      .where('mail_account_id', mailAccountId)
+      .where('status', 'draft')
+      .where('deleted', false)
+      .orderBy('updated_at', 'desc')
   }
 
   async update(mail: Mail, data: Partial<ModelProps<MailSchema>>): Promise<Mail> {

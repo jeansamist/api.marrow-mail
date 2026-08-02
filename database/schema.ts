@@ -123,7 +123,7 @@ export class MailAccountSchema extends BaseModel {
 }
 
 export class MailSchema extends BaseModel {
-  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'direction', 'fromEmail', 'id', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
+  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
   $columns = MailSchema.$columns
   @column()
   declare attachmentIds: any | null
@@ -138,11 +138,17 @@ export class MailSchema extends BaseModel {
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
+  declare deleted: boolean
+  @column()
   declare direction: string
   @column()
   declare fromEmail: string
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare important: boolean
+  @column()
+  declare isSpam: boolean
   @column()
   declare mailAccountId: number
   @column()
@@ -152,7 +158,7 @@ export class MailSchema extends BaseModel {
   @column()
   declare status: string
   @column()
-  declare subject: string
+  declare subject: string | null
   @column()
   declare toAddresses: any
   @column.dateTime({ autoCreate: true, autoUpdate: true })

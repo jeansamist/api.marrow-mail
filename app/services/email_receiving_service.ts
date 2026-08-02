@@ -105,6 +105,9 @@ export class EmailReceivingService {
         direction: 'received',
         sesMessageId: mail.messageId,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : null,
+        important: false,
+        isSpam: false,
+        deleted: false,
       })
 
       this.logger.info(

@@ -18,6 +18,9 @@ export default class MailTransformer extends BaseTransformer<Mail> {
       'direction',
       'sesMessageId',
       'attachmentIds',
+      'important',
+      'isSpam',
+      'deleted',
       'createdAt',
       'updatedAt',
     ])
