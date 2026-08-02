@@ -32,6 +32,31 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class ContactSchema extends BaseModel {
+  static $columns = ['company', 'createdAt', 'email', 'firstName', 'id', 'lastName', 'mailAccountId', 'notes', 'phone', 'updatedAt'] as const
+  $columns = ContactSchema.$columns
+  @column()
+  declare company: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare email: string
+  @column()
+  declare firstName: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare lastName: string | null
+  @column()
+  declare mailAccountId: number
+  @column()
+  declare notes: string | null
+  @column()
+  declare phone: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class DomainSchema extends BaseModel {
   static $columns = ['createdAt', 'description', 'id', 'name', 'updatedAt', 'userId', 'verified'] as const
   $columns = DomainSchema.$columns
