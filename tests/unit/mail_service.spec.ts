@@ -11,6 +11,7 @@ import app from '@adonisjs/core/services/app'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 import jwt from 'jsonwebtoken'
+import { DateTime } from 'luxon'
 import { IncomingMessage } from 'node:http'
 import { Socket } from 'node:net'
 
@@ -54,6 +55,7 @@ test.group('MailService', (group) => {
       isSpam: false,
       deleted: false,
       folderId: null,
+      scheduledAt: null,
       ...overrides,
     }
   }
@@ -234,5 +236,77 @@ test.group('MailService', (group) => {
 
     await otherMailAccount.delete()
     await otherUser.delete()
+  })
+
+  test('scheduleMail rejects a scheduledAt that is not in the future', async ({ assert }) => {
+    try {
+      await mailService.scheduleMail({
+        to: ['someone@example.com'],
+        subject: 'Too late',
+        scheduledAt: DateTime.now().minus({ minutes: 5 }),
+      })
+      assert.fail('Expected scheduleMail to reject a past scheduledAt')
+    } catch (error) {
+      assert.equal(httpStatus(error), 422)
+    }
+  })
+
+  test('scheduleMail creates a scheduled mail excluded from other mailboxes', async ({
+    assert,
+  }) => {
+    const scheduledAt = DateTime.now().plus({ hours: 1 })
+    const scheduled = await mailService.scheduleMail({
+      to: ['someone@example.com'],
+      subject: 'Future mail',
+      scheduledAt,
+    })
+
+    assert.equal(scheduled.status, 'scheduled')
+    assert.isTrue(scheduledAt.equals(scheduled.scheduledAt!))
+
+    const scheduledList = await mailService.fetchScheduledMails()
+    const all = await mailService.fetchAllMail()
+    const sent = await mailService.fetchAllSentMail()
+
+    assert.isTrue(scheduledList.some((m) => m.id === scheduled.id))
+    assert.isFalse(all.some((m) => m.id === scheduled.id))
+    assert.isFalse(sent.some((m) => m.id === scheduled.id))
+  })
+
+  test('rescheduleMail changes the send time and rejects a past date', async ({ assert }) => {
+    const scheduled = await mailService.scheduleMail({
+      to: ['someone@example.com'],
+      subject: 'Reschedule me',
+      scheduledAt: DateTime.now().plus({ hours: 1 }),
+    })
+
+    const newTime = DateTime.now().plus({ days: 1 })
+    const rescheduled = await mailService.rescheduleMail(scheduled.id, newTime)
+    assert.isTrue(newTime.equals(rescheduled.scheduledAt!))
+
+    try {
+      await mailService.rescheduleMail(scheduled.id, DateTime.now().minus({ minutes: 1 }))
+      assert.fail('Expected rescheduleMail to reject a past scheduledAt')
+    } catch (error) {
+      assert.equal(httpStatus(error), 422)
+    }
+  })
+
+  test('cancelScheduledMail reverts a scheduled mail back to a draft', async ({ assert }) => {
+    const scheduled = await mailService.scheduleMail({
+      to: ['someone@example.com'],
+      subject: 'Cancel me',
+      scheduledAt: DateTime.now().plus({ hours: 1 }),
+    })
+
+    const canceled = await mailService.cancelScheduledMail(scheduled.id)
+
+    assert.equal(canceled.status, 'draft')
+    assert.isNull(canceled.scheduledAt)
+
+    const drafts = await mailService.fetchDrafts()
+    const scheduledList = await mailService.fetchScheduledMails()
+    assert.isTrue(drafts.some((m) => m.id === canceled.id))
+    assert.isFalse(scheduledList.some((m) => m.id === canceled.id))
   })
 })

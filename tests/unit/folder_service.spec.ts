@@ -121,6 +121,7 @@ test.group('FolderService', (group) => {
       isSpam: false,
       deleted: false,
       folderId: folder.id,
+      scheduledAt: null,
     })
 
     const mails = await folderService.listMailsInFolder(folder.id)

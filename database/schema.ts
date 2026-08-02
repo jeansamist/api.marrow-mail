@@ -163,7 +163,7 @@ export class MailAccountSchema extends BaseModel {
 }
 
 export class MailSchema extends BaseModel {
-  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'folderId', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
+  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'folderId', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'scheduledAt', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
   $columns = MailSchema.$columns
   @column()
   declare attachmentIds: any | null
@@ -195,6 +195,8 @@ export class MailSchema extends BaseModel {
   declare mailAccountId: number
   @column()
   declare replyTo: string | null
+  @column.dateTime()
+  declare scheduledAt: DateTime | null
   @column()
   declare sesMessageId: string | null
   @column()

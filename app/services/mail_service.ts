@@ -7,6 +7,7 @@ import { SESService } from '#services/ses_service'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
+import { DateTime } from 'luxon'
 import CronManager from '../managers/crons_manager.js'
 
 interface SendMailPayload {
@@ -36,6 +37,10 @@ interface ForwardMailPayload {
   replyTo?: string
   bodyHtml?: string
   bodyText?: string
+}
+
+interface ScheduleMailPayload extends SendMailPayload {
+  scheduledAt: DateTime
 }
 
 @inject()
@@ -71,6 +76,7 @@ export class MailService {
       isSpam: false,
       deleted: false,
       folderId: null,
+      scheduledAt: null,
     })
 
     this.queueSesSend(mail, fromDisplay, data)
@@ -120,6 +126,7 @@ export class MailService {
       isSpam: false,
       deleted: false,
       folderId: null,
+      scheduledAt: null,
     })
   }
 
@@ -229,6 +236,64 @@ export class MailService {
       bodyHtml: original.bodyHtml || data.bodyHtml ? bodyHtml : undefined,
       bodyText: original.bodyText || data.bodyText ? bodyText : undefined,
     })
+  }
+
+  async fetchScheduledMails() {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    return this.mailRepository.findScheduledByMailAccount(mailAccount.id)
+  }
+
+  async scheduleMail(data: ScheduleMailPayload) {
+    if (data.scheduledAt <= DateTime.now()) {
+      throw httpError(422, 'scheduledAt must be in the future')
+    }
+
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    const { fromDisplay } = await this.buildFromDisplay(mailAccount)
+
+    return this.mailRepository.create({
+      mailAccountId: mailAccount.id,
+      fromEmail: fromDisplay,
+      toAddresses: data.to,
+      ccAddresses: data.cc ?? null,
+      bccAddresses: data.bcc ?? null,
+      replyTo: data.replyTo ?? null,
+      subject: data.subject,
+      bodyHtml: data.bodyHtml ?? null,
+      bodyText: data.bodyText ?? null,
+      status: 'scheduled',
+      direction: 'sent',
+      sesMessageId: null,
+      attachmentIds: null,
+      important: false,
+      isSpam: false,
+      deleted: false,
+      folderId: null,
+      scheduledAt: data.scheduledAt,
+    })
+  }
+
+  async rescheduleMail(id: number, scheduledAt: DateTime) {
+    if (scheduledAt <= DateTime.now()) {
+      throw httpError(422, 'scheduledAt must be in the future')
+    }
+
+    const { scheduled } = await this.getOwnedScheduledMail(id)
+    return this.mailRepository.update(scheduled, { scheduledAt })
+  }
+
+  async cancelScheduledMail(id: number) {
+    const { scheduled } = await this.getOwnedScheduledMail(id)
+    return this.mailRepository.update(scheduled, { status: 'draft', scheduledAt: null })
+  }
+
+  private async getOwnedScheduledMail(id: number): Promise<{
+    mailAccount: MailAccount
+    scheduled: Mail
+  }> {
+    const { mailAccount, mail } = await this.getOwnedMail(id)
+    if (mail.status !== 'scheduled') throw httpError(404, 'Scheduled mail not found')
+    return { mailAccount, scheduled: mail }
   }
 
   private async getOwnedMail(id: number): Promise<{ mailAccount: MailAccount; mail: Mail }> {

@@ -109,6 +109,7 @@ export class EmailReceivingService {
         isSpam: false,
         deleted: false,
         folderId: null,
+        scheduledAt: null,
       })
 
       this.logger.info(

@@ -42,6 +42,10 @@ export type ScannedRoutes = {
     'mail.mark_spam': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_important': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.forward': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.scheduled': { paramsTuple?: []; params?: {} }
+    'mail.schedule_mail': { paramsTuple?: []; params?: {} }
+    'mail.reschedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.store': { paramsTuple?: []; params?: {} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -65,6 +69,7 @@ export type ScannedRoutes = {
     'mail.sent': { paramsTuple?: []; params?: {} }
     'mail.received': { paramsTuple?: []; params?: {} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
+    'mail.scheduled': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
@@ -82,6 +87,7 @@ export type ScannedRoutes = {
     'mail.sent': { paramsTuple?: []; params?: {} }
     'mail.received': { paramsTuple?: []; params?: {} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
+    'mail.scheduled': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
@@ -108,6 +114,7 @@ export type ScannedRoutes = {
     'mail.save_draft': { paramsTuple?: []; params?: {} }
     'mail.send_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.forward': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.schedule_mail': { paramsTuple?: []; params?: {} }
     'folders.store': { paramsTuple?: []; params?: {} }
     'contacts.store': { paramsTuple?: []; params?: {} }
   }
@@ -117,12 +124,14 @@ export type ScannedRoutes = {
     'mail.move_to_folder': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_spam': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_important': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.reschedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   DELETE: {
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'mail.delete_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }

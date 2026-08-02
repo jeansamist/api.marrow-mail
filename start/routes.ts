@@ -96,6 +96,10 @@ router
             router.put('/:id/spam', [controllers.Mail, 'markSpam'])
             router.put('/:id/star', [controllers.Mail, 'markImportant'])
             router.post('/:id/forward', [controllers.Mail, 'forward'])
+            router.get('/scheduled', [controllers.Mail, 'scheduled'])
+            router.post('/schedule', [controllers.Mail, 'scheduleMail'])
+            router.put('/:id/schedule', [controllers.Mail, 'reschedule'])
+            router.delete('/:id/schedule', [controllers.Mail, 'cancelSchedule'])
           })
           .prefix('/mails')
 

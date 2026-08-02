@@ -56,3 +56,24 @@ export const forwardMailValidator = vine.create(
     bodyText: vine.string().optional(),
   })
 )
+
+// scheduledAt only needs to be a parseable date here — "must be in the
+// future" is a business rule enforced in MailService, not a format concern.
+export const scheduleMailValidator = vine.create(
+  vine.object({
+    to: vine.array(vine.string().email().trim().toLowerCase()).minLength(1),
+    cc: vine.array(vine.string().email().trim().toLowerCase()).optional(),
+    bcc: vine.array(vine.string().email().trim().toLowerCase()).optional(),
+    replyTo: vine.string().email().trim().toLowerCase().optional(),
+    subject: vine.string().trim(),
+    bodyHtml: vine.string().optional(),
+    bodyText: vine.string().optional(),
+    scheduledAt: vine.date(),
+  })
+)
+
+export const rescheduleMailValidator = vine.create(
+  vine.object({
+    scheduledAt: vine.date(),
+  })
+)

@@ -463,6 +463,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['forward']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'mail.scheduled': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/scheduled'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['scheduled']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['scheduled']>>>
+    }
+  }
+  'mail.schedule_mail': {
+    methods: ["POST"]
+    pattern: '/api/mail/mails/schedule'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').scheduleMailValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').scheduleMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['scheduleMail']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['scheduleMail']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.reschedule': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/schedule'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').rescheduleMailValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').rescheduleMailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['reschedule']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['reschedule']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail.cancel_schedule': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/mails/:id/schedule'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['cancelSchedule']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['cancelSchedule']>>>
+    }
+  }
   'folders.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/mail/folders'

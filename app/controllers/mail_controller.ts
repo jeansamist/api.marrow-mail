@@ -7,6 +7,8 @@ import {
   markImportantValidator,
   markSpamValidator,
   moveMailToFolderValidator,
+  rescheduleMailValidator,
+  scheduleMailValidator,
   sendMailValidator,
 } from '#validators/mail'
 import { inject } from '@adonisjs/core'
@@ -102,5 +104,31 @@ export default class MailController {
     const mail = await this.mailService.forwardMail(params.id, data)
     const serialized = await serialize(MailTransformer.transform(mail))
     return response.ok(ApiResponse.success(serialized.data, 'Mail forwarded'))
+  }
+
+  async scheduled({ response, serialize }: HttpContext) {
+    const mails = await this.mailService.fetchScheduledMails()
+    const serialized = await serialize(MailTransformer.transform(mails))
+    return response.ok(ApiResponse.success(serialized.data, 'Scheduled mails retrieved'))
+  }
+
+  async scheduleMail({ request, response, serialize }: HttpContext) {
+    const data = await request.validateUsing(scheduleMailValidator)
+    const mail = await this.mailService.scheduleMail(data)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.created(ApiResponse.success(serialized.data, 'Mail scheduled'))
+  }
+
+  async reschedule({ params, request, response, serialize }: HttpContext) {
+    const { scheduledAt } = await request.validateUsing(rescheduleMailValidator)
+    const mail = await this.mailService.rescheduleMail(params.id, scheduledAt)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Mail rescheduled'))
+  }
+
+  async cancelSchedule({ params, response, serialize }: HttpContext) {
+    const mail = await this.mailService.cancelScheduledMail(params.id)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Scheduled send canceled'))
   }
 }

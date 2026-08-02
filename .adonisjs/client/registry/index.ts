@@ -234,6 +234,30 @@ const routes = {
     tokens: [{"old":"/api/mail/mails/:id/forward","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/forward","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/forward","type":0,"val":"forward","end":""}],
     types: placeholder as Registry['mail.forward']['types'],
   },
+  'mail.scheduled': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/scheduled',
+    tokens: [{"old":"/api/mail/mails/scheduled","type":0,"val":"api","end":""},{"old":"/api/mail/mails/scheduled","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/scheduled","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/scheduled","type":0,"val":"scheduled","end":""}],
+    types: placeholder as Registry['mail.scheduled']['types'],
+  },
+  'mail.schedule_mail': {
+    methods: ["POST"],
+    pattern: '/api/mail/mails/schedule',
+    tokens: [{"old":"/api/mail/mails/schedule","type":0,"val":"api","end":""},{"old":"/api/mail/mails/schedule","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/schedule","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/schedule","type":0,"val":"schedule","end":""}],
+    types: placeholder as Registry['mail.schedule_mail']['types'],
+  },
+  'mail.reschedule': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/schedule',
+    tokens: [{"old":"/api/mail/mails/:id/schedule","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/schedule","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"schedule","end":""}],
+    types: placeholder as Registry['mail.reschedule']['types'],
+  },
+  'mail.cancel_schedule': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/mails/:id/schedule',
+    tokens: [{"old":"/api/mail/mails/:id/schedule","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/schedule","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"schedule","end":""}],
+    types: placeholder as Registry['mail.cancel_schedule']['types'],
+  },
   'folders.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/mail/folders',

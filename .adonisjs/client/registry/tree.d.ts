@@ -51,6 +51,10 @@ export interface ApiDefinition {
     markSpam: typeof routes['mail.mark_spam']
     markImportant: typeof routes['mail.mark_important']
     forward: typeof routes['mail.forward']
+    scheduled: typeof routes['mail.scheduled']
+    scheduleMail: typeof routes['mail.schedule_mail']
+    reschedule: typeof routes['mail.reschedule']
+    cancelSchedule: typeof routes['mail.cancel_schedule']
   }
   folders: {
     index: typeof routes['folders.index']
