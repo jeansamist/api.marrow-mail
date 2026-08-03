@@ -3,6 +3,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { DomainService } from '#services/domain_service'
 import { MailAccountService } from '#services/mail_account_service'
 import { RecordService } from '#services/record_service'
+import { SubscriptionService } from '#services/subscription_service'
 import MailAccountTransformer from '#transformers/mail_account_transformer'
 import RecordTransformer from '#transformers/record_transformer'
 import { ApiResponse } from '#utils/api_response'
@@ -15,7 +16,8 @@ export default class OnboardingController {
   constructor(
     protected readonly domainService: DomainService,
     protected readonly recordService: RecordService,
-    protected readonly mailAccountService: MailAccountService
+    protected readonly mailAccountService: MailAccountService,
+    protected readonly subscriptionService: SubscriptionService
   ) {}
   async registerDomain({ request, response, serialize }: HttpContext) {
     const data = await request.validateUsing(createDomainValidator)
@@ -43,6 +45,8 @@ export default class OnboardingController {
     const { data } = await request.validateUsing(createManyMailAccountsValidator)
     const domainName = request.input('domainName')
     const domain = await this.domainService.findDomainByNameOrFail(domainName)
+    const existingMailboxCount = await this.mailAccountService.countForCurrentUser()
+    await this.subscriptionService.assertActiveEntitlement(existingMailboxCount + data.length)
     const mailAccounts = await this.mailAccountService.setupEmailAddress({
       data,
       domainId: domain.id,

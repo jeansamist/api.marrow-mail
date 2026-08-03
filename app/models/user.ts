@@ -7,6 +7,7 @@ import { hasMany } from '@adonisjs/lucid/orm'
 import { type HasMany } from '@adonisjs/lucid/types/relations'
 import Domain from './domain.ts'
 import MailAccount from './mail_account.ts'
+import Subscription from './subscription.ts'
 
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   static accessTokens = DbAccessTokensProvider.forModel(User)
@@ -21,4 +22,7 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @hasMany(() => MailAccount)
   declare mailAccounts: HasMany<typeof MailAccount>
+
+  @hasMany(() => Subscription)
+  declare subscriptions: HasMany<typeof Subscription>
 }

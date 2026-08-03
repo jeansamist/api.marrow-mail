@@ -209,6 +209,35 @@ export class MailSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class PaymentSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'currency', 'customerPhone', 'failureReason', 'id', 'provider', 'providerTransactionId', 'rawResponse', 'status', 'subscriptionId', 'updatedAt'] as const
+  $columns = PaymentSchema.$columns
+  @column()
+  declare amount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare currency: string
+  @column()
+  declare customerPhone: string | null
+  @column()
+  declare failureReason: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare provider: string
+  @column()
+  declare providerTransactionId: string | null
+  @column()
+  declare rawResponse: any | null
+  @column()
+  declare status: string
+  @column()
+  declare subscriptionId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class RecordSchema extends BaseModel {
   static $columns = ['createdAt', 'domainId', 'id', 'name', 'priority', 'type', 'updatedAt', 'userId', 'value'] as const
   $columns = RecordSchema.$columns
@@ -265,6 +294,41 @@ export class SignatureSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare website: string | null
+}
+
+export class SubscriptionSchema extends BaseModel {
+  static $columns = ['amountTotal', 'billingMonths', 'countryCode', 'createdAt', 'currency', 'currentPeriodEnd', 'id', 'mailboxQuantity', 'planId', 'provider', 'status', 'stripeCustomerId', 'stripeSubscriptionId', 'updatedAt', 'userId'] as const
+  $columns = SubscriptionSchema.$columns
+  @column()
+  declare amountTotal: number
+  @column()
+  declare billingMonths: number
+  @column()
+  declare countryCode: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare currentPeriodEnd: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare mailboxQuantity: number
+  @column()
+  declare planId: string
+  @column()
+  declare provider: string
+  @column()
+  declare status: string
+  @column()
+  declare stripeCustomerId: string | null
+  @column()
+  declare stripeSubscriptionId: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class UserSchema extends BaseModel {

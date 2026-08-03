@@ -18,6 +18,10 @@ router.get('/', () => {
 // SES inbound webhook — no auth, public endpoint for AWS SNS
 router.post('/api/webhooks/ses', [controllers.SesWebhook, 'handle'])
 
+// Payment webhooks — no auth, public endpoints, signature-verified in-controller
+router.post('/api/webhooks/stripe', [controllers.StripeWebhook, 'handle'])
+router.post('/api/webhooks/elgiopay', [controllers.ElgiopayWebhook, 'handle'])
+
 router
   .group(() => {
     router
@@ -51,6 +55,8 @@ router
         router.post('/setup-mail-account', [controllers.Onboarding, 'setupMailAccount'])
         router.get('/get-dns-records', [controllers.Onboarding, 'getDNSRecords'])
         router.get('/check-domain-status', [controllers.Onboarding, 'checkDomainStatus'])
+        router.post('/checkout-subscription', [controllers.Subscriptions, 'checkout'])
+        router.get('/subscription-status/:id', [controllers.Subscriptions, 'status'])
       })
       .prefix('/onboarding')
       .use([middleware.auth()])

@@ -3,6 +3,8 @@ import type { routes } from './index.ts'
 
 export interface ApiDefinition {
   sesWebhook: typeof routes['ses_webhook']
+  stripeWebhook: typeof routes['stripe_webhook']
+  elgiopayWebhook: typeof routes['elgiopay_webhook']
   auth: {
     signUp: typeof routes['auth.sign_up']
     verifyEmail: typeof routes['auth.verify_email']
@@ -23,6 +25,10 @@ export interface ApiDefinition {
     setupMailAccount: typeof routes['onboarding.setup_mail_account']
     getDnsRecords: typeof routes['onboarding.get_dns_records']
     checkDomainStatus: typeof routes['onboarding.check_domain_status']
+  }
+  subscriptions: {
+    checkout: typeof routes['subscriptions.checkout']
+    status: typeof routes['subscriptions.status']
   }
   authMailAccounts: {
     login: typeof routes['auth_mail_accounts.login']

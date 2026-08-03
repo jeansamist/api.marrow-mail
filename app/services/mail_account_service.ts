@@ -55,6 +55,10 @@ export class MailAccountService {
     }
   }
 
+  async countForCurrentUser(): Promise<number> {
+    return this.repository.countByUserId(this.userId)
+  }
+
   private queueMailAccountCreatedNotification(mailAccount: MailAccount, ownerEmail: string) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
     const setupLink = `${env.get('FRONTEND_APP_URL')}/en/domain/${mailAccount.domain.name}/setup-profile?cuid=${mailAccount.cuid}`

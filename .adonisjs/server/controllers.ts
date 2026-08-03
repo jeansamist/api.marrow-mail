@@ -8,6 +8,7 @@ export const controllers = {
   AuthMailAccounts: () => import('#controllers/auth_mail_accounts_controller'),
   Contacts: () => import('#controllers/contacts_controller'),
   Domains: () => import('#controllers/domains_controller'),
+  ElgiopayWebhook: () => import('#controllers/elgiopay_webhook_controller'),
   Folders: () => import('#controllers/folders_controller'),
   MailAccountProfiles: () => import('#controllers/mail_account_profiles_controller'),
   MailAccounts: () => import('#controllers/mail_accounts_controller'),
@@ -16,4 +17,6 @@ export const controllers = {
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
   Signatures: () => import('#controllers/signatures_controller'),
   Storage: () => import('#controllers/storage_controller'),
+  StripeWebhook: () => import('#controllers/stripe_webhook_controller'),
+  Subscriptions: () => import('#controllers/subscriptions_controller'),
 }

@@ -19,6 +19,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/ses_webhook_controller').default['handle']>>>
     }
   }
+  'stripe_webhook': {
+    methods: ["POST"]
+    pattern: '/api/webhooks/stripe'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stripe_webhook_controller').default['handle']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stripe_webhook_controller').default['handle']>>>
+    }
+  }
+  'elgiopay_webhook': {
+    methods: ["POST"]
+    pattern: '/api/webhooks/elgiopay'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/elgiopay_webhook_controller').default['handle']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/elgiopay_webhook_controller').default['handle']>>>
+    }
+  }
   'auth.sign_up': {
     methods: ["POST"]
     pattern: '/api/auth/sign-up'
@@ -185,6 +209,30 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/onboarding_controller').default['checkDomainStatus']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/onboarding_controller').default['checkDomainStatus']>>>
+    }
+  }
+  'subscriptions.checkout': {
+    methods: ["POST"]
+    pattern: '/api/onboarding/checkout-subscription'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').checkoutSubscriptionValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').checkoutSubscriptionValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['checkout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['checkout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'subscriptions.status': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/onboarding/subscription-status/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['status']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['status']>>>
     }
   }
   'auth_mail_accounts.login': {

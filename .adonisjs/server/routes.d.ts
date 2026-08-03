@@ -5,6 +5,8 @@ type ParamValue = string | number | bigint | boolean
 export type ScannedRoutes = {
   ALL: {
     'ses_webhook': { paramsTuple?: []; params?: {} }
+    'stripe_webhook': { paramsTuple?: []; params?: {} }
+    'elgiopay_webhook': { paramsTuple?: []; params?: {} }
     'auth.sign_up': { paramsTuple?: []; params?: {} }
     'auth.verify_email': { paramsTuple?: []; params?: {} }
     'auth.sign_in': { paramsTuple?: []; params?: {} }
@@ -19,6 +21,8 @@ export type ScannedRoutes = {
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
+    'subscriptions.checkout': { paramsTuple?: []; params?: {} }
+    'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.forgot_password': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.reset_password': { paramsTuple?: []; params?: {} }
@@ -64,6 +68,7 @@ export type ScannedRoutes = {
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
+    'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.profile': { paramsTuple?: []; params?: {} }
     'storage.files': { paramsTuple?: []; params?: {} }
     'storage.get_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
@@ -83,6 +88,7 @@ export type ScannedRoutes = {
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
+    'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.profile': { paramsTuple?: []; params?: {} }
     'storage.files': { paramsTuple?: []; params?: {} }
     'storage.get_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
@@ -99,6 +105,8 @@ export type ScannedRoutes = {
   }
   POST: {
     'ses_webhook': { paramsTuple?: []; params?: {} }
+    'stripe_webhook': { paramsTuple?: []; params?: {} }
+    'elgiopay_webhook': { paramsTuple?: []; params?: {} }
     'auth.sign_up': { paramsTuple?: []; params?: {} }
     'auth.verify_email': { paramsTuple?: []; params?: {} }
     'auth.sign_in': { paramsTuple?: []; params?: {} }
@@ -108,6 +116,7 @@ export type ScannedRoutes = {
     'auth.delete_account': { paramsTuple?: []; params?: {} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
+    'subscriptions.checkout': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.forgot_password': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.reset_password': { paramsTuple?: []; params?: {} }

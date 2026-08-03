@@ -13,6 +13,7 @@ import type MailAccountTransformer from '#transformers/mail_account_transformer'
 import type MailTransformer from '#transformers/mail_transformer'
 import type RecordTransformer from '#transformers/record_transformer'
 import type SignatureTransformer from '#transformers/signature_transformer'
+import type SubscriptionTransformer from '#transformers/subscription_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 
 export namespace Data {
@@ -47,6 +48,10 @@ export namespace Data {
   export type Signature = InferData<SignatureTransformer>
   export namespace Signature {
     export type Variants = InferVariants<SignatureTransformer>
+  }
+  export type Subscription = InferData<SubscriptionTransformer>
+  export namespace Subscription {
+    export type Variants = InferVariants<SubscriptionTransformer>
   }
   export type User = InferData<UserTransformer>
   export namespace User {

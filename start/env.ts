@@ -68,4 +68,24 @@ export default await Env.create(new URL('../', import.meta.url), {
   AWS_REGION: Env.schema.string(),
   AWS_BUCKET: Env.schema.string(),
   AWS_SES_RULE_SET_NAME: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Stripe (card subscription payments)
+  |----------------------------------------------------------
+  */
+  STRIPE_SECRET_KEY: Env.schema.string(),
+  STRIPE_WEBHOOK_SECRET: Env.schema.string(),
+  STRIPE_PRODUCT_CORE_ID: Env.schema.string(),
+  STRIPE_PRODUCT_PLUS_ID: Env.schema.string(),
+  STRIPE_CURRENCY: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Elgiopay (mobile money payments)
+  |----------------------------------------------------------
+  */
+  ELGIOPAY_API_BASE_URL: Env.schema.string(),
+  ELGIOPAY_SECRET_KEY: Env.schema.string(),
+  ELGIOPAY_WEBHOOK_SECRET: Env.schema.string(),
 })

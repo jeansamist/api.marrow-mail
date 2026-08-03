@@ -12,6 +12,18 @@ const routes = {
     tokens: [{"old":"/api/webhooks/ses","type":0,"val":"api","end":""},{"old":"/api/webhooks/ses","type":0,"val":"webhooks","end":""},{"old":"/api/webhooks/ses","type":0,"val":"ses","end":""}],
     types: placeholder as Registry['ses_webhook']['types'],
   },
+  'stripe_webhook': {
+    methods: ["POST"],
+    pattern: '/api/webhooks/stripe',
+    tokens: [{"old":"/api/webhooks/stripe","type":0,"val":"api","end":""},{"old":"/api/webhooks/stripe","type":0,"val":"webhooks","end":""},{"old":"/api/webhooks/stripe","type":0,"val":"stripe","end":""}],
+    types: placeholder as Registry['stripe_webhook']['types'],
+  },
+  'elgiopay_webhook': {
+    methods: ["POST"],
+    pattern: '/api/webhooks/elgiopay',
+    tokens: [{"old":"/api/webhooks/elgiopay","type":0,"val":"api","end":""},{"old":"/api/webhooks/elgiopay","type":0,"val":"webhooks","end":""},{"old":"/api/webhooks/elgiopay","type":0,"val":"elgiopay","end":""}],
+    types: placeholder as Registry['elgiopay_webhook']['types'],
+  },
   'auth.sign_up': {
     methods: ["POST"],
     pattern: '/api/auth/sign-up',
@@ -95,6 +107,18 @@ const routes = {
     pattern: '/api/onboarding/check-domain-status',
     tokens: [{"old":"/api/onboarding/check-domain-status","type":0,"val":"api","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"onboarding","end":""},{"old":"/api/onboarding/check-domain-status","type":0,"val":"check-domain-status","end":""}],
     types: placeholder as Registry['onboarding.check_domain_status']['types'],
+  },
+  'subscriptions.checkout': {
+    methods: ["POST"],
+    pattern: '/api/onboarding/checkout-subscription',
+    tokens: [{"old":"/api/onboarding/checkout-subscription","type":0,"val":"api","end":""},{"old":"/api/onboarding/checkout-subscription","type":0,"val":"onboarding","end":""},{"old":"/api/onboarding/checkout-subscription","type":0,"val":"checkout-subscription","end":""}],
+    types: placeholder as Registry['subscriptions.checkout']['types'],
+  },
+  'subscriptions.status': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/onboarding/subscription-status/:id',
+    tokens: [{"old":"/api/onboarding/subscription-status/:id","type":0,"val":"api","end":""},{"old":"/api/onboarding/subscription-status/:id","type":0,"val":"onboarding","end":""},{"old":"/api/onboarding/subscription-status/:id","type":0,"val":"subscription-status","end":""},{"old":"/api/onboarding/subscription-status/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['subscriptions.status']['types'],
   },
   'auth_mail_accounts.login': {
     methods: ["POST"],

@@ -56,4 +56,9 @@ export default class MailAccountRepository {
       })
       .first()
   }
+
+  async countByUserId(userId: number): Promise<number> {
+    const result = await this.model.query().where('user_id', userId).count('* as total')
+    return Number(result[0].$extras.total)
+  }
 }
