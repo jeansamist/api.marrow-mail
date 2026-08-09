@@ -8,6 +8,7 @@ import User from '#models/user'
 import UserRepository from '#repositories/user_repository'
 import env from '#start/env'
 import { ModelProps } from '#utils/generics'
+import { httpError } from '#utils/http_error'
 import { Authenticator } from '@adonisjs/auth'
 import { Authenticators } from '@adonisjs/auth/types'
 import { inject } from '@adonisjs/core'
@@ -30,9 +31,14 @@ export class AuthService {
     return randomInt(100000, 1000000).toString()
   }
 
-  async signUp(data: Pick<ModelProps<User>, 'firstName' | 'lastName' | 'email' | 'password'>) {
+  async signUp(
+    data: Pick<ModelProps<User>, 'firstName' | 'lastName' | 'email' | 'password'> & {
+      businessName?: string
+    }
+  ) {
     const verificationCode = this.generateVerificationCode()
     const verificationCodeExpiresAt = DateTime.now().plus({ hours: 1 })
+    const normalizedData = { ...data, businessName: data.businessName ?? null }
     const restOfData = {
       avatar: null,
       emailVerificationCode: verificationCode,
@@ -41,17 +47,21 @@ export class AuthService {
       emailVerifiedAt: null,
       resetPasswordToken: null,
       resetPasswordTokenExpiresAt: null,
-    } satisfies Omit<ModelProps<UserSchema>, 'firstName' | 'lastName' | 'email' | 'password'>
+    } satisfies Omit<
+      ModelProps<UserSchema>,
+      'firstName' | 'lastName' | 'email' | 'password' | 'businessName'
+    >
     const existingUser = await this.userRepository.findByEmail(data.email)
     if (existingUser) {
       if (existingUser.emailVerified) {
-        throw new Error('Email has already been taken')
+        throw httpError(409, 'Email has already been taken')
       }
-      // Update the unverified user
-      await this.userRepository.update(existingUser, { ...data, ...restOfData })
+      // Update the unverified user and resend the verification code
+      await this.userRepository.update(existingUser, { ...normalizedData, ...restOfData })
+      this.sendEmailVerificationCodeNotification(existingUser)
       return existingUser
     }
-    const user = await this.userRepository.create({ ...data, ...restOfData })
+    const user = await this.userRepository.create({ ...normalizedData, ...restOfData })
     this.sendEmailVerificationCodeNotification(user)
     return user
   }
@@ -60,7 +70,8 @@ export class AuthService {
     const user = await User.verifyCredentials(data.email, data.password)
     // Check if email is verified
     if (!user.emailVerified) {
-      throw new Error(
+      throw httpError(
+        403,
         'Please verify your email address before signing in. Check your email for the verification code.'
       )
     }
@@ -72,7 +83,7 @@ export class AuthService {
     const normalizedEmail = email.toLowerCase().trim()
     const user = await User.findBy('email', normalizedEmail)
     if (!user) {
-      throw new Error('User does not exist')
+      throw httpError(400, 'User does not exist')
     }
     const resetPasswordToken = this.generateResetPasswordToken()
     const resetPasswordTokenExpiresAt = DateTime.now().plus({ hours: 1 })
@@ -122,7 +133,7 @@ export class AuthService {
   sendPasswordResetEmail(user: User) {
     const resetPasswordLink =
       env.get('FRONTEND_APP_URL') +
-      `/auth/reset-password?email=${encodeURIComponent(user.email)}&resetPasswordToken=${user.resetPasswordToken}`
+      `/en/reset-password?email=${encodeURIComponent(user.email)}&resetPasswordToken=${user.resetPasswordToken}`
     const notification = new PasswordResetNotification(user, resetPasswordLink)
 
     this.cronManager.addQueueJob(

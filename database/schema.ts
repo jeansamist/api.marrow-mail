@@ -332,10 +332,12 @@ export class SubscriptionSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['avatar', 'createdAt', 'email', 'emailVerificationCode', 'emailVerificationCodeExpiresAt', 'emailVerified', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'updatedAt'] as const
+  static $columns = ['avatar', 'businessName', 'createdAt', 'email', 'emailVerificationCode', 'emailVerificationCodeExpiresAt', 'emailVerified', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column()
   declare avatar: string | null
+  @column()
+  declare businessName: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
