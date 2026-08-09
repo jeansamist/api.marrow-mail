@@ -27,8 +27,6 @@ export default class OnboardingController {
   }
   async getDNSRecords({ request, response, serialize }: HttpContext) {
     const domainName = request.input('domainName')
-    console.log(domainName)
-
     const domain = await this.domainService.findDomainByNameOrFail(domainName)
     const records = await this.recordService.findRecordsByDomainId(domain.id)
     const serialized = await serialize(RecordTransformer.transform(records))

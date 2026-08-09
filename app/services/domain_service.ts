@@ -56,7 +56,6 @@ export class DomainService {
   }
   async createDomain(data: DomainPayload): Promise<Domain> {
     this.logger.info(`[DomainService]: Create new domain`)
-    console.log(this.userId)
 
     const domain = await this.repository.create({ ...data, userId: this.userId })
     return domain
@@ -126,6 +125,15 @@ export class DomainService {
 
   async setupDomain(data: SetupDomainPayload): Promise<Record[]> {
     this.logger.info(`[DomainService]: Setup domain`)
+
+    const existing = await this.repository.findByName(data.name)
+    if (existing) {
+      if (existing.userId !== this.userId) {
+        throw httpError(409, 'This domain is already registered')
+      }
+      return this.recordService.findRecordsByDomainId(existing.id)
+    }
+
     const createDomainEntityPayload: DomainPayload = {
       name: data.name,
       description: `Marrowmail Domain Entity`,
