@@ -108,4 +108,46 @@ test.group('DomainService', (group) => {
     if (registeredDomain) await domainService.deleteDomain(registeredDomain.id)
     await otherUser.delete()
   }).timeout(30000)
+
+  test('listDomainsForCurrentUser only returns the current user domains', async ({ assert }) => {
+    const domainA = await domainService.createDomain({
+      name: 'list-test-a.shop',
+      description: 'Domain A',
+      verified: false,
+    })
+    const domainB = await domainService.createDomain({
+      name: 'list-test-b.shop',
+      description: 'Domain B',
+      verified: false,
+    })
+
+    const otherUser = await User.create({
+      firstName: 'Other',
+      lastName: 'Lister',
+      email: 'domain.tester.lister@example.com',
+      password: 'password',
+    })
+    await bindUserContext(otherUser)
+    const otherDomainService = await app.container.make(DomainService)
+    const otherDomain = await otherDomainService.createDomain({
+      name: 'list-test-other.shop',
+      description: 'Other user domain',
+      verified: false,
+    })
+
+    const otherList = await otherDomainService.listDomainsForCurrentUser()
+    assert.equal(otherList.length, 1)
+    assert.equal(otherList[0].id, otherDomain.id)
+
+    await bindUserContext(user)
+    domainService = await app.container.make(DomainService)
+    const myList = await domainService.listDomainsForCurrentUser()
+    const myIds = myList.map((d) => d.id).sort()
+    assert.deepEqual(myIds, [domainA.id, domainB.id].sort())
+
+    await domainService.deleteDomain(domainA.id)
+    await domainService.deleteDomain(domainB.id)
+    await otherDomainService.deleteDomain(otherDomain.id)
+    await otherUser.delete()
+  })
 })

@@ -41,12 +41,23 @@ router
           .use([middleware.auth()])
       })
       .prefix('/auth')
-    // Mail account profiles routes
+    // Mail account profiles + account-administration routes
     router
       .group(() => {
+        router.get('/', [controllers.MailAccounts, 'index'])
+        router.delete('/:id', [controllers.MailAccounts, 'destroy'])
         router.get('/:mailAccountId/profile', [controllers.MailAccountProfiles, 'show'])
       })
       .prefix('/mail-accounts')
+      .use([middleware.auth()])
+    // Domains routes (account administration — post-onboarding domain management)
+    router
+      .group(() => {
+        router.get('/', [controllers.Domains, 'index'])
+        router.post('/', [controllers.Domains, 'store'])
+        router.delete('/:id', [controllers.Domains, 'destroy'])
+      })
+      .prefix('/domains')
       .use([middleware.auth()])
     // Onboarding routes
     router

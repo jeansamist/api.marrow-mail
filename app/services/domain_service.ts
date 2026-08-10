@@ -86,6 +86,11 @@ export class DomainService {
     return domain
   }
 
+  async listDomainsForCurrentUser(): Promise<Domain[]> {
+    this.logger.info(`[DomainService]: List domains for current user`)
+    return this.repository.findAllByUserId(this.userId)
+  }
+
   async checkDomainStatusByName(domainName: string) {
     this.logger.info(`[DomainService]: Check domain satus by name`)
     const domain = await this.findDomainByNameOrFail(domainName)

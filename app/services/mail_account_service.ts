@@ -59,6 +59,19 @@ export class MailAccountService {
     return this.repository.countByUserId(this.userId)
   }
 
+  async listMailAccountsForCurrentUser(): Promise<MailAccount[]> {
+    return this.repository.findAllByUserId(this.userId)
+  }
+
+  async deleteMailAccount(id: number): Promise<void> {
+    const mailAccount = await this.repository.findById(id)
+    if (!mailAccount) {
+      throw httpError(404, 'Mail account not found')
+    }
+    this.checkOwnership(mailAccount)
+    await this.repository.delete(mailAccount)
+  }
+
   private queueMailAccountCreatedNotification(mailAccount: MailAccount, ownerEmail: string) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
     const setupLink = `${env.get('FRONTEND_APP_URL')}/en/domain/${mailAccount.domain.name}/setup-profile?cuid=${mailAccount.cuid}`

@@ -26,6 +26,10 @@ export default class SubscriptionRepository {
       .first()
   }
 
+  async findAllActiveForUser(userId: number): Promise<Subscription[]> {
+    return this.model.query().where('user_id', userId).where('status', 'active')
+  }
+
   async update(
     subscription: Subscription,
     data: Partial<ModelProps<SubscriptionSchema>>

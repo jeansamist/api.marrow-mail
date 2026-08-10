@@ -61,4 +61,12 @@ export default class MailAccountRepository {
     const result = await this.model.query().where('user_id', userId).count('* as total')
     return Number(result[0].$extras.total)
   }
+
+  async findAllByUserId(userId: number): Promise<MailAccount[]> {
+    return this.model.query().where('user_id', userId).orderBy('created_at', 'desc')
+  }
+
+  async delete(mailAccount: MailAccount): Promise<void> {
+    await mailAccount.delete()
+  }
 }

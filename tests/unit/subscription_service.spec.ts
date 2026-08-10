@@ -210,4 +210,46 @@ test.group('SubscriptionService', (group) => {
     assert.equal(result.subscription.status, 'pending')
     assert.isTrue('clientSecret' in result.providerPayload)
   }).timeout(20000)
+
+  test('assertActiveEntitlement sums mailboxQuantity across multiple active subscriptions', async ({
+    assert,
+  }) => {
+    const first = await subscriptionService.checkout(
+      {
+        planId: 'core',
+        mailboxQuantity: 1,
+        billingMonths: 1,
+        paymentMethod: 'orange_money',
+        customerPhone: '699000000',
+      },
+      '41.202.219.1'
+    )
+    await subscriptionService.getStatus(first.subscription.id) // sync to active
+
+    const second = await subscriptionService.checkout(
+      {
+        planId: 'core',
+        mailboxQuantity: 1,
+        billingMonths: 1,
+        paymentMethod: 'orange_money',
+        customerPhone: '699000000',
+      },
+      '41.202.219.1'
+    )
+    await subscriptionService.getStatus(second.subscription.id) // sync to active
+
+    // Two separate active subscriptions, quantity 1 each, should together entitle 2 mailboxes.
+    await subscriptionService.assertActiveEntitlement(2)
+
+    try {
+      await subscriptionService.assertActiveEntitlement(3)
+      assert.fail(
+        'Expected assertActiveEntitlement to reject a request exceeding the combined total'
+      )
+    } catch (error) {
+      assert.equal(httpStatus(error), 402)
+    }
+  })
+    .timeout(20000)
+    .retry(2)
 })

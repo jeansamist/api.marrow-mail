@@ -222,23 +222,29 @@ export class SubscriptionService {
   }
 
   async assertActiveEntitlement(requestedTotalMailboxCount: number): Promise<void> {
-    const subscription = await this.repository.findLatestActiveForUser(this.userId)
-    if (!subscription) {
+    const subscriptions = await this.repository.findAllActiveForUser(this.userId)
+
+    const validSubscriptions = subscriptions.filter((subscription) => {
+      if (
+        subscription.provider === 'elgiopay' &&
+        subscription.currentPeriodEnd &&
+        subscription.currentPeriodEnd < DateTime.now()
+      ) {
+        return false
+      }
+      return true
+    })
+
+    if (validSubscriptions.length === 0) {
       throw httpError(402, 'An active subscription is required before creating mailboxes')
     }
 
-    if (
-      subscription.provider === 'elgiopay' &&
-      subscription.currentPeriodEnd &&
-      subscription.currentPeriodEnd < DateTime.now()
-    ) {
-      throw httpError(
-        402,
-        'Your mailbox subscription period has expired. Please renew to continue.'
-      )
-    }
+    const totalEntitledMailboxes = validSubscriptions.reduce(
+      (total, subscription) => total + subscription.mailboxQuantity,
+      0
+    )
 
-    if (requestedTotalMailboxCount > subscription.mailboxQuantity) {
+    if (requestedTotalMailboxCount > totalEntitledMailboxes) {
       throw httpError(
         402,
         'This request exceeds the mailbox quantity included in your subscription'
