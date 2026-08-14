@@ -1,12 +1,32 @@
 name: Build, Push, and Deploy to AWS
 
+# Required GitHub secrets:
+#   AWS_ACCOUNT_ID, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+#   ECR_REPOSITORY, ECS_CLUSTER, ECS_SERVICE
+#
+# The IAM user behind AWS_ACCESS_KEY_ID needs: ecr push, ecs:RegisterTaskDefinition,
+# ecs:UpdateService, ecs:DescribeServices, and iam:PassRole for the task/execution roles
+# referenced in .aws/task-definition.json.
+#
+# The task execution role in .aws/task-definition.json needs, in addition to the
+# AmazonECSTaskExecutionRolePolicy managed policy: secretsmanager:GetSecretValue on
+# each secret ARN referenced there, plus logs:CreateLogGroup/CreateLogStream/PutLogEvents
+# (CloudWatch Logs — that's how you get logs, via `aws logs tail /ecs/marrow-mail-api --follow`).
+#
+# Web access to the service (ALB target group, security groups, public DNS) is assumed
+# to already be wired to the ECS service and pointing at container port 80.
+
 on:
   push:
     branches:
       - main
 
+env:
+  CONTAINER_NAME: marrow-mail-api
+  ECS_TASK_DEFINITION: .aws/task-definition.json
+
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,24 +44,31 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
-          docker build -t $IMAGE_URI:latest .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Tag image with commit SHA
-        run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
-          docker tag $IMAGE_URI:latest $IMAGE_URI:${{ github.sha }}
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
 
-      - name: Push Docker image
-        run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
-          docker push $IMAGE_URI:latest
-          docker push $IMAGE_URI:${{ github.sha }}
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster "${{ secrets.ECS_CLUSTER }}" \
-            --service "${{ secrets.ECS_SERVICE }}" \
-            --force-new-deployment
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
+          wait-for-service-stability: true
