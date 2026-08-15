@@ -135,6 +135,12 @@ jobs:
       # Migrations run as a one-off Fargate task on the NEW image, before any
       # traffic reaches it. A non-zero exit fails the workflow and the running
       # service is left untouched on the previous revision.
+      #
+      # Retries only when the container never started (exitCode is null), which
+      # means an infrastructure fault such as CannotPullContainerError — those
+      # are transient on Fargate. A container that ran and exited non-zero is a
+      # real migration failure and is NEVER retried: re-running a half-applied
+      # migration is how you turn one bad deploy into a corrupted schema.
       - name: Run database migrations
         env:
           TASK_DEF_ARN: ${{ steps.register.outputs.arn }}
@@ -142,45 +148,65 @@ jobs:
           ECS_SUBNETS: ${{ secrets.ECS_SUBNETS }}
           ECS_SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUPS }}
           ASSIGN_PUBLIC_IP: ${{ vars.ECS_ASSIGN_PUBLIC_IP || 'DISABLED' }}
+          MAX_ATTEMPTS: '3'
         run: |
           set -euo pipefail
 
-          TASK_ARN=$(aws ecs run-task \
-            --cluster "$ECS_CLUSTER" \
-            --task-definition "$TASK_DEF_ARN" \
-            --launch-type FARGATE \
-            --started-by "gha-migrate-${GITHUB_SHA::7}" \
-            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNETS],securityGroups=[$ECS_SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
-            --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"node\",\"ace\",\"migration:run\",\"--force\"]}]}" \
-            --query 'tasks[0].taskArn' --output text)
+          attempt=1
+          while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
+            echo "::group::Migration attempt $attempt of $MAX_ATTEMPTS"
 
-          if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-            echo "::error::Failed to start the migration task"
-            exit 1
-          fi
-          echo "Migration task: $TASK_ARN"
+            TASK_ARN=$(aws ecs run-task \
+              --cluster "$ECS_CLUSTER" \
+              --task-definition "$TASK_DEF_ARN" \
+              --launch-type FARGATE \
+              --started-by "gha-migrate-${GITHUB_SHA::7}" \
+              --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNETS],securityGroups=[$ECS_SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
+              --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"node\",\"ace\",\"migration:run\",\"--force\"]}]}" \
+              --query 'tasks[0].taskArn' --output text)
 
-          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+            if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
+              echo "::endgroup::"
+              echo "::error::Could not submit the migration task to ECS"
+              exit 1
+            fi
+            echo "Task: $TASK_ARN"
 
-          EXIT_CODE=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
-            --query "tasks[0].containers[?name=='$CONTAINER_NAME'].exitCode | [0]" --output text)
-          REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
-            --query 'tasks[0].stoppedReason' --output text)
+            aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
 
-          echo "Exit code: $EXIT_CODE  ($REASON)"
+            DETAILS=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+              --query "tasks[0].{exit:containers[?name=='$CONTAINER_NAME'].exitCode|[0],stopped:stoppedReason,reason:containers[?name=='$CONTAINER_NAME'].reason|[0]}" \
+              --output json)
+            EXIT_CODE=$(echo "$DETAILS" | python3 -c "import sys,json;v=json.load(sys.stdin)['exit'];print('null' if v is None else v)")
+            STOPPED=$(echo "$DETAILS" | python3 -c "import sys,json;print(json.load(sys.stdin)['stopped'] or '')")
 
-          # Always print the migration output — it is the only record of what ran.
-          echo "::group::Migration logs"
-          aws logs get-log-events \
-            --log-group-name "$LOG_GROUP" \
-            --log-stream-name "ecs/$CONTAINER_NAME/${TASK_ARN##*/}" \
-            --query 'events[].message' --output text 2>/dev/null || echo "(no logs available)"
-          echo "::endgroup::"
+            echo "Exit code: $EXIT_CODE"
+            echo "Stopped reason: $STOPPED"
 
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "::error::Migrations failed (exit $EXIT_CODE) — service not updated"
-            exit 1
-          fi
+            # The container's own output — the only record of what actually ran.
+            aws logs get-log-events \
+              --log-group-name "$LOG_GROUP" \
+              --log-stream-name "ecs/$CONTAINER_NAME/${TASK_ARN##*/}" \
+              --query 'events[].message' --output text 2>/dev/null || echo "(no container logs — it never started)"
+            echo "::endgroup::"
+
+            if [ "$EXIT_CODE" = "0" ]; then
+              echo "Migrations applied successfully."
+              exit 0
+            fi
+
+            if [ "$EXIT_CODE" != "null" ]; then
+              echo "::error::Migrations ran and failed (exit $EXIT_CODE) — service not updated, not retrying"
+              exit 1
+            fi
+
+            echo "::warning::Task never started (${STOPPED}) — infrastructure fault, retrying"
+            attempt=$((attempt + 1))
+            [ "$attempt" -le "$MAX_ATTEMPTS" ] && sleep 20
+          done
+
+          echo "::error::Migration task failed to start after $MAX_ATTEMPTS attempts — service not updated"
+          exit 1
 
       - name: Deploy to ECS service
         env:
