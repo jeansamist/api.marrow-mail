@@ -11,7 +11,7 @@ name: Build, Push, and Deploy to AWS
 # The task execution role in .aws/task-definition.json needs, in addition to the
 # AmazonECSTaskExecutionRolePolicy managed policy: secretsmanager:GetSecretValue on
 # each secret ARN referenced there, plus logs:CreateLogGroup/CreateLogStream/PutLogEvents
-# (CloudWatch Logs — that's how you get logs, via `aws logs tail /ecs/marrow-mail-api --follow`).
+# (CloudWatch Logs — that's how you get logs, via `aws logs tail /ecs/api-marrowmail --follow`).
 #
 # Web access to the service (ALB target group, security groups, public DNS) is assumed
 # to already be wired to the ECS service and pointing at container port 80.
@@ -27,7 +27,7 @@ on:
       - main
 
 env:
-  CONTAINER_NAME: marrow-mail-api
+  CONTAINER_NAME: api-marrowmail
   ECS_TASK_DEFINITION: .aws/task-definition.json
 
 jobs:
