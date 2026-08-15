@@ -1,0 +1,32 @@
+# Keep the build context small and never ship host-built artefacts into the image.
+# Without this file `COPY . .` overwrites the Linux node_modules installed in the
+# deps stage with the host's (macOS) one, which breaks native modules like better-sqlite3.
+
+node_modules
+build
+.git
+.github
+tmp/*
+!tmp/.gitkeep
+
+# Secrets — must never end up in an image layer
+.env
+.env.*
+!.env.example
+
+# Local tooling / editor noise
+# NOTE: .adonisjs/ is deliberately NOT ignored — it is tracked in git and
+# `#generated/*` resolves into it at build and run time.
+.vscode
+.idea
+.fleet
+.DS_Store
+npm-debug.log
+yarn-error.log
+coverage
+
+# Not needed at build time
+deploy.sh
+README.md
+.editorconfig
+.prettierignore

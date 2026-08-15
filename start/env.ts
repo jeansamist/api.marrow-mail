@@ -22,6 +22,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   APP_KEY: Env.schema.secret(),
   APP_URL: Env.schema.string({ format: 'url', tld: false }),
 
+  /*
+  |----------------------------------------------------------
+  | Secret used to sign mail-account access tokens. Required —
+  | booting without it would silently fall back to a guessable key.
+  |----------------------------------------------------------
+  */
+  JWT_SECRET: Env.schema.string(),
+
   // Session
   SESSION_DRIVER: Env.schema.enum(['cookie', 'memory', 'database'] as const),
 
@@ -53,6 +61,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   FRONTEND_APP_URL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Comma-separated list of origins allowed to call the API from
+  | a browser. Empty means no cross-origin access in production.
+  |----------------------------------------------------------
+  */
+  CORS_ORIGIN: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------

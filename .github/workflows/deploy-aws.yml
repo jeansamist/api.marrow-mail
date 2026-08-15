@@ -1,38 +1,75 @@
 name: Build, Push, and Deploy to AWS
 
-# Required GitHub secrets:
-#   AWS_ACCOUNT_ID, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-#   ECR_REPOSITORY, ECS_CLUSTER, ECS_SERVICE
+# ---------------------------------------------------------------------------
+# Required GitHub secrets
+#   AWS_ACCOUNT_ID          e.g. 123456789012
+#   AWS_REGION              e.g. us-east-1
+#   AWS_ACCESS_KEY_ID       deploy user's key
+#   AWS_SECRET_ACCESS_KEY   deploy user's secret
+#   ECR_REPOSITORY          e.g. marrow-mail-api
+#   ECS_CLUSTER             cluster name or ARN
+#   ECS_SERVICE             service name
+#   ECS_SUBNETS             comma-separated subnet IDs for the migration task
+#                           (same subnets the service runs in)
+#   ECS_SECURITY_GROUPS     comma-separated security group IDs for the migration
+#                           task (must be allowed to reach the database)
 #
-# The IAM user behind AWS_ACCESS_KEY_ID needs: ecr push, ecs:RegisterTaskDefinition,
-# ecs:UpdateService, ecs:DescribeServices, and iam:PassRole for the task/execution roles
-# referenced in .aws/task-definition.json.
+# Optional repository variable
+#   ECS_ASSIGN_PUBLIC_IP    ENABLED | DISABLED  (default DISABLED — set ENABLED
+#                           only if the subnets are public and the task needs a
+#                           route to ECR/Secrets Manager without a NAT gateway)
 #
-# The task execution role in .aws/task-definition.json needs, in addition to the
-# AmazonECSTaskExecutionRolePolicy managed policy: secretsmanager:GetSecretValue on
-# each secret ARN referenced there, plus logs:CreateLogGroup/CreateLogStream/PutLogEvents
-# (CloudWatch Logs — that's how you get logs, via `aws logs tail /ecs/api-marrowmail --follow`).
+# IAM permissions for the deploy user:
+#   ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload,
+#   ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage, ecr:BatchGetImage
+#   ecs:RegisterTaskDefinition, ecs:RunTask, ecs:DescribeTasks,
+#   ecs:UpdateService, ecs:DescribeServices
+#   iam:PassRole for the task and execution roles in .aws/task-definition.json
+#   logs:GetLogEvents on /ecs/marrow-mail-api (to surface migration failures)
 #
-# Web access to the service (ALB target group, security groups, public DNS) is assumed
-# to already be wired to the ECS service and pointing at container port 80.
+# The task execution role needs, on top of AmazonECSTaskExecutionRolePolicy:
+#   secretsmanager:GetSecretValue on each secret ARN in the task definition, and
+#   logs:CreateLogGroup / CreateLogStream / PutLogEvents.
+#   Tail logs with: aws logs tail /ecs/marrow-mail-api --follow
 #
-# NOTE: .aws/task-definition.json contains literal "<AWS_ACCOUNT_ID>" placeholders in
-# executionRoleArn, taskRoleArn, and every secrets[].valueFrom ARN. These are substituted
-# at deploy time below using the AWS_ACCOUNT_ID secret — do not hardcode a real account ID
-# in the committed file.
+# Web access (ALB target group, security groups, DNS) is assumed to already be
+# wired to the ECS service on container port 80.
+#
+# NOTE: the task definition deliberately has no container-level `healthCheck`.
+# The ALB target group already health-checks the container, and a container health
+# check would also run inside the one-off migration task below — where nothing is
+# listening on port 80 — and could get that task killed mid-migration.
+#
+# NOTE: .aws/task-definition.json contains literal "<AWS_ACCOUNT_ID>" placeholders.
+# They are substituted at deploy time from the AWS_ACCOUNT_ID secret — never
+# hardcode a real account ID in the committed file.
+# ---------------------------------------------------------------------------
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+# One deploy at a time. Never cancel a run mid-deploy — a half-applied migration
+# or a partial service update is worse than waiting.
+concurrency:
+  group: deploy-ecs-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 env:
   CONTAINER_NAME: api-marrowmail
   ECS_TASK_DEFINITION: .aws/task-definition.json
+  LOG_GROUP: /ecs/marrow-mail-api
 
 jobs:
   deploy:
+    name: Build, migrate, deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
@@ -49,37 +86,129 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Layer caching via the GitHub Actions cache. The dependency-install layer
+      # is only rebuilt when package.json / pnpm-lock.yaml change, which is the
+      # difference between a ~1 minute and a ~5 minute build.
+      - name: Build and push image to Amazon ECR
         id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          provenance: false
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Substitute AWS account ID in task definition
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          sed -i "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" $ECS_TASK_DEFINITION
+          test -n "$AWS_ACCOUNT_ID" || { echo "::error::AWS_ACCOUNT_ID secret is empty"; exit 1; }
+          sed -i "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" "$ECS_TASK_DEFINITION"
 
-      - name: Fill in the new image ID in the Amazon ECS task definition
+      - name: Fill in the new image ID in the ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ secrets.ECS_SERVICE }}
-          cluster: ${{ secrets.ECS_CLUSTER }}
-          wait-for-service-stability: true
+      # Registered explicitly (rather than by the deploy action) so the exact
+      # same revision is used to run migrations and then to update the service.
+      - name: Register task definition
+        id: register
+        run: |
+          ARN=$(aws ecs register-task-definition \
+            --cli-input-json "file://${{ steps.task-def.outputs.task-definition }}" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Registered $ARN"
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+
+      # Migrations run as a one-off Fargate task on the NEW image, before any
+      # traffic reaches it. A non-zero exit fails the workflow and the running
+      # service is left untouched on the previous revision.
+      - name: Run database migrations
+        env:
+          TASK_DEF_ARN: ${{ steps.register.outputs.arn }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+          ECS_SUBNETS: ${{ secrets.ECS_SUBNETS }}
+          ECS_SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUPS }}
+          ASSIGN_PUBLIC_IP: ${{ vars.ECS_ASSIGN_PUBLIC_IP || 'DISABLED' }}
+        run: |
+          set -euo pipefail
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$TASK_DEF_ARN" \
+            --launch-type FARGATE \
+            --started-by "gha-migrate-${GITHUB_SHA::7}" \
+            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNETS],securityGroups=[$ECS_SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"node\",\"ace\",\"migration:run\",\"--force\"]}]}" \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
+            echo "::error::Failed to start the migration task"
+            exit 1
+          fi
+          echo "Migration task: $TASK_ARN"
+
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query "tasks[0].containers[?name=='$CONTAINER_NAME'].exitCode | [0]" --output text)
+          REASON=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+
+          echo "Exit code: $EXIT_CODE  ($REASON)"
+
+          # Always print the migration output — it is the only record of what ran.
+          echo "::group::Migration logs"
+          aws logs get-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "ecs/$CONTAINER_NAME/${TASK_ARN##*/}" \
+            --query 'events[].message' --output text 2>/dev/null || echo "(no logs available)"
+          echo "::endgroup::"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migrations failed (exit $EXIT_CODE) — service not updated"
+            exit 1
+          fi
+
+      - name: Deploy to ECS service
+        env:
+          TASK_DEF_ARN: ${{ steps.register.outputs.arn }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+          ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "$TASK_DEF_ARN" \
+            --no-cli-pager --query 'service.serviceName' --output text
+
+          echo "Waiting for the service to reach a steady state..."
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          echo "Deployed $TASK_DEF_ARN"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### ECS deploy"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | \`${GITHUB_SHA::7}\` |"
+            echo "| Image tag | \`${GITHUB_SHA}\` |"
+            echo "| Task definition | \`${{ steps.register.outputs.arn }}\` |"
+            echo "| Result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
