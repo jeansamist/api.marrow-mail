@@ -18,7 +18,7 @@ COPY . .
 RUN node ace build --ignore-ts-errors
 
 # ----------------------------
-# Stage 3: Production runtime
+# Stage 3: Production runtim
 # ----------------------------
 FROM base AS production
 WORKDIR /app
