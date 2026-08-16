@@ -31,10 +31,7 @@ ENVIRONMENTS = {
         "SECRET_ID": "marrow-mail",
         "APP_URL": "https://api.marrowmails.com",
         "FRONTEND_APP_URL": "https://marrowmails.com",
-        # TODO: drop the vercel.app origin once the frontend serves from
-        # marrowmails.com. It is a domain we do not own; if the Vercel project
-        # is renamed, someone else can claim it and it stays CORS-allowed.
-        "CORS_ORIGIN": "https://marrowmails.com,https://www.marrowmails.com,https://marrowmail.vercel.app",
+        "CORS_ORIGIN": "https://marrowmails.com,https://www.marrowmails.com",
         "AWS_BUCKET": "marrow-mail-s3",
         "AWS_SES_RULE_SET_NAME": "marrow-mail",
         "DB_DATABASE": "marrowmail_prod",
