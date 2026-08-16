@@ -37,7 +37,10 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://marrowmails.com,https://www.marrowmails.com,https://marrowmail.vercel.app",
         "AWS_BUCKET": "marrow-mail-s3",
         "AWS_SES_RULE_SET_NAME": "marrow-mail",
-        "DB_DATABASE": "neondb",
+        "DB_DATABASE": "marrowmail_prod",
+        "DB_SSL": "false",
+        "SMTP_PORT": "465",
+        "SMTP_SECURE": "true",
         "LOG_GROUP": "/ecs/marrow-mail-api",
         "LOG_LEVEL": "info",
         "MAIL_FROM_NAME": "Marrowmail",
@@ -52,7 +55,10 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://staging.marrowmails.com",
         "AWS_BUCKET": "marrow-mail-s3-staging",
         "AWS_SES_RULE_SET_NAME": "marrow-mail-staging",
-        "DB_DATABASE": "neondb",
+        "DB_DATABASE": "marrowmail_staging",
+        "DB_SSL": "false",
+        "SMTP_PORT": "1025",
+        "SMTP_SECURE": "false",
         "LOG_GROUP": "/ecs/marrow-mail-api-staging",
         "LOG_LEVEL": "debug",
         "MAIL_FROM_NAME": "Marrowmail (staging)",
@@ -69,7 +75,10 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://dev.marrowmails.com,http://localhost:3000,http://localhost:5173",
         "AWS_BUCKET": "marrow-mail-s3-dev",
         "AWS_SES_RULE_SET_NAME": "marrow-mail-dev",
-        "DB_DATABASE": "neondb",
+        "DB_DATABASE": "marrowmail_dev",
+        "DB_SSL": "false",
+        "SMTP_PORT": "1025",
+        "SMTP_SECURE": "false",
         "LOG_GROUP": "/ecs/marrow-mail-api-dev",
         "LOG_LEVEL": "debug",
         "MAIL_FROM_NAME": "Marrowmail (dev)",
@@ -89,6 +98,51 @@ def secret_arn(secret_id: str, region: str) -> str:
     if result.returncode != 0 or not result.stdout.strip():
         sys.exit(f"error: cannot resolve secret '{secret_id}': {result.stderr.strip()}")
     return result.stdout.strip()
+
+
+def add_mail_sink(task_def: dict, log_group: str, region: str) -> None:
+    """
+    Attach a Mailpit sidecar to non-production tasks.
+
+    The application is a mail product, so a dev or staging box that can reach a
+    real SMTP relay will eventually send real mail to a real person — a stray
+    fixture, a copied-down database, a developer testing with their own
+    address. Convention does not prevent that; topology does.
+
+    Containers in an awsvpc task share one network namespace, so the app's
+    SMTP_HOST of localhost:1025 lands inside the task and goes nowhere else.
+    Mailpit accepts and stores the message but has no relay, so there is no
+    configuration mistake that turns dev into an outbound mail server.
+
+    Marked non-essential deliberately: if the sink dies the API should keep
+    serving, because mail capture is a development convenience, not a
+    dependency of the service under test.
+    """
+    task_def["containerDefinitions"].append({
+        "name": "mailpit",
+        "image": "axllent/mailpit:v1.21",
+        "essential": False,
+        "portMappings": [
+            {"containerPort": 1025, "protocol": "tcp"},
+            {"containerPort": 8025, "protocol": "tcp"},
+        ],
+        "environment": [
+            # The app sends whatever SMTP credentials are in its secret;
+            # Mailpit takes any of them rather than failing the handshake.
+            {"name": "MP_SMTP_AUTH_ACCEPT_ANY", "value": "true"},
+            {"name": "MP_SMTP_AUTH_ALLOW_INSECURE", "value": "true"},
+            {"name": "MP_MAX_MESSAGES", "value": "5000"},
+        ],
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+                "awslogs-group": log_group,
+                "awslogs-region": region,
+                "awslogs-stream-prefix": "mailpit",
+                "awslogs-create-group": "true",
+            },
+        },
+    })
 
 
 def main() -> None:
@@ -116,6 +170,9 @@ def main() -> None:
 
     task_def = json.loads(rendered)
     task_def["containerDefinitions"][0]["image"] = args.image
+
+    if args.env != "production":
+        add_mail_sink(task_def, ENVIRONMENTS[args.env]["LOG_GROUP"], args.region)
 
     output = json.dumps(task_def, indent=2)
     if args.out == "-":
