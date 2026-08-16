@@ -78,11 +78,41 @@ const routes = {
     tokens: [{"old":"/api/auth/update-profile","type":0,"val":"api","end":""},{"old":"/api/auth/update-profile","type":0,"val":"auth","end":""},{"old":"/api/auth/update-profile","type":0,"val":"update-profile","end":""}],
     types: placeholder as Registry['auth.update_profile']['types'],
   },
+  'mail_accounts.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail-accounts',
+    tokens: [{"old":"/api/mail-accounts","type":0,"val":"api","end":""},{"old":"/api/mail-accounts","type":0,"val":"mail-accounts","end":""}],
+    types: placeholder as Registry['mail_accounts.index']['types'],
+  },
+  'mail_accounts.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/mail-accounts/:id',
+    tokens: [{"old":"/api/mail-accounts/:id","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:id","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['mail_accounts.destroy']['types'],
+  },
   'mail_account_profiles.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/mail-accounts/:mailAccountId/profile',
     tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.show']['types'],
+  },
+  'domains.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domains',
+    tokens: [{"old":"/api/domains","type":0,"val":"api","end":""},{"old":"/api/domains","type":0,"val":"domains","end":""}],
+    types: placeholder as Registry['domains.index']['types'],
+  },
+  'domains.store': {
+    methods: ["POST"],
+    pattern: '/api/domains',
+    tokens: [{"old":"/api/domains","type":0,"val":"api","end":""},{"old":"/api/domains","type":0,"val":"domains","end":""}],
+    types: placeholder as Registry['domains.store']['types'],
+  },
+  'domains.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/domains/:id',
+    tokens: [{"old":"/api/domains/:id","type":0,"val":"api","end":""},{"old":"/api/domains/:id","type":0,"val":"domains","end":""},{"old":"/api/domains/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['domains.destroy']['types'],
   },
   'onboarding.register_domain': {
     methods: ["POST"],

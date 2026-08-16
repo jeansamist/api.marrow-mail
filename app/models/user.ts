@@ -9,7 +9,10 @@ import Domain from './domain.ts'
 import MailAccount from './mail_account.ts'
 import Subscription from './subscription.ts'
 
-export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+export default class User extends compose(
+  UserSchema,
+  withAuthFinder(() => hash.use())
+) {
   static accessTokens = DbAccessTokensProvider.forModel(User)
   declare currentAccessToken?: AccessToken
 

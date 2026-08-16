@@ -151,6 +151,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_controller').default['updateProfile']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'mail_accounts.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail-accounts'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['index']>>>
+    }
+  }
+  'mail_accounts.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/mail-accounts/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['destroy']>>>
+    }
+  }
   'mail_account_profiles.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/mail-accounts/:mailAccountId/profile'
@@ -161,6 +185,42 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
+    }
+  }
+  'domains.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domains'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['index']>>>
+    }
+  }
+  'domains.store': {
+    methods: ["POST"]
+    pattern: '/api/domains'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain').createDomainValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain').createDomainValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'domains.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/domains/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['destroy']>>>
     }
   }
   'onboarding.register_domain': {

@@ -16,7 +16,12 @@ export type ScannedRoutes = {
     'auth.delete_account': { paramsTuple?: []; params?: {} }
     'auth.profile': { paramsTuple?: []; params?: {} }
     'auth.update_profile': { paramsTuple?: []; params?: {} }
+    'mail_accounts.index': { paramsTuple?: []; params?: {} }
+    'mail_accounts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
+    'domains.index': { paramsTuple?: []; params?: {} }
+    'domains.store': { paramsTuple?: []; params?: {} }
+    'domains.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -65,7 +70,9 @@ export type ScannedRoutes = {
   }
   GET: {
     'auth.profile': { paramsTuple?: []; params?: {} }
+    'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
+    'domains.index': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -85,7 +92,9 @@ export type ScannedRoutes = {
   }
   HEAD: {
     'auth.profile': { paramsTuple?: []; params?: {} }
+    'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
+    'domains.index': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -114,6 +123,7 @@ export type ScannedRoutes = {
     'auth.reset_password': { paramsTuple?: []; params?: {} }
     'auth.logout': { paramsTuple?: []; params?: {} }
     'auth.delete_account': { paramsTuple?: []; params?: {} }
+    'domains.store': { paramsTuple?: []; params?: {} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
@@ -143,6 +153,8 @@ export type ScannedRoutes = {
     'signatures.update': { paramsTuple?: []; params?: {} }
   }
   DELETE: {
+    'mail_accounts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'mail.delete_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
