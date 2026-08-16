@@ -12,7 +12,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.ts'
 
 router.get('/', () => {
-  return { hello: 'world' }
+  return { hello: 'marrowmails' }
 })
 
 // SES inbound webhook — no auth, public endpoint for AWS SNS
