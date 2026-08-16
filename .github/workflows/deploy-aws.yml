@@ -1,58 +1,66 @@
 name: Build, Push, and Deploy to AWS
 
 # ---------------------------------------------------------------------------
+# Branch -> environment
+#
+#   main     -> production   api.marrowmails.com
+#   staging  -> staging      staging-api.marrowmails.com
+#   dev      -> dev          dev-api.marrowmails.com
+#
+# All three run in the same ECS cluster behind the same ALB, split by
+# host-header rules on the HTTPS:443 listener. Each environment has its own
+# task definition family, target group, log group, Secrets Manager secret and
+# Neon database. The container image is identical across all three — only
+# configuration differs, which is what makes a staging deploy a meaningful
+# rehearsal for production.
+#
 # Required GitHub secrets
 #   AWS_ACCOUNT_ID          e.g. 123456789012
 #   AWS_REGION              e.g. us-east-1
 #   AWS_ACCESS_KEY_ID       deploy user's key
 #   AWS_SECRET_ACCESS_KEY   deploy user's secret
-#   ECR_REPOSITORY          e.g. marrow-mail-api
-#   ECS_CLUSTER             cluster name or ARN
-#   ECS_SERVICE             service name
+#   ECR_REPOSITORY          e.g. api-marrowmail
+#   ECS_CLUSTER             cluster name or ARN (shared by all environments)
 #   ECS_SUBNETS             comma-separated subnet IDs for the migration task
-#                           (same subnets the service runs in)
-#   ECS_SECURITY_GROUPS     comma-separated security group IDs for the migration
-#                           task (must be allowed to reach the database)
+#   ECS_SECURITY_GROUPS     comma-separated SG IDs for the migration task.
+#                           Must be the TASKS security group (marrowmail-tasks-sg),
+#                           not the ALB one, and must be able to reach Neon.
 #
 # Optional repository variable
-#   ECS_ASSIGN_PUBLIC_IP    ENABLED | DISABLED  (default DISABLED — set ENABLED
-#                           only if the subnets are public and the task needs a
-#                           route to ECR/Secrets Manager without a NAT gateway)
+#   ECS_ASSIGN_PUBLIC_IP    ENABLED | DISABLED (default ENABLED — the subnets
+#                           are public and have no NAT gateway, so tasks need a
+#                           public IP to reach ECR and Secrets Manager)
 #
 # IAM permissions for the deploy user:
 #   ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:InitiateLayerUpload,
 #   ecr:UploadLayerPart, ecr:CompleteLayerUpload, ecr:PutImage, ecr:BatchGetImage
 #   ecs:RegisterTaskDefinition, ecs:RunTask, ecs:DescribeTasks,
 #   ecs:UpdateService, ecs:DescribeServices
-#   iam:PassRole for the task and execution roles in .aws/task-definition.json
-#   logs:GetLogEvents on /ecs/marrow-mail-api (to surface migration failures)
-#
-# The task execution role needs, on top of AmazonECSTaskExecutionRolePolicy:
-#   secretsmanager:GetSecretValue on each secret ARN in the task definition, and
-#   logs:CreateLogGroup / CreateLogStream / PutLogEvents.
-#   Tail logs with: aws logs tail /ecs/marrow-mail-api --follow
-#
-# Web access (ALB target group, security groups, DNS) is assumed to already be
-# wired to the ECS service on container port 80.
+#   secretsmanager:DescribeSecret on each environment's secret
+#   iam:PassRole for the task and execution roles
+#   logs:GetLogEvents on /ecs/marrow-mail-api*
 #
 # NOTE: the task definition deliberately has no container-level `healthCheck`.
-# The ALB target group already health-checks the container, and a container health
-# check would also run inside the one-off migration task below — where nothing is
-# listening on port 80 — and could get that task killed mid-migration.
+# The ALB target group already health-checks the container, and a container
+# health check would also run inside the one-off migration task below — where
+# nothing is listening on port 80 — and could kill that task mid-migration.
 #
-# NOTE: .aws/task-definition.json contains literal "<AWS_ACCOUNT_ID>" placeholders.
-# They are substituted at deploy time from the AWS_ACCOUNT_ID secret — never
-# hardcode a real account ID in the committed file.
+# NOTE: .aws/task-definition.json is a TEMPLATE full of <PLACEHOLDER> tokens.
+# .aws/render-task-def.py fills them in per environment and resolves the
+# Secrets Manager ARN at run time. Never hardcode an account ID or a secret
+# ARN suffix in the committed file.
 # ---------------------------------------------------------------------------
 
 on:
   push:
     branches:
       - main
+      - staging
+      - dev
   workflow_dispatch:
 
-# One deploy at a time. Never cancel a run mid-deploy — a half-applied migration
-# or a partial service update is worse than waiting.
+# One deploy at a time per environment. Never cancel mid-deploy — a
+# half-applied migration or a partial service update is worse than waiting.
 concurrency:
   group: deploy-ecs-${{ github.ref }}
   cancel-in-progress: false
@@ -62,8 +70,6 @@ permissions:
 
 env:
   CONTAINER_NAME: api-marrowmail
-  ECS_TASK_DEFINITION: .aws/task-definition.json
-  LOG_GROUP: /ecs/marrow-mail-api
 
 jobs:
   deploy:
@@ -74,6 +80,44 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Single source of truth for which environment this branch deploys to.
+      # Everything downstream reads these outputs.
+      - name: Resolve environment from branch
+        id: envmap
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            main)
+              ENVIRONMENT=production
+              SERVICE=ApiMarrowmail-service-yx9mklbj
+              LOG_GROUP=/ecs/marrow-mail-api
+              URL=https://api.marrowmails.com
+              ;;
+            staging)
+              ENVIRONMENT=staging
+              SERVICE=marrowmail-staging
+              LOG_GROUP=/ecs/marrow-mail-api-staging
+              URL=https://staging-api.marrowmails.com
+              ;;
+            dev)
+              ENVIRONMENT=dev
+              SERVICE=marrowmail-dev
+              LOG_GROUP=/ecs/marrow-mail-api-dev
+              URL=https://dev-api.marrowmails.com
+              ;;
+            *)
+              echo "::error::Branch ${GITHUB_REF_NAME} has no environment mapping"
+              exit 1
+              ;;
+          esac
+          {
+            echo "environment=$ENVIRONMENT"
+            echo "service=$SERVICE"
+            echo "log_group=$LOG_GROUP"
+            echo "url=$URL"
+          } >> "$GITHUB_OUTPUT"
+          echo "Deploying ${GITHUB_REF_NAME} -> $ENVIRONMENT ($URL)"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -92,6 +136,9 @@ jobs:
       # Layer caching via the GitHub Actions cache. The dependency-install layer
       # is only rebuilt when package.json / pnpm-lock.yaml change, which is the
       # difference between a ~1 minute and a ~5 minute build.
+      #
+      # Cache scope is per-environment so a dev build cannot evict the cache
+      # that production builds depend on.
       - name: Build and push image to Amazon ECR
         id: build-image
         uses: docker/build-push-action@v6
@@ -102,32 +149,35 @@ jobs:
           provenance: false
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.envmap.outputs.environment }}
+          cache-from: type=gha,scope=${{ steps.envmap.outputs.environment }}
+          cache-to: type=gha,mode=max,scope=${{ steps.envmap.outputs.environment }}
 
-      - name: Substitute AWS account ID in task definition
+      - name: Render task definition
+        id: task-def
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          ENVIRONMENT: ${{ steps.envmap.outputs.environment }}
+          IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
         run: |
+          set -euo pipefail
           test -n "$AWS_ACCOUNT_ID" || { echo "::error::AWS_ACCOUNT_ID secret is empty"; exit 1; }
-          sed -i "s/<AWS_ACCOUNT_ID>/$AWS_ACCOUNT_ID/g" "$ECS_TASK_DEFINITION"
+          python3 .aws/render-task-def.py \
+            --env "$ENVIRONMENT" \
+            --account-id "$AWS_ACCOUNT_ID" \
+            --image "$IMAGE" \
+            --region "${{ secrets.AWS_REGION }}" \
+            --out /tmp/task-definition.json
+          echo "path=/tmp/task-definition.json" >> "$GITHUB_OUTPUT"
 
-      - name: Fill in the new image ID in the ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ${{ env.ECS_TASK_DEFINITION }}
-          container-name: ${{ env.CONTAINER_NAME }}
-          image: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-
-      # Registered explicitly (rather than by the deploy action) so the exact
-      # same revision is used to run migrations and then to update the service.
+      # Registered explicitly so the exact same revision is used to run
+      # migrations and then to update the service.
       - name: Register task definition
         id: register
         run: |
+          set -euo pipefail
           ARN=$(aws ecs register-task-definition \
-            --cli-input-json "file://${{ steps.task-def.outputs.task-definition }}" \
+            --cli-input-json "file://${{ steps.task-def.outputs.path }}" \
             --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "Registered $ARN"
           echo "arn=$ARN" >> "$GITHUB_OUTPUT"
@@ -147,7 +197,8 @@ jobs:
           ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
           ECS_SUBNETS: ${{ secrets.ECS_SUBNETS }}
           ECS_SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUPS }}
-          ASSIGN_PUBLIC_IP: ${{ vars.ECS_ASSIGN_PUBLIC_IP || 'DISABLED' }}
+          ASSIGN_PUBLIC_IP: ${{ vars.ECS_ASSIGN_PUBLIC_IP || 'ENABLED' }}
+          LOG_GROUP: ${{ steps.envmap.outputs.log_group }}
           MAX_ATTEMPTS: '3'
         run: |
           set -euo pipefail
@@ -212,7 +263,7 @@ jobs:
         env:
           TASK_DEF_ARN: ${{ steps.register.outputs.arn }}
           ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
-          ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+          ECS_SERVICE: ${{ steps.envmap.outputs.service }}
         run: |
           set -euo pipefail
           aws ecs update-service \
@@ -225,6 +276,20 @@ jobs:
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
           echo "Deployed $TASK_DEF_ARN"
 
+      - name: Smoke test
+        env:
+          URL: ${{ steps.envmap.outputs.url }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 10); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$URL/" || echo 000)
+            echo "attempt $i: $CODE"
+            [ "$CODE" = "200" ] && { echo "$URL is healthy"; exit 0; }
+            sleep 10
+          done
+          echo "::error::$URL did not return 200 after the deploy"
+          exit 1
+
       - name: Summary
         if: always()
         run: |
@@ -233,8 +298,10 @@ jobs:
             echo ""
             echo "| | |"
             echo "|---|---|"
+            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
+            echo "| Environment | \`${{ steps.envmap.outputs.environment }}\` |"
+            echo "| URL | ${{ steps.envmap.outputs.url }} |"
             echo "| Commit | \`${GITHUB_SHA::7}\` |"
-            echo "| Image tag | \`${GITHUB_SHA}\` |"
             echo "| Task definition | \`${{ steps.register.outputs.arn }}\` |"
             echo "| Result | ${{ job.status }} |"
           } >> "$GITHUB_STEP_SUMMARY"
