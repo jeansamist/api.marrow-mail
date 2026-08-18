@@ -10,11 +10,11 @@ test.group('resolveCurrencyForCountry', () => {
     assert.equal(resolveCurrencyForCountry('SN'), 'XOF')
   })
 
-  test('unknown country falls back to EUR', ({ assert }) => {
-    assert.equal(resolveCurrencyForCountry('US'), 'EUR')
+  test('unknown country falls back to USD', ({ assert }) => {
+    assert.equal(resolveCurrencyForCountry('US'), 'USD')
   })
 
-  test('null country falls back to EUR', ({ assert }) => {
-    assert.equal(resolveCurrencyForCountry(null), 'EUR')
+  test('null country falls back to USD', ({ assert }) => {
+    assert.equal(resolveCurrencyForCountry(null), 'USD')
   })
 })
