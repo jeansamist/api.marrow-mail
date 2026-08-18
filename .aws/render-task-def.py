@@ -42,7 +42,7 @@ ENVIRONMENTS = {
         "LOG_LEVEL": "info",
         "MAIL_FROM_NAME": "Marrowmail",
         "MAIL_FROM_ADDRESS": "no-reply@marrowmails.com",
-        "ELGIOPAY_API_BASE_URL": "https://api.elgiopay.com",
+        "ELGIOPAY_API_BASE_URL": "https://sandbox-api.elgiopay.com",
     },
     "staging": {
         "FAMILY_SUFFIX": "-staging",
