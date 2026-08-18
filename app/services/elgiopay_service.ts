@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export interface CreateElgiopayPaymentPayload {
   amount: number
-  currency: 'XAF' | 'XOF' | 'EUR'
+  currency: 'XAF' | 'XOF' | 'USD'
   payment_method: 'mtn_mobile_money' | 'orange_money'
   customer_phone: string
   customer_name: string
