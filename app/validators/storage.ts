@@ -13,3 +13,9 @@ export const createUploadLinksValidator = vine.create(
     files: vine.array(fileDescriptor).minLength(1).maxLength(20),
   })
 )
+
+export const updateStorageQuotaValidator = vine.create(
+  vine.object({
+    quotaBytes: vine.number().min(0),
+  })
+)

@@ -43,6 +43,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/elgiopay_webhook_controller').default['handle']>>>
     }
   }
+  'public_domains.public_branding': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domains/:name/public-branding'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { name: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/public_domains_controller').default['publicBranding']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/public_domains_controller').default['publicBranding']>>>
+    }
+  }
+  'public_domains.by_hostname': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domains/by-hostname/:hostname'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { hostname: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/public_domains_controller').default['byHostname']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/public_domains_controller').default['byHostname']>>>
+    }
+  }
   'auth.sign_up': {
     methods: ["POST"]
     pattern: '/api/auth/sign-up'
@@ -187,6 +211,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
     }
   }
+  'mail_accounts.update_storage_quota': {
+    methods: ["PUT"]
+    pattern: '/api/mail-accounts/:id/storage-quota'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/storage').updateStorageQuotaValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/storage').updateStorageQuotaValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['updateStorageQuota']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['updateStorageQuota']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_accounts.toggle_active': {
+    methods: ["PUT"]
+    pattern: '/api/mail-accounts/:id/toggle-active'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['toggleActive']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['toggleActive']>>>
+    }
+  }
+  'mail_accounts.resend_invite': {
+    methods: ["POST"]
+    pattern: '/api/mail-accounts/:id/resend-invite'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['resendInvite']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['resendInvite']>>>
+    }
+  }
   'domains.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/domains'
@@ -221,6 +281,54 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['destroy']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['destroy']>>>
+    }
+  }
+  'domains.get_branding': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domains/:id/branding'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['getBranding']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['getBranding']>>>
+    }
+  }
+  'domains.update_branding': {
+    methods: ["PUT"]
+    pattern: '/api/domains/:id/branding'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_branding').updateDomainBrandingValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_branding').updateDomainBrandingValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['updateBranding']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['updateBranding']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'domains.create_logo_upload_link': {
+    methods: ["POST"]
+    pattern: '/api/domains/:id/branding/logo-upload-link'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_branding').createLogoUploadLinkValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_branding').createLogoUploadLinkValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['createLogoUploadLink']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['createLogoUploadLink']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage_overview.usage': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/storage/usage'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['usage']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['usage']>>>
     }
   }
   'onboarding.register_domain': {

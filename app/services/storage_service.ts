@@ -1,6 +1,7 @@
 import FileRepository from '#repositories/file_repository'
 import { AuthMailAccountService } from '#services/auth_mail_account_service'
 import { S3Service } from '#services/s3_service'
+import { StorageOverviewService } from '#services/storage_overview_service'
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
@@ -10,16 +11,20 @@ export class StorageService {
   constructor(
     private readonly s3Service: S3Service,
     private readonly authMailAccountService: AuthMailAccountService,
-    private readonly fileRepository: FileRepository
+    private readonly fileRepository: FileRepository,
+    private readonly storageOverviewService: StorageOverviewService
   ) {}
 
   async createUploadLink(data: { originalName: string; mimeType?: string; size?: number }) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    await this.storageOverviewService.assertWithinQuota(mailAccount.id, data.size ?? 0)
     return this.buildUploadLink(mailAccount.id, data)
   }
 
   async createUploadLinks(files: { originalName: string; mimeType?: string; size?: number }[]) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    const totalSize = files.reduce((sum, file) => sum + (file.size ?? 0), 0)
+    await this.storageOverviewService.assertWithinQuota(mailAccount.id, totalSize)
     return Promise.all(files.map((file) => this.buildUploadLink(mailAccount.id, file)))
   }
 

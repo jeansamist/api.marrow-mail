@@ -72,6 +72,28 @@ export class MailAccountService {
     await this.repository.delete(mailAccount)
   }
 
+  async toggleActive(id: number): Promise<MailAccount> {
+    const mailAccount = await this.repository.findById(id)
+    if (!mailAccount) {
+      throw httpError(404, 'Mail account not found')
+    }
+    this.checkOwnership(mailAccount)
+    return this.repository.update(mailAccount, { active: !mailAccount.active })
+  }
+
+  async resendInvite(id: number): Promise<void> {
+    const mailAccount = await this.repository.findById(id)
+    if (!mailAccount) {
+      throw httpError(404, 'Mail account not found')
+    }
+    this.checkOwnership(mailAccount)
+    if (!mailAccount.ownerEmail) {
+      throw httpError(400, 'This mail account has no owner email to send the invite to')
+    }
+    await mailAccount.load('domain')
+    this.queueMailAccountCreatedNotification(mailAccount, mailAccount.ownerEmail)
+  }
+
   private queueMailAccountCreatedNotification(mailAccount: MailAccount, ownerEmail: string) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
     const setupLink = `${env.get('FRONTEND_APP_URL')}/en/domain/${mailAccount.domain.name}/setup-profile?cuid=${mailAccount.cuid}`
@@ -110,6 +132,8 @@ export class MailAccountService {
       twoFactorSecret: null,
       twoFactorEnabled: false,
       twoFactorBackupCodes: null,
+      active: true,
+      storageQuotaBytes: null,
     })
 
     if (data.ownerEmail) {
@@ -145,6 +169,8 @@ export class MailAccountService {
           twoFactorSecret: null,
           twoFactorEnabled: false,
           twoFactorBackupCodes: null,
+          active: true,
+          storageQuotaBytes: null,
         }
       })
     )

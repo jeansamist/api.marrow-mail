@@ -34,6 +34,10 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://marrowmails.com,https://www.marrowmails.com",
         "AWS_BUCKET": "marrow-mail-s3",
         "AWS_SES_RULE_SET_NAME": "marrow-mail",
+        # Vercel's project-specific anycast IP shown on the frontend project's
+        # domain card (Settings > Domains) — the same Vercel project serves
+        # all three environments, so this IP is shared across them too.
+        "CUSTOM_LOGIN_HOSTNAME_TARGET_IP": "216.198.79.1",
         "DB_DATABASE": "marrowmail_prod",
         "DB_SSL": "false",
         "SMTP_PORT": "465",
@@ -52,6 +56,7 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://staging.marrowmails.com",
         "AWS_BUCKET": "marrow-mail-s3-staging",
         "AWS_SES_RULE_SET_NAME": "marrow-mail-staging",
+        "CUSTOM_LOGIN_HOSTNAME_TARGET_IP": "216.198.79.1",
         "DB_DATABASE": "marrowmail_staging",
         "DB_SSL": "false",
         "SMTP_PORT": "1025",
@@ -72,6 +77,7 @@ ENVIRONMENTS = {
         "CORS_ORIGIN": "https://dev.marrowmails.com,http://localhost:3000,http://localhost:5173",
         "AWS_BUCKET": "marrow-mail-s3-dev",
         "AWS_SES_RULE_SET_NAME": "marrow-mail-dev",
+        "CUSTOM_LOGIN_HOSTNAME_TARGET_IP": "216.198.79.1",
         "DB_DATABASE": "marrowmail_dev",
         "DB_SSL": "false",
         "SMTP_PORT": "1025",

@@ -104,4 +104,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   ELGIOPAY_API_BASE_URL: Env.schema.string(),
   ELGIOPAY_SECRET_KEY: Env.schema.string(),
   ELGIOPAY_WEBHOOK_SECRET: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | The edge IP that a customer's custom login hostname
+  | (e.g. mail.<domain>) must resolve to via an A record.
+  |----------------------------------------------------------
+  */
+  CUSTOM_LOGIN_HOSTNAME_TARGET_IP: Env.schema.string.optional(),
 })

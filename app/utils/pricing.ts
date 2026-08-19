@@ -3,6 +3,9 @@
 
 export const PLAN_BASE_PRICE_XAF = { core: 2500, plus: 3500 } as const
 
+// Applied when a mail account has no explicit storageQuotaBytes override.
+export const DEFAULT_MAILBOX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024
+
 export type PlanId = keyof typeof PLAN_BASE_PRICE_XAF
 
 function getDurationDiscount(months: number): number {
