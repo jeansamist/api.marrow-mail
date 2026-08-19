@@ -15,9 +15,11 @@ export const controllers = {
   Mail: () => import('#controllers/mail_controller'),
   MailForwarding: () => import('#controllers/mail_forwarding_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
+  PublicDomains: () => import('#controllers/public_domains_controller'),
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
   Signatures: () => import('#controllers/signatures_controller'),
   Storage: () => import('#controllers/storage_controller'),
+  StorageOverview: () => import('#controllers/storage_overview_controller'),
   StripeWebhook: () => import('#controllers/stripe_webhook_controller'),
   Subscriptions: () => import('#controllers/subscriptions_controller'),
 }

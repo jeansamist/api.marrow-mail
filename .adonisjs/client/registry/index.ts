@@ -24,6 +24,18 @@ const routes = {
     tokens: [{"old":"/api/webhooks/elgiopay","type":0,"val":"api","end":""},{"old":"/api/webhooks/elgiopay","type":0,"val":"webhooks","end":""},{"old":"/api/webhooks/elgiopay","type":0,"val":"elgiopay","end":""}],
     types: placeholder as Registry['elgiopay_webhook']['types'],
   },
+  'public_domains.public_branding': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domains/:name/public-branding',
+    tokens: [{"old":"/api/domains/:name/public-branding","type":0,"val":"api","end":""},{"old":"/api/domains/:name/public-branding","type":0,"val":"domains","end":""},{"old":"/api/domains/:name/public-branding","type":1,"val":"name","end":""},{"old":"/api/domains/:name/public-branding","type":0,"val":"public-branding","end":""}],
+    types: placeholder as Registry['public_domains.public_branding']['types'],
+  },
+  'public_domains.by_hostname': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domains/by-hostname/:hostname',
+    tokens: [{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"api","end":""},{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"domains","end":""},{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"by-hostname","end":""},{"old":"/api/domains/by-hostname/:hostname","type":1,"val":"hostname","end":""}],
+    types: placeholder as Registry['public_domains.by_hostname']['types'],
+  },
   'auth.sign_up': {
     methods: ["POST"],
     pattern: '/api/auth/sign-up',
@@ -96,6 +108,24 @@ const routes = {
     tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.show']['types'],
   },
+  'mail_accounts.update_storage_quota': {
+    methods: ["PUT"],
+    pattern: '/api/mail-accounts/:id/storage-quota',
+    tokens: [{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":1,"val":"id","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"storage-quota","end":""}],
+    types: placeholder as Registry['mail_accounts.update_storage_quota']['types'],
+  },
+  'mail_accounts.toggle_active': {
+    methods: ["PUT"],
+    pattern: '/api/mail-accounts/:id/toggle-active',
+    tokens: [{"old":"/api/mail-accounts/:id/toggle-active","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:id/toggle-active","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:id/toggle-active","type":1,"val":"id","end":""},{"old":"/api/mail-accounts/:id/toggle-active","type":0,"val":"toggle-active","end":""}],
+    types: placeholder as Registry['mail_accounts.toggle_active']['types'],
+  },
+  'mail_accounts.resend_invite': {
+    methods: ["POST"],
+    pattern: '/api/mail-accounts/:id/resend-invite',
+    tokens: [{"old":"/api/mail-accounts/:id/resend-invite","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:id/resend-invite","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:id/resend-invite","type":1,"val":"id","end":""},{"old":"/api/mail-accounts/:id/resend-invite","type":0,"val":"resend-invite","end":""}],
+    types: placeholder as Registry['mail_accounts.resend_invite']['types'],
+  },
   'domains.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/domains',
@@ -113,6 +143,30 @@ const routes = {
     pattern: '/api/domains/:id',
     tokens: [{"old":"/api/domains/:id","type":0,"val":"api","end":""},{"old":"/api/domains/:id","type":0,"val":"domains","end":""},{"old":"/api/domains/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['domains.destroy']['types'],
+  },
+  'domains.get_branding': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domains/:id/branding',
+    tokens: [{"old":"/api/domains/:id/branding","type":0,"val":"api","end":""},{"old":"/api/domains/:id/branding","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/branding","type":1,"val":"id","end":""},{"old":"/api/domains/:id/branding","type":0,"val":"branding","end":""}],
+    types: placeholder as Registry['domains.get_branding']['types'],
+  },
+  'domains.update_branding': {
+    methods: ["PUT"],
+    pattern: '/api/domains/:id/branding',
+    tokens: [{"old":"/api/domains/:id/branding","type":0,"val":"api","end":""},{"old":"/api/domains/:id/branding","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/branding","type":1,"val":"id","end":""},{"old":"/api/domains/:id/branding","type":0,"val":"branding","end":""}],
+    types: placeholder as Registry['domains.update_branding']['types'],
+  },
+  'domains.create_logo_upload_link': {
+    methods: ["POST"],
+    pattern: '/api/domains/:id/branding/logo-upload-link',
+    tokens: [{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"api","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":1,"val":"id","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"branding","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"logo-upload-link","end":""}],
+    types: placeholder as Registry['domains.create_logo_upload_link']['types'],
+  },
+  'storage_overview.usage': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/storage/usage',
+    tokens: [{"old":"/api/storage/usage","type":0,"val":"api","end":""},{"old":"/api/storage/usage","type":0,"val":"storage","end":""},{"old":"/api/storage/usage","type":0,"val":"usage","end":""}],
+    types: placeholder as Registry['storage_overview.usage']['types'],
   },
   'onboarding.register_domain': {
     methods: ["POST"],
