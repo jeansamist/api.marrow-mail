@@ -70,6 +70,23 @@ export default class MailRepository {
       .orderBy('created_at', 'desc')
   }
 
+  async findTrashByMailAccount(mailAccountId: number): Promise<Mail[]> {
+    return this.model
+      .query()
+      .where('mail_account_id', mailAccountId)
+      .where('deleted', true)
+      .orderBy('updated_at', 'desc')
+  }
+
+  async findSpamByMailAccount(mailAccountId: number): Promise<Mail[]> {
+    return this.model
+      .query()
+      .where('mail_account_id', mailAccountId)
+      .where('is_spam', true)
+      .where('deleted', false)
+      .orderBy('created_at', 'desc')
+  }
+
   async update(mail: Mail, data: Partial<ModelProps<MailSchema>>): Promise<Mail> {
     return mail.merge(data).save()
   }

@@ -13,6 +13,7 @@ export const controllers = {
   MailAccountProfiles: () => import('#controllers/mail_account_profiles_controller'),
   MailAccounts: () => import('#controllers/mail_accounts_controller'),
   Mail: () => import('#controllers/mail_controller'),
+  MailForwarding: () => import('#controllers/mail_forwarding_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
   Signatures: () => import('#controllers/signatures_controller'),

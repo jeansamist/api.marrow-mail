@@ -20,6 +20,7 @@ export default class MailTransformer extends BaseTransformer<Mail> {
       'attachmentIds',
       'important',
       'isSpam',
+      'isRead',
       'deleted',
       'folderId',
       'scheduledAt',

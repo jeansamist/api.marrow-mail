@@ -27,7 +27,7 @@ export default class MailAccountRepository {
   }
   async update(
     mailAccount: MailAccount,
-    data: Partial<ModelProps<MailAccount>>
+    data: Partial<ModelProps<MailAccountSchema>>
   ): Promise<MailAccount> {
     return mailAccount.merge(data).save()
   }
@@ -55,6 +55,10 @@ export default class MailAccountRepository {
         query.andWhere('name', domainName)
       })
       .first()
+  }
+
+  findByForwardingVerificationToken(token: string): Promise<MailAccount | null> {
+    return this.model.query().where('forwarding_verification_token', token).first()
   }
 
   async countByUserId(userId: number): Promise<number> {

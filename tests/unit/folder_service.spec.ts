@@ -119,6 +119,7 @@ test.group('FolderService', (group) => {
       attachmentIds: null,
       important: false,
       isSpam: false,
+      isRead: true,
       deleted: false,
       folderId: folder.id,
       scheduledAt: null,

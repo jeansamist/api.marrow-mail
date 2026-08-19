@@ -18,6 +18,7 @@ interface SendMailPayload {
   subject: string
   bodyHtml?: string
   bodyText?: string
+  attachmentIds?: number[]
 }
 
 interface DraftMailPayload {
@@ -28,6 +29,7 @@ interface DraftMailPayload {
   subject?: string
   bodyHtml?: string
   bodyText?: string
+  attachmentIds?: number[]
 }
 
 interface ForwardMailPayload {
@@ -71,9 +73,10 @@ export class MailService {
       status: 'queued',
       direction: 'sent',
       sesMessageId: null,
-      attachmentIds: null,
+      attachmentIds: data.attachmentIds ?? null,
       important: false,
       isSpam: false,
+      isRead: true,
       deleted: false,
       folderId: null,
       scheduledAt: null,
@@ -121,9 +124,10 @@ export class MailService {
       status: 'draft',
       direction: 'sent',
       sesMessageId: null,
-      attachmentIds: null,
+      attachmentIds: data.attachmentIds ?? null,
       important: false,
       isSpam: false,
+      isRead: true,
       deleted: false,
       folderId: null,
       scheduledAt: null,
@@ -141,6 +145,7 @@ export class MailService {
       ...(data.subject !== undefined && { subject: data.subject }),
       ...(data.bodyHtml !== undefined && { bodyHtml: data.bodyHtml }),
       ...(data.bodyText !== undefined && { bodyText: data.bodyText }),
+      ...(data.attachmentIds !== undefined && { attachmentIds: data.attachmentIds }),
     })
   }
 
@@ -198,6 +203,36 @@ export class MailService {
   async markImportant(id: number, important: boolean) {
     const { mail } = await this.getOwnedMail(id)
     return this.mailRepository.update(mail, { important })
+  }
+
+  async markRead(id: number, isRead: boolean) {
+    const { mail } = await this.getOwnedMail(id)
+    return this.mailRepository.update(mail, { isRead })
+  }
+
+  async trashMail(id: number) {
+    const { mail } = await this.getOwnedMail(id)
+    return this.mailRepository.update(mail, { deleted: true })
+  }
+
+  async restoreMail(id: number) {
+    const { mail } = await this.getOwnedTrashedMail(id)
+    return this.mailRepository.update(mail, { deleted: false })
+  }
+
+  async permanentlyDeleteMail(id: number) {
+    const { mail } = await this.getOwnedTrashedMail(id)
+    await this.mailRepository.delete(mail)
+  }
+
+  async fetchTrash() {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    return this.mailRepository.findTrashByMailAccount(mailAccount.id)
+  }
+
+  async fetchSpam() {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    return this.mailRepository.findSpamByMailAccount(mailAccount.id)
   }
 
   async forwardMail(id: number, data: ForwardMailPayload) {
@@ -264,9 +299,10 @@ export class MailService {
       status: 'scheduled',
       direction: 'sent',
       sesMessageId: null,
-      attachmentIds: null,
+      attachmentIds: data.attachmentIds ?? null,
       important: false,
       isSpam: false,
+      isRead: true,
       deleted: false,
       folderId: null,
       scheduledAt: data.scheduledAt,
@@ -309,6 +345,15 @@ export class MailService {
     const { mailAccount, mail } = await this.getOwnedMail(id)
     if (mail.status !== 'draft') throw httpError(404, 'Draft not found')
     return { mailAccount, draft: mail }
+  }
+
+  private async getOwnedTrashedMail(id: number): Promise<{ mailAccount: MailAccount; mail: Mail }> {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    const mail = await this.mailRepository.findById(id)
+    if (!mail || mail.mailAccountId !== mailAccount.id || !mail.deleted) {
+      throw httpError(404, 'Mail not found in trash')
+    }
+    return { mailAccount, mail }
   }
 
   private async buildFromDisplay(mailAccount: MailAccount) {

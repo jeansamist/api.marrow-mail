@@ -1,10 +1,13 @@
+import type MailAccount from '#models/mail_account'
 import FileRepository from '#repositories/file_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
 import { S3Service } from '#services/s3_service'
+import { SESService } from '#services/ses_service'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
-import { simpleParser } from 'mailparser'
+import { simpleParser, type ParsedMail } from 'mailparser'
+import CronManager from '../managers/crons_manager.js'
 
 interface SesReceiptNotification {
   notificationType: 'Received'
@@ -33,7 +36,9 @@ export class EmailReceivingService {
     private readonly mailAccountRepository: MailAccountRepository,
     private readonly fileRepository: FileRepository,
     private readonly s3Service: S3Service,
-    private readonly logger: Logger
+    private readonly sesService: SESService,
+    private readonly logger: Logger,
+    private readonly cronManager: CronManager
   ) {}
 
   async processIncomingEmail(notification: SesReceiptNotification) {
@@ -58,6 +63,17 @@ export class EmailReceivingService {
       )
       if (!mailAccount) {
         this.logger.warn(`No mail account found for ${recipientEmail}`)
+        continue
+      }
+
+      const isForwarding = Boolean(mailAccount.forwardingEmail && mailAccount.forwardingVerified)
+      if (isForwarding) {
+        this.queueForward(mailAccount, parsed)
+      }
+      if (isForwarding && !mailAccount.keepForwardedCopy) {
+        this.logger.info(
+          `Forwarded ${recipientEmail} to ${mailAccount.forwardingEmail} without keeping a copy`
+        )
         continue
       }
 
@@ -107,6 +123,7 @@ export class EmailReceivingService {
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : null,
         important: false,
         isSpam: false,
+        isRead: false,
         deleted: false,
         folderId: null,
         scheduledAt: null,
@@ -116,5 +133,47 @@ export class EmailReceivingService {
         `Mail record created for ${recipientEmail} — ${attachmentIds.length} attachment(s)`
       )
     }
+  }
+
+  /**
+   * Relays a received email's text/html content to the mailbox's verified
+   * forwarding address. Attachments aren't carried over — SES's Simple
+   * content API used here doesn't support them (same limitation as
+   * MailService.forwardMail's user-initiated forwards).
+   */
+  private queueForward(mailAccount: MailAccount, parsed: ParsedMail) {
+    this.cronManager.addQueueJob(
+      'mails',
+      async () => {
+        await mailAccount.load('domain')
+        const originalFrom = parsed.from?.text ?? 'unknown sender'
+        const forwardedHeaderText = [
+          '---------- Forwarded message ----------',
+          `From: ${originalFrom}`,
+          parsed.subject ? `Subject: ${parsed.subject}` : null,
+        ]
+          .filter((line): line is string => !!line)
+          .join('\n')
+
+        await this.sesService.sendRichEmail({
+          from: `${mailAccount.username}@${mailAccount.domain.name}`,
+          to: [mailAccount.forwardingEmail!],
+          replyTo: parsed.from?.value?.[0]?.address,
+          subject: parsed.subject ? `Fwd: ${parsed.subject}` : 'Fwd: (no subject)',
+          bodyText: [forwardedHeaderText, parsed.text].filter((part): part is string => !!part).join('\n\n'),
+          bodyHtml: parsed.html
+            ? `<p>${forwardedHeaderText.replace(/\n/g, '<br/>')}</p>${parsed.html}`
+            : undefined,
+        })
+        this.logger.info(`Forwarded mail to ${mailAccount.forwardingEmail}`)
+      },
+      {
+        retries: 2,
+        retryDelayMs: 2000,
+        onRetriesExhausted: async () => {
+          this.logger.error(`Failed to forward mail to ${mailAccount.forwardingEmail}`)
+        },
+      }
+    )
   }
 }

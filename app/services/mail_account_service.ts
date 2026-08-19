@@ -102,6 +102,14 @@ export class MailAccountService {
       setuped: false,
       resetPasswordToken: null,
       resetPasswordTokenExpiresAt: null,
+      forwardingEmail: null,
+      forwardingVerified: false,
+      forwardingVerificationToken: null,
+      forwardingVerificationTokenExpiresAt: null,
+      keepForwardedCopy: true,
+      twoFactorSecret: null,
+      twoFactorEnabled: false,
+      twoFactorBackupCodes: null,
     })
 
     if (data.ownerEmail) {
@@ -129,6 +137,14 @@ export class MailAccountService {
           setuped: false,
           resetPasswordToken: null,
           resetPasswordTokenExpiresAt: null,
+          forwardingEmail: null,
+          forwardingVerified: false,
+          forwardingVerificationToken: null,
+          forwardingVerificationTokenExpiresAt: null,
+          keepForwardedCopy: true,
+          twoFactorSecret: null,
+          twoFactorEnabled: false,
+          twoFactorBackupCodes: null,
         }
       })
     )

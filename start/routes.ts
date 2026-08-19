@@ -79,12 +79,31 @@ router
         router
           .group(() => {
             router.post('/login', [controllers.AuthMailAccounts, 'login'])
+            router.post('/verify-2fa', [controllers.AuthMailAccounts, 'verifyTwoFactor'])
             router.post('/forgot-password', [controllers.AuthMailAccounts, 'forgotPassword'])
             router.post('/reset-password', [controllers.AuthMailAccounts, 'resetPassword'])
             router.get('/profile', [controllers.AuthMailAccounts, 'profile'])
+            router.put('/change-password', [controllers.AuthMailAccounts, 'changePassword'])
+            router
+              .group(() => {
+                router.post('/setup', [controllers.AuthMailAccounts, 'setupTwoFactor'])
+                router.post('/enable', [controllers.AuthMailAccounts, 'enableTwoFactor'])
+                router.post('/disable', [controllers.AuthMailAccounts, 'disableTwoFactor'])
+              })
+              .prefix('/2fa')
           })
           .prefix('/auth')
         router.post('/setup-profile', [controllers.MailAccountProfiles, 'setupMailAccountProfile'])
+        router.put('/profile', [controllers.MailAccountProfiles, 'updateProfile'])
+
+        // Forward incoming mail to an external, verified address
+        router
+          .group(() => {
+            router.put('/', [controllers.MailForwarding, 'setForwardingEmail'])
+            router.post('/verify', [controllers.MailForwarding, 'verify'])
+            router.put('/preferences', [controllers.MailForwarding, 'updatePreferences'])
+          })
+          .prefix('/forwarding')
 
         // Storage routes
         router
@@ -112,11 +131,17 @@ router
             router.put('/:id/folder', [controllers.Mail, 'moveToFolder'])
             router.put('/:id/spam', [controllers.Mail, 'markSpam'])
             router.put('/:id/star', [controllers.Mail, 'markImportant'])
+            router.put('/:id/read', [controllers.Mail, 'markRead'])
             router.post('/:id/forward', [controllers.Mail, 'forward'])
             router.get('/scheduled', [controllers.Mail, 'scheduled'])
             router.post('/schedule', [controllers.Mail, 'scheduleMail'])
             router.put('/:id/schedule', [controllers.Mail, 'reschedule'])
             router.delete('/:id/schedule', [controllers.Mail, 'cancelSchedule'])
+            router.get('/trash', [controllers.Mail, 'trashList'])
+            router.get('/spam', [controllers.Mail, 'spamList'])
+            router.put('/:id/trash', [controllers.Mail, 'trash'])
+            router.put('/:id/restore', [controllers.Mail, 'restore'])
+            router.delete('/:id', [controllers.Mail, 'destroy'])
           })
           .prefix('/mails')
 

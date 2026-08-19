@@ -53,6 +53,7 @@ test.group('MailService', (group) => {
       attachmentIds: null,
       important: false,
       isSpam: false,
+      isRead: true,
       deleted: false,
       folderId: null,
       scheduledAt: null,
