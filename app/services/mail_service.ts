@@ -1,9 +1,11 @@
 import type MailAccount from '#models/mail_account'
 import type Mail from '#models/mail'
 import FolderRepository from '#repositories/folder_repository'
+import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
 import { AuthMailAccountService } from '#services/auth_mail_account_service'
 import { SESService } from '#services/ses_service'
+import { describeSendFailure } from '#utils/ses_send_error'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
@@ -50,6 +52,7 @@ export class MailService {
   constructor(
     private readonly mailRepository: MailRepository,
     private readonly folderRepository: FolderRepository,
+    private readonly mailAccountRepository: MailAccountRepository,
     private readonly authMailAccountService: AuthMailAccountService,
     private readonly sesService: SESService,
     private readonly logger: Logger,
@@ -59,6 +62,7 @@ export class MailService {
   async sendMail(data: SendMailPayload) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
+    this.assertDomainVerified(mailAccount)
 
     const mail = await this.mailRepository.create({
       mailAccountId: mailAccount.id,
@@ -77,6 +81,7 @@ export class MailService {
       important: false,
       isSpam: false,
       isRead: true,
+      failureReason: null,
       deleted: false,
       folderId: null,
       scheduledAt: null,
@@ -128,6 +133,7 @@ export class MailService {
       important: false,
       isSpam: false,
       isRead: true,
+      failureReason: null,
       deleted: false,
       folderId: null,
       scheduledAt: null,
@@ -162,6 +168,7 @@ export class MailService {
     if (!draft.subject) throw httpError(422, 'Draft has no subject')
 
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
+    this.assertDomainVerified(mailAccount)
     const payload: SendMailPayload = {
       to,
       cc: (draft.ccAddresses as string[] | null) ?? undefined,
@@ -285,6 +292,7 @@ export class MailService {
 
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
+    this.assertDomainVerified(mailAccount)
 
     return this.mailRepository.create({
       mailAccountId: mailAccount.id,
@@ -303,6 +311,7 @@ export class MailService {
       important: false,
       isSpam: false,
       isRead: true,
+      failureReason: null,
       deleted: false,
       folderId: null,
       scheduledAt: data.scheduledAt,
@@ -368,6 +377,21 @@ export class MailService {
     return { fromEmail, fromDisplay: `"${displayName}" <${fromEmail}>` }
   }
 
+  /**
+   * Fails fast, before ever queuing a send, when the cached domain
+   * verification flag is already known to be false — avoids a doomed
+   * background job and gives the caller an immediate, actionable error.
+   * Requires mailAccount.domain to already be loaded (see buildFromDisplay).
+   */
+  private assertDomainVerified(mailAccount: MailAccount) {
+    if (!mailAccount.domain.verified) {
+      throw httpError(
+        422,
+        `The domain ${mailAccount.domain.name} is not verified for sending mail. Verify it before sending.`
+      )
+    }
+  }
+
   private queueSesSend(mail: Mail, fromDisplay: string, data: SendMailPayload) {
     this.cronManager.addQueueJob(
       'mails',
@@ -385,17 +409,42 @@ export class MailService {
         await this.mailRepository.update(mail, {
           status: 'sent',
           sesMessageId: response.MessageId ?? null,
+          failureReason: null,
         })
         this.logger.info(`Mail ${mail.id} sent successfully`)
       },
       {
         retries: 2,
         retryDelayMs: 2000,
-        onRetriesExhausted: async () => {
-          await this.mailRepository.update(mail, { status: 'failed' })
-          this.logger.error(`Mail ${mail.id} failed after retries`)
+        onRetriesExhausted: async ({ error }) => {
+          const { message, isUnverifiedIdentity } = describeSendFailure(error)
+          await this.mailRepository.update(mail, { status: 'failed', failureReason: message })
+          this.logger.error(`Mail ${mail.id} failed after retries: ${message}`)
+
+          if (isUnverifiedIdentity) {
+            await this.reconcileDomainVerification(mail.mailAccountId)
+          }
         },
       }
     )
+  }
+
+  /**
+   * Self-heals the cached domains.verified flag when a send fails for a
+   * reason that indicates the identity is actually gone from SES (e.g.
+   * deleted out-of-band in the AWS console), so the next send attempt fails
+   * fast via assertDomainVerified instead of repeating the same silent
+   * background failure.
+   */
+  private async reconcileDomainVerification(mailAccountId: number) {
+    const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
+    if (!mailAccount) return
+    await mailAccount.load('domain')
+    if (!mailAccount.domain.verified) return
+
+    this.logger.warn(
+      `[MailService]: Marking domain ${mailAccount.domain.name} unverified after a send failure`
+    )
+    await mailAccount.domain.merge({ verified: false }).save()
   }
 }

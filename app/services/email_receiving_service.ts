@@ -124,6 +124,7 @@ export class EmailReceivingService {
         important: false,
         isSpam: false,
         isRead: false,
+        failureReason: null,
         deleted: false,
         folderId: null,
         scheduledAt: null,

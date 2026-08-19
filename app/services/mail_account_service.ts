@@ -198,6 +198,16 @@ export class MailAccountService {
   }
 
   async setupEmailAddress(data: SetupEmailAddressPayload) {
+    const usernames = data.data.map((item) => item.username)
+    const existingAccounts = await this.repository.findByUsernamesAndDomainId(
+      usernames,
+      data.domainId
+    )
+    if (existingAccounts.length > 0) {
+      const taken = existingAccounts.map((account) => account.username).join(', ')
+      throw httpError(409, `A mailbox already exists for: ${taken}`)
+    }
+
     const createMailAccountsPayload: MailAccountPayload[] = data.data.map((_) => ({
       domainId: data.domainId,
       ownerEmail: _.owner,

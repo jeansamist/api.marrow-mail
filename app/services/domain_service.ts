@@ -103,6 +103,14 @@ export class DomainService {
           `[DomainService]: Failed to setup inbound email for ${domain.name}: ${error instanceof Error ? error.message : String(error)}`
         )
       })
+    } else if (!verified && domain.verified) {
+      // The SES identity was removed or lost verification out-of-band (e.g. deleted
+      // directly in the AWS console) — reconcile our cached flag instead of leaving
+      // it stale, so sends fail fast with a clear error rather than silently.
+      this.logger.warn(
+        `[DomainService]: Domain ${domain.name} is no longer verified in SES, marking unverified`
+      )
+      await this.updateDomain(domain.id, { verified: false })
     }
 
     return verified

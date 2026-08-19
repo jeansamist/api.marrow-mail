@@ -32,6 +32,10 @@ export default class MailAccountRepository {
     return mailAccount.merge(data).save()
   }
 
+  findByUsernamesAndDomainId(usernames: string[], domainId: number): Promise<MailAccount[]> {
+    return this.model.query().where('domain_id', domainId).whereIn('username', usernames)
+  }
+
   findByUsernameAndDomain(username: string, domainName: string): Promise<MailAccount | null> {
     return this.model
       .query()
