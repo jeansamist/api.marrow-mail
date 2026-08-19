@@ -33,6 +33,8 @@ export type ScannedRoutes = {
     'domains.set_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.create_addon_checkout': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
     'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'role_aliases.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -110,6 +112,7 @@ export type ScannedRoutes = {
     'domains.index': { paramsTuple?: []; params?: {} }
     'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
     'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -140,6 +143,7 @@ export type ScannedRoutes = {
     'domains.index': { paramsTuple?: []; params?: {} }
     'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
     'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -176,6 +180,7 @@ export type ScannedRoutes = {
     'domains.store': { paramsTuple?: []; params?: {} }
     'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'storage_overview.create_addon_checkout': { paramsTuple?: []; params?: {} }
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

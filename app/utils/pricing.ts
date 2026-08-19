@@ -7,6 +7,9 @@ export const PLAN_BASE_PRICE_XAF = { core: 2500, plus: 3500 } as const
 // has no explicit storageQuotaBytes override.
 export const PLAN_STORAGE_GB = { core: 10, plus: 15 } as const
 
+// Mirrors marrowmails/lib/onboarding.ts's STORAGE_PRICE_PER_GB_XAF exactly.
+export const STORAGE_PRICE_PER_GB_XAF = 150
+
 export type PlanId = keyof typeof PLAN_BASE_PRICE_XAF
 
 export function defaultStorageBytesForPlan(planId: PlanId): number {

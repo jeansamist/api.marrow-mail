@@ -44,6 +44,8 @@ export interface ApiDefinition {
   }
   storageOverview: {
     usage: typeof routes['storage_overview.usage']
+    createAddonCheckout: typeof routes['storage_overview.create_addon_checkout']
+    addonPaymentStatus: typeof routes['storage_overview.addon_payment_status']
   }
   roleAliases: {
     index: typeof routes['role_aliases.index']

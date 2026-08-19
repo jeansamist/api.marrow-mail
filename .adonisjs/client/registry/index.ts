@@ -180,6 +180,18 @@ const routes = {
     tokens: [{"old":"/api/storage/usage","type":0,"val":"api","end":""},{"old":"/api/storage/usage","type":0,"val":"storage","end":""},{"old":"/api/storage/usage","type":0,"val":"usage","end":""}],
     types: placeholder as Registry['storage_overview.usage']['types'],
   },
+  'storage_overview.create_addon_checkout': {
+    methods: ["POST"],
+    pattern: '/api/storage/addon-checkout',
+    tokens: [{"old":"/api/storage/addon-checkout","type":0,"val":"api","end":""},{"old":"/api/storage/addon-checkout","type":0,"val":"storage","end":""},{"old":"/api/storage/addon-checkout","type":0,"val":"addon-checkout","end":""}],
+    types: placeholder as Registry['storage_overview.create_addon_checkout']['types'],
+  },
+  'storage_overview.addon_payment_status': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/storage/addon-payments/:paymentId',
+    tokens: [{"old":"/api/storage/addon-payments/:paymentId","type":0,"val":"api","end":""},{"old":"/api/storage/addon-payments/:paymentId","type":0,"val":"storage","end":""},{"old":"/api/storage/addon-payments/:paymentId","type":0,"val":"addon-payments","end":""},{"old":"/api/storage/addon-payments/:paymentId","type":1,"val":"paymentId","end":""}],
+    types: placeholder as Registry['storage_overview.addon_payment_status']['types'],
+  },
   'role_aliases.index': {
     methods: ["GET","HEAD"],
     pattern: '/api/domains/:domainId/role-aliases',

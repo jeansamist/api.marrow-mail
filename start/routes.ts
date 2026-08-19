@@ -82,6 +82,11 @@ router
     router
       .group(() => {
         router.get('/usage', [controllers.StorageOverview, 'usage'])
+        router.post('/addon-checkout', [controllers.StorageOverview, 'createAddonCheckout'])
+        router.get('/addon-payments/:paymentId', [
+          controllers.StorageOverview,
+          'addonPaymentStatus',
+        ])
       })
       .prefix('/storage')
       .use([middleware.auth()])

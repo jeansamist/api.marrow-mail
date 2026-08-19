@@ -355,6 +355,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['usage']>>>
     }
   }
+  'storage_overview.create_addon_checkout': {
+    methods: ["POST"]
+    pattern: '/api/storage/addon-checkout'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/storage').createStorageAddonCheckoutValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/storage').createStorageAddonCheckoutValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['createAddonCheckout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['createAddonCheckout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage_overview.addon_payment_status': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/storage/addon-payments/:paymentId'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { paymentId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['addonPaymentStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['addonPaymentStatus']>>>
+    }
+  }
   'role_aliases.index': {
     methods: ["GET","HEAD"]
     pattern: '/api/domains/:domainId/role-aliases'
