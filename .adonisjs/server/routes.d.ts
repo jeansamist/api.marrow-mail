@@ -29,10 +29,19 @@ export type ScannedRoutes = {
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.verify_two_factor': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.forgot_password': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.reset_password': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.profile': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.change_password': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.setup_two_factor': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.enable_two_factor': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.disable_two_factor': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.setup_mail_account_profile': { paramsTuple?: []; params?: {} }
+    'mail_account_profiles.update_profile': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.set_forwarding_email': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.verify': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.update_preferences': { paramsTuple?: []; params?: {} }
     'storage.create_upload_link': { paramsTuple?: []; params?: {} }
     'storage.create_upload_links': { paramsTuple?: []; params?: {} }
     'storage.files': { paramsTuple?: []; params?: {} }
@@ -50,11 +59,17 @@ export type ScannedRoutes = {
     'mail.move_to_folder': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_spam': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_important': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.mark_read': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.forward': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.scheduled': { paramsTuple?: []; params?: {} }
     'mail.schedule_mail': { paramsTuple?: []; params?: {} }
     'mail.reschedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.trash_list': { paramsTuple?: []; params?: {} }
+    'mail.spam_list': { paramsTuple?: []; params?: {} }
+    'mail.trash': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.restore': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.store': { paramsTuple?: []; params?: {} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -84,6 +99,8 @@ export type ScannedRoutes = {
     'mail.received': { paramsTuple?: []; params?: {} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'mail.scheduled': { paramsTuple?: []; params?: {} }
+    'mail.trash_list': { paramsTuple?: []; params?: {} }
+    'mail.spam_list': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
@@ -106,6 +123,8 @@ export type ScannedRoutes = {
     'mail.received': { paramsTuple?: []; params?: {} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'mail.scheduled': { paramsTuple?: []; params?: {} }
+    'mail.trash_list': { paramsTuple?: []; params?: {} }
+    'mail.spam_list': { paramsTuple?: []; params?: {} }
     'folders.index': { paramsTuple?: []; params?: {} }
     'folders.mails': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.index': { paramsTuple?: []; params?: {} }
@@ -128,9 +147,14 @@ export type ScannedRoutes = {
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.login': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.verify_two_factor': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.forgot_password': { paramsTuple?: []; params?: {} }
     'auth_mail_accounts.reset_password': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.setup_two_factor': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.enable_two_factor': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.disable_two_factor': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.setup_mail_account_profile': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.verify': { paramsTuple?: []; params?: {} }
     'storage.create_upload_link': { paramsTuple?: []; params?: {} }
     'storage.create_upload_links': { paramsTuple?: []; params?: {} }
     'mail.send': { paramsTuple?: []; params?: {} }
@@ -143,11 +167,18 @@ export type ScannedRoutes = {
   }
   PUT: {
     'auth.update_profile': { paramsTuple?: []; params?: {} }
+    'auth_mail_accounts.change_password': { paramsTuple?: []; params?: {} }
+    'mail_account_profiles.update_profile': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.set_forwarding_email': { paramsTuple?: []; params?: {} }
+    'mail_forwarding.update_preferences': { paramsTuple?: []; params?: {} }
     'mail.update_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.move_to_folder': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_spam': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.mark_important': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.mark_read': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.reschedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.trash': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.restore': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'signatures.update': { paramsTuple?: []; params?: {} }
@@ -158,6 +189,7 @@ export type ScannedRoutes = {
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'mail.delete_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'folders.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'contacts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }

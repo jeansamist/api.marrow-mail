@@ -1,3 +1,4 @@
+import Domain from '#models/domain'
 import Folder from '#models/folder'
 import MailAccount from '#models/mail_account'
 import User from '#models/user'
@@ -32,6 +33,7 @@ async function bindMailAccountContext(mailAccountId: number) {
 test.group('MailService', (group) => {
   const userEmail = 'mail-service.tester@example.com'
   let user: User
+  let domain: Domain
   let mailAccount: MailAccount
   let mailService: MailService
   let mailRepository: MailRepository
@@ -53,6 +55,8 @@ test.group('MailService', (group) => {
       attachmentIds: null,
       important: false,
       isSpam: false,
+      isRead: true,
+      failureReason: null,
       deleted: false,
       folderId: null,
       scheduledAt: null,
@@ -67,12 +71,18 @@ test.group('MailService', (group) => {
       email: userEmail,
       password: 'password',
     })
+    domain = await Domain.create({
+      name: 'mail-service-test.example.com',
+      userId: user.id,
+      verified: true,
+    })
     mailAccount = await MailAccount.create({
       cuid: 'mail-service-test-account',
       username: 'mail-service-tester',
       password: 'password',
       setuped: true,
       userId: user.id,
+      domainId: domain.id,
     })
 
     await bindMailAccountContext(mailAccount.id)
@@ -82,6 +92,7 @@ test.group('MailService', (group) => {
 
   group.teardown(async () => {
     await mailAccount.delete()
+    await domain.delete()
     await user.delete()
   })
 

@@ -76,4 +76,8 @@ export class RecordService {
     )
     return records
   }
+
+  async deleteRecordsByDomainId(domainId: number): Promise<void> {
+    await this.repository.deleteByDomainId(domainId)
+  }
 }

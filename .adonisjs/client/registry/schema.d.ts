@@ -307,6 +307,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['login']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'auth_mail_accounts.verify_two_factor': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/verify-2fa'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').verifyTwoFactorValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').verifyTwoFactorValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['verifyTwoFactor']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['verifyTwoFactor']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'auth_mail_accounts.forgot_password': {
     methods: ["POST"]
     pattern: '/api/mail/auth/forgot-password'
@@ -343,6 +355,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['profile']>>>
     }
   }
+  'auth_mail_accounts.change_password': {
+    methods: ["PUT"]
+    pattern: '/api/mail/auth/change-password'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').changePasswordValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').changePasswordValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['changePassword']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['changePassword']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'auth_mail_accounts.setup_two_factor': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/2fa/setup'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['setupTwoFactor']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['setupTwoFactor']>>>
+    }
+  }
+  'auth_mail_accounts.enable_two_factor': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/2fa/enable'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').twoFactorCodeValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').twoFactorCodeValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['enableTwoFactor']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['enableTwoFactor']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'auth_mail_accounts.disable_two_factor': {
+    methods: ["POST"]
+    pattern: '/api/mail/auth/2fa/disable'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/auth').disableTwoFactorValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/auth').disableTwoFactorValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['disableTwoFactor']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_mail_accounts_controller').default['disableTwoFactor']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"]
     pattern: '/api/mail/setup-profile'
@@ -353,6 +413,54 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/mail_account_profile').setupMailAccountProfileValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['setupMailAccountProfile']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['setupMailAccountProfile']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_account_profiles.update_profile': {
+    methods: ["PUT"]
+    pattern: '/api/mail/profile'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_account_profile').updateMailAccountProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_account_profile').updateMailAccountProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['updateProfile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['updateProfile']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_forwarding.set_forwarding_email': {
+    methods: ["PUT"]
+    pattern: '/api/mail/forwarding'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_forwarding').setForwardingEmailValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_forwarding').setForwardingEmailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['setForwardingEmail']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['setForwardingEmail']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_forwarding.verify': {
+    methods: ["POST"]
+    pattern: '/api/mail/forwarding/verify'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_forwarding').verifyForwardingEmailValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_forwarding').verifyForwardingEmailValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['verify']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['verify']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'mail_forwarding.update_preferences': {
+    methods: ["PUT"]
+    pattern: '/api/mail/forwarding/preferences'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail_forwarding').updateForwardingPreferencesValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail_forwarding').updateForwardingPreferencesValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['updatePreferences']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_forwarding_controller').default['updatePreferences']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'storage.create_upload_link': {
@@ -559,6 +667,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markImportant']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'mail.mark_read': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/read'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/mail').markReadValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/mail').markReadValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markRead']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['markRead']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'mail.forward': {
     methods: ["POST"]
     pattern: '/api/mail/mails/:id/forward'
@@ -617,6 +737,66 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['cancelSchedule']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['cancelSchedule']>>>
+    }
+  }
+  'mail.trash_list': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/trash'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['trashList']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['trashList']>>>
+    }
+  }
+  'mail.spam_list': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/spam'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['spamList']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['spamList']>>>
+    }
+  }
+  'mail.trash': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/trash'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['trash']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['trash']>>>
+    }
+  }
+  'mail.restore': {
+    methods: ["PUT"]
+    pattern: '/api/mail/mails/:id/restore'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['restore']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['restore']>>>
+    }
+  }
+  'mail.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/mail/mails/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['destroy']>>>
     }
   }
   'folders.index': {

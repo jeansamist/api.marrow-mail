@@ -2,6 +2,7 @@ import MailAccountPasswordResetAlertNotification from '#mails/mail_account_passw
 import MailAccountPasswordResetNotification from '#mails/mail_account_password_reset_notification'
 import MailAccount from '#models/mail_account'
 import MailAccountRepository from '#repositories/mail_account_repository'
+import { TwoFactorService } from '#services/two_factor_service'
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
@@ -13,10 +14,13 @@ import jwt from 'jsonwebtoken'
 import { DateTime } from 'luxon'
 import CronManager from '../managers/crons_manager.js'
 
+const TWO_FACTOR_CHALLENGE_PURPOSE = '2fa-challenge'
+
 @inject()
 export class AuthMailAccountService {
   constructor(
     private readonly repository: MailAccountRepository,
+    private readonly twoFactorService: TwoFactorService,
     private readonly ctx: HttpContext,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
@@ -55,6 +59,37 @@ export class AuthMailAccountService {
       token: jwt.sign({ id: mailAccount.id }, env.get('JWT_SECRET', 'key'), { expiresIn: '1d' }),
       expiresAt,
     }
+  }
+
+  generateTwoFactorChallenge(mailAccount: MailAccount) {
+    const expiresAt = DateTime.now().plus({ minutes: 5 }).toISO()
+    return {
+      challengeToken: jwt.sign(
+        { id: mailAccount.id, purpose: TWO_FACTOR_CHALLENGE_PURPOSE },
+        env.get('JWT_SECRET', 'key'),
+        { expiresIn: '5m' }
+      ),
+      expiresAt,
+    }
+  }
+
+  async verifyTwoFactorChallenge(challengeToken: string, code: string) {
+    let payload: { id: number; purpose: string }
+    try {
+      payload = jwt.verify(challengeToken, env.get('JWT_SECRET', 'key')) as typeof payload
+    } catch {
+      throw httpError(401, 'Challenge expired or invalid, please sign in again')
+    }
+    if (payload.purpose !== TWO_FACTOR_CHALLENGE_PURPOSE) {
+      throw httpError(401, 'Invalid challenge token')
+    }
+
+    const mailAccount = await this.repository.findById(payload.id)
+    if (!mailAccount) throw httpError(401, 'Invalid challenge token')
+
+    await this.twoFactorService.assertValidCode(mailAccount, code)
+
+    return this.generateJWT(mailAccount)
   }
 
   async forgotPassword(email: string) {
@@ -111,10 +146,34 @@ export class AuthMailAccountService {
     return true
   }
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    const mailAccount = await this.getRequestMailAccount()
+
+    const isCurrentPasswordValid = await hash.verify(mailAccount.password, currentPassword)
+    if (!isCurrentPasswordValid) throw httpError(400, 'Current password is incorrect')
+
+    await this.repository.update(mailAccount, {
+      password: await hash.make(newPassword),
+    })
+
+    await mailAccount.load('domain')
+    const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
+    const recipient = mailAccount.ownerEmail ?? mailAccountEmail
+    this.sendPasswordResetAlertNotification(recipient, mailAccountEmail)
+  }
+
   async profile() {
     const mailAccount = await this.getRequestMailAccount()
     await mailAccount.load('profile')
-    return mailAccount.profile ?? null
+    if (!mailAccount.profile) return null
+
+    return {
+      ...mailAccount.profile.serialize(),
+      twoFactorEnabled: mailAccount.twoFactorEnabled,
+      forwardingEmail: mailAccount.forwardingEmail,
+      forwardingVerified: mailAccount.forwardingVerified,
+      keepForwardedCopy: mailAccount.keepForwardedCopy,
+    }
   }
 
   generateResetPasswordToken() {

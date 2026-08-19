@@ -27,9 +27,13 @@ export default class MailAccountRepository {
   }
   async update(
     mailAccount: MailAccount,
-    data: Partial<ModelProps<MailAccount>>
+    data: Partial<ModelProps<MailAccountSchema>>
   ): Promise<MailAccount> {
     return mailAccount.merge(data).save()
+  }
+
+  findByUsernamesAndDomainId(usernames: string[], domainId: number): Promise<MailAccount[]> {
+    return this.model.query().where('domain_id', domainId).whereIn('username', usernames)
   }
 
   findByUsernameAndDomain(username: string, domainName: string): Promise<MailAccount | null> {
@@ -55,6 +59,10 @@ export default class MailAccountRepository {
         query.andWhere('name', domainName)
       })
       .first()
+  }
+
+  findByForwardingVerificationToken(token: string): Promise<MailAccount | null> {
+    return this.model.query().where('forwarding_verification_token', token).first()
   }
 
   async countByUserId(userId: number): Promise<number> {

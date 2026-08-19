@@ -30,3 +30,30 @@ export const verifyEmailValidator = vine.create(
     emailVerificationCode: vine.string().minLength(6),
   })
 )
+
+export const changePasswordValidator = vine.create(
+  vine.object({
+    currentPassword: vine.string().minLength(8),
+    newPassword: vine.string().minLength(8),
+  })
+)
+
+export const verifyTwoFactorValidator = vine.create(
+  vine.object({
+    challengeToken: vine.string().minLength(1),
+    code: vine.string().minLength(6),
+  })
+)
+
+export const twoFactorCodeValidator = vine.create(
+  vine.object({
+    code: vine.string().minLength(6),
+  })
+)
+
+export const disableTwoFactorValidator = vine.create(
+  vine.object({
+    currentPassword: vine.string().minLength(8),
+    code: vine.string().minLength(6),
+  })
+)

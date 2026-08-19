@@ -156,6 +156,12 @@ const routes = {
     tokens: [{"old":"/api/mail/auth/login","type":0,"val":"api","end":""},{"old":"/api/mail/auth/login","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/login","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/login","type":0,"val":"login","end":""}],
     types: placeholder as Registry['auth_mail_accounts.login']['types'],
   },
+  'auth_mail_accounts.verify_two_factor': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/verify-2fa',
+    tokens: [{"old":"/api/mail/auth/verify-2fa","type":0,"val":"api","end":""},{"old":"/api/mail/auth/verify-2fa","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/verify-2fa","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/verify-2fa","type":0,"val":"verify-2fa","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.verify_two_factor']['types'],
+  },
   'auth_mail_accounts.forgot_password': {
     methods: ["POST"],
     pattern: '/api/mail/auth/forgot-password',
@@ -174,11 +180,59 @@ const routes = {
     tokens: [{"old":"/api/mail/auth/profile","type":0,"val":"api","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['auth_mail_accounts.profile']['types'],
   },
+  'auth_mail_accounts.change_password': {
+    methods: ["PUT"],
+    pattern: '/api/mail/auth/change-password',
+    tokens: [{"old":"/api/mail/auth/change-password","type":0,"val":"api","end":""},{"old":"/api/mail/auth/change-password","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/change-password","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/change-password","type":0,"val":"change-password","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.change_password']['types'],
+  },
+  'auth_mail_accounts.setup_two_factor': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/2fa/setup',
+    tokens: [{"old":"/api/mail/auth/2fa/setup","type":0,"val":"api","end":""},{"old":"/api/mail/auth/2fa/setup","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/2fa/setup","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/2fa/setup","type":0,"val":"2fa","end":""},{"old":"/api/mail/auth/2fa/setup","type":0,"val":"setup","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.setup_two_factor']['types'],
+  },
+  'auth_mail_accounts.enable_two_factor': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/2fa/enable',
+    tokens: [{"old":"/api/mail/auth/2fa/enable","type":0,"val":"api","end":""},{"old":"/api/mail/auth/2fa/enable","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/2fa/enable","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/2fa/enable","type":0,"val":"2fa","end":""},{"old":"/api/mail/auth/2fa/enable","type":0,"val":"enable","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.enable_two_factor']['types'],
+  },
+  'auth_mail_accounts.disable_two_factor': {
+    methods: ["POST"],
+    pattern: '/api/mail/auth/2fa/disable',
+    tokens: [{"old":"/api/mail/auth/2fa/disable","type":0,"val":"api","end":""},{"old":"/api/mail/auth/2fa/disable","type":0,"val":"mail","end":""},{"old":"/api/mail/auth/2fa/disable","type":0,"val":"auth","end":""},{"old":"/api/mail/auth/2fa/disable","type":0,"val":"2fa","end":""},{"old":"/api/mail/auth/2fa/disable","type":0,"val":"disable","end":""}],
+    types: placeholder as Registry['auth_mail_accounts.disable_two_factor']['types'],
+  },
   'mail_account_profiles.setup_mail_account_profile': {
     methods: ["POST"],
     pattern: '/api/mail/setup-profile',
     tokens: [{"old":"/api/mail/setup-profile","type":0,"val":"api","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"mail","end":""},{"old":"/api/mail/setup-profile","type":0,"val":"setup-profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.setup_mail_account_profile']['types'],
+  },
+  'mail_account_profiles.update_profile': {
+    methods: ["PUT"],
+    pattern: '/api/mail/profile',
+    tokens: [{"old":"/api/mail/profile","type":0,"val":"api","end":""},{"old":"/api/mail/profile","type":0,"val":"mail","end":""},{"old":"/api/mail/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['mail_account_profiles.update_profile']['types'],
+  },
+  'mail_forwarding.set_forwarding_email': {
+    methods: ["PUT"],
+    pattern: '/api/mail/forwarding',
+    tokens: [{"old":"/api/mail/forwarding","type":0,"val":"api","end":""},{"old":"/api/mail/forwarding","type":0,"val":"mail","end":""},{"old":"/api/mail/forwarding","type":0,"val":"forwarding","end":""}],
+    types: placeholder as Registry['mail_forwarding.set_forwarding_email']['types'],
+  },
+  'mail_forwarding.verify': {
+    methods: ["POST"],
+    pattern: '/api/mail/forwarding/verify',
+    tokens: [{"old":"/api/mail/forwarding/verify","type":0,"val":"api","end":""},{"old":"/api/mail/forwarding/verify","type":0,"val":"mail","end":""},{"old":"/api/mail/forwarding/verify","type":0,"val":"forwarding","end":""},{"old":"/api/mail/forwarding/verify","type":0,"val":"verify","end":""}],
+    types: placeholder as Registry['mail_forwarding.verify']['types'],
+  },
+  'mail_forwarding.update_preferences': {
+    methods: ["PUT"],
+    pattern: '/api/mail/forwarding/preferences',
+    tokens: [{"old":"/api/mail/forwarding/preferences","type":0,"val":"api","end":""},{"old":"/api/mail/forwarding/preferences","type":0,"val":"mail","end":""},{"old":"/api/mail/forwarding/preferences","type":0,"val":"forwarding","end":""},{"old":"/api/mail/forwarding/preferences","type":0,"val":"preferences","end":""}],
+    types: placeholder as Registry['mail_forwarding.update_preferences']['types'],
   },
   'storage.create_upload_link': {
     methods: ["POST"],
@@ -282,6 +336,12 @@ const routes = {
     tokens: [{"old":"/api/mail/mails/:id/star","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/star","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/star","type":0,"val":"star","end":""}],
     types: placeholder as Registry['mail.mark_important']['types'],
   },
+  'mail.mark_read': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/read',
+    tokens: [{"old":"/api/mail/mails/:id/read","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/read","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/read","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/read","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/read","type":0,"val":"read","end":""}],
+    types: placeholder as Registry['mail.mark_read']['types'],
+  },
   'mail.forward': {
     methods: ["POST"],
     pattern: '/api/mail/mails/:id/forward',
@@ -311,6 +371,36 @@ const routes = {
     pattern: '/api/mail/mails/:id/schedule',
     tokens: [{"old":"/api/mail/mails/:id/schedule","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/schedule","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/schedule","type":0,"val":"schedule","end":""}],
     types: placeholder as Registry['mail.cancel_schedule']['types'],
+  },
+  'mail.trash_list': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/trash',
+    tokens: [{"old":"/api/mail/mails/trash","type":0,"val":"api","end":""},{"old":"/api/mail/mails/trash","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/trash","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/trash","type":0,"val":"trash","end":""}],
+    types: placeholder as Registry['mail.trash_list']['types'],
+  },
+  'mail.spam_list': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/spam',
+    tokens: [{"old":"/api/mail/mails/spam","type":0,"val":"api","end":""},{"old":"/api/mail/mails/spam","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/spam","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/spam","type":0,"val":"spam","end":""}],
+    types: placeholder as Registry['mail.spam_list']['types'],
+  },
+  'mail.trash': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/trash',
+    tokens: [{"old":"/api/mail/mails/:id/trash","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/trash","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/trash","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/trash","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/trash","type":0,"val":"trash","end":""}],
+    types: placeholder as Registry['mail.trash']['types'],
+  },
+  'mail.restore': {
+    methods: ["PUT"],
+    pattern: '/api/mail/mails/:id/restore',
+    tokens: [{"old":"/api/mail/mails/:id/restore","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/restore","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/restore","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/restore","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/restore","type":0,"val":"restore","end":""}],
+    types: placeholder as Registry['mail.restore']['types'],
+  },
+  'mail.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/mail/mails/:id',
+    tokens: [{"old":"/api/mail/mails/:id","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['mail.destroy']['types'],
   },
   'folders.index': {
     methods: ["GET","HEAD"],
