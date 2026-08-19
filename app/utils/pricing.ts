@@ -3,10 +3,18 @@
 
 export const PLAN_BASE_PRICE_XAF = { core: 2500, plus: 3500 } as const
 
-// Applied when a mail account has no explicit storageQuotaBytes override.
-export const DEFAULT_MAILBOX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024
+// Per-mailbox storage included with each plan. Applied when a mail account
+// has no explicit storageQuotaBytes override.
+export const PLAN_STORAGE_GB = { core: 10, plus: 15 } as const
+
+// Mirrors marrowmails/lib/onboarding.ts's STORAGE_PRICE_PER_GB_XAF exactly.
+export const STORAGE_PRICE_PER_GB_XAF = 150
 
 export type PlanId = keyof typeof PLAN_BASE_PRICE_XAF
+
+export function defaultStorageBytesForPlan(planId: PlanId): number {
+  return PLAN_STORAGE_GB[planId] * 1024 * 1024 * 1024
+}
 
 function getDurationDiscount(months: number): number {
   if (months >= 12) return 0.2

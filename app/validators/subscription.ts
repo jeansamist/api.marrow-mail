@@ -9,3 +9,9 @@ export const checkoutSubscriptionValidator = vine.create(
     customerPhone: vine.string().trim().minLength(6).maxLength(20).optional(),
   })
 )
+
+export const changeSubscriptionPlanValidator = vine.create(
+  vine.object({
+    planId: vine.enum(['core', 'plus'] as const),
+  })
+)

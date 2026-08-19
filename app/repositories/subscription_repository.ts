@@ -30,6 +30,10 @@ export default class SubscriptionRepository {
     return this.model.query().where('user_id', userId).where('status', 'active')
   }
 
+  async findLatestForUser(userId: number): Promise<Subscription | null> {
+    return this.model.query().where('user_id', userId).orderBy('created_at', 'desc').first()
+  }
+
   async update(
     subscription: Subscription,
     data: Partial<ModelProps<SubscriptionSchema>>

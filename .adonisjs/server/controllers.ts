@@ -16,6 +16,7 @@ export const controllers = {
   MailForwarding: () => import('#controllers/mail_forwarding_controller'),
   Onboarding: () => import('#controllers/onboarding_controller'),
   PublicDomains: () => import('#controllers/public_domains_controller'),
+  RoleAliases: () => import('#controllers/role_aliases_controller'),
   SesWebhook: () => import('#controllers/ses_webhook_controller'),
   Signatures: () => import('#controllers/signatures_controller'),
   Storage: () => import('#controllers/storage_controller'),

@@ -14,6 +14,7 @@ import type MailAccountProfileTransformer from '#transformers/mail_account_profi
 import type MailAccountTransformer from '#transformers/mail_account_transformer'
 import type MailTransformer from '#transformers/mail_transformer'
 import type RecordTransformer from '#transformers/record_transformer'
+import type RoleAliasTransformer from '#transformers/role_alias_transformer'
 import type SignatureTransformer from '#transformers/signature_transformer'
 import type SubscriptionTransformer from '#transformers/subscription_transformer'
 import type UserTransformer from '#transformers/user_transformer'
@@ -54,6 +55,10 @@ export namespace Data {
   export type Record = InferData<RecordTransformer>
   export namespace Record {
     export type Variants = InferVariants<RecordTransformer>
+  }
+  export type RoleAlias = InferData<RoleAliasTransformer>
+  export namespace RoleAlias {
+    export type Variants = InferVariants<RoleAliasTransformer>
   }
   export type Signature = InferData<SignatureTransformer>
   export namespace Signature {

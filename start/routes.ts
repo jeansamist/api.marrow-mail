@@ -70,6 +70,11 @@ router
         router.get('/:id/branding', [controllers.Domains, 'getBranding'])
         router.put('/:id/branding', [controllers.Domains, 'updateBranding'])
         router.post('/:id/branding/logo-upload-link', [controllers.Domains, 'createLogoUploadLink'])
+        router.put('/:id/custom-login-hostname', [controllers.Domains, 'setCustomLoginHostname'])
+        router.post('/:id/custom-login-hostname/verify', [
+          controllers.Domains,
+          'verifyCustomLoginHostname',
+        ])
       })
       .prefix('/domains')
       .use([middleware.auth()])
@@ -77,8 +82,32 @@ router
     router
       .group(() => {
         router.get('/usage', [controllers.StorageOverview, 'usage'])
+        router.post('/addon-checkout', [controllers.StorageOverview, 'createAddonCheckout'])
+        router.get('/addon-payments/:paymentId', [
+          controllers.StorageOverview,
+          'addonPaymentStatus',
+        ])
       })
       .prefix('/storage')
+      .use([middleware.auth()])
+    // Role aliases (account administration — extra accepted usernames on a
+    // domain that route to an existing mailbox)
+    router
+      .group(() => {
+        router.get('/domains/:domainId/role-aliases', [controllers.RoleAliases, 'index'])
+        router.post('/domains/:domainId/role-aliases', [controllers.RoleAliases, 'store'])
+        router.delete('/role-aliases/:id', [controllers.RoleAliases, 'destroy'])
+      })
+      .use([middleware.auth()])
+    // Subscriptions (account administration — current plan for the dashboard/settings UI)
+    router
+      .group(() => {
+        router.get('/current', [controllers.Subscriptions, 'current'])
+        router.put('/:id/change-plan', [controllers.Subscriptions, 'changePlan'])
+        router.post('/:id/cancel', [controllers.Subscriptions, 'cancel'])
+        router.post('/:id/reactivate', [controllers.Subscriptions, 'reactivate'])
+      })
+      .prefix('/subscriptions')
       .use([middleware.auth()])
     // Onboarding routes
     router

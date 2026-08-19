@@ -9,6 +9,10 @@ export default class PaymentRepository {
     return this.model.create(data)
   }
 
+  async findById(id: number): Promise<Payment | null> {
+    return this.model.find(id)
+  }
+
   async findByProviderTransactionId(providerTransactionId: string): Promise<Payment | null> {
     return this.model.query().where('provider_transaction_id', providerTransactionId).first()
   }
