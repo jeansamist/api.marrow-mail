@@ -23,6 +23,7 @@ export interface ApiDefinition {
   mailAccountProfiles: {
     show: typeof routes['mail_account_profiles.show']
     setupMailAccountProfile: typeof routes['mail_account_profiles.setup_mail_account_profile']
+    updateProfile: typeof routes['mail_account_profiles.update_profile']
   }
   domains: {
     index: typeof routes['domains.index']
@@ -41,9 +42,19 @@ export interface ApiDefinition {
   }
   authMailAccounts: {
     login: typeof routes['auth_mail_accounts.login']
+    verifyTwoFactor: typeof routes['auth_mail_accounts.verify_two_factor']
     forgotPassword: typeof routes['auth_mail_accounts.forgot_password']
     resetPassword: typeof routes['auth_mail_accounts.reset_password']
     profile: typeof routes['auth_mail_accounts.profile']
+    changePassword: typeof routes['auth_mail_accounts.change_password']
+    setupTwoFactor: typeof routes['auth_mail_accounts.setup_two_factor']
+    enableTwoFactor: typeof routes['auth_mail_accounts.enable_two_factor']
+    disableTwoFactor: typeof routes['auth_mail_accounts.disable_two_factor']
+  }
+  mailForwarding: {
+    setForwardingEmail: typeof routes['mail_forwarding.set_forwarding_email']
+    verify: typeof routes['mail_forwarding.verify']
+    updatePreferences: typeof routes['mail_forwarding.update_preferences']
   }
   storage: {
     createUploadLink: typeof routes['storage.create_upload_link']
@@ -65,11 +76,17 @@ export interface ApiDefinition {
     moveToFolder: typeof routes['mail.move_to_folder']
     markSpam: typeof routes['mail.mark_spam']
     markImportant: typeof routes['mail.mark_important']
+    markRead: typeof routes['mail.mark_read']
     forward: typeof routes['mail.forward']
     scheduled: typeof routes['mail.scheduled']
     scheduleMail: typeof routes['mail.schedule_mail']
     reschedule: typeof routes['mail.reschedule']
     cancelSchedule: typeof routes['mail.cancel_schedule']
+    trashList: typeof routes['mail.trash_list']
+    spamList: typeof routes['mail.spam_list']
+    trash: typeof routes['mail.trash']
+    restore: typeof routes['mail.restore']
+    destroy: typeof routes['mail.destroy']
   }
   folders: {
     index: typeof routes['folders.index']

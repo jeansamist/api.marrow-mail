@@ -36,6 +36,8 @@ test.group('ScheduledMailDispatchService', (group) => {
       attachmentIds: null,
       important: false,
       isSpam: false,
+      isRead: true,
+      failureReason: null,
       deleted: false,
       folderId: null,
       scheduledAt: DateTime.now().minus({ minutes: 1 }),

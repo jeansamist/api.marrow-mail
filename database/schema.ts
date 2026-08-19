@@ -134,7 +134,7 @@ export class MailAccountProfileSchema extends BaseModel {
 }
 
 export class MailAccountSchema extends BaseModel {
-  static $columns = ['createdAt', 'cuid', 'domainId', 'id', 'ownerEmail', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'setuped', 'updatedAt', 'userId', 'username'] as const
+  static $columns = ['createdAt', 'cuid', 'domainId', 'forwardingEmail', 'forwardingVerificationToken', 'forwardingVerificationTokenExpiresAt', 'forwardingVerified', 'id', 'keepForwardedCopy', 'ownerEmail', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'setuped', 'twoFactorBackupCodes', 'twoFactorEnabled', 'twoFactorSecret', 'updatedAt', 'userId', 'username'] as const
   $columns = MailAccountSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -142,8 +142,18 @@ export class MailAccountSchema extends BaseModel {
   declare cuid: string
   @column()
   declare domainId: number | null
+  @column()
+  declare forwardingEmail: string | null
+  @column()
+  declare forwardingVerificationToken: string | null
+  @column.dateTime()
+  declare forwardingVerificationTokenExpiresAt: DateTime | null
+  @column()
+  declare forwardingVerified: boolean
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare keepForwardedCopy: boolean
   @column()
   declare ownerEmail: string | null
   @column({ serializeAs: null })
@@ -154,6 +164,12 @@ export class MailAccountSchema extends BaseModel {
   declare resetPasswordTokenExpiresAt: DateTime | null
   @column()
   declare setuped: boolean
+  @column()
+  declare twoFactorBackupCodes: any | null
+  @column()
+  declare twoFactorEnabled: boolean
+  @column()
+  declare twoFactorSecret: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
@@ -163,7 +179,7 @@ export class MailAccountSchema extends BaseModel {
 }
 
 export class MailSchema extends BaseModel {
-  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'folderId', 'fromEmail', 'id', 'important', 'isSpam', 'mailAccountId', 'replyTo', 'scheduledAt', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
+  static $columns = ['attachmentIds', 'bccAddresses', 'bodyHtml', 'bodyText', 'ccAddresses', 'createdAt', 'deleted', 'direction', 'failureReason', 'folderId', 'fromEmail', 'id', 'important', 'isRead', 'isSpam', 'mailAccountId', 'replyTo', 'scheduledAt', 'sesMessageId', 'status', 'subject', 'toAddresses', 'updatedAt'] as const
   $columns = MailSchema.$columns
   @column()
   declare attachmentIds: any | null
@@ -182,6 +198,8 @@ export class MailSchema extends BaseModel {
   @column()
   declare direction: string
   @column()
+  declare failureReason: string | null
+  @column()
   declare folderId: number | null
   @column()
   declare fromEmail: string
@@ -189,6 +207,8 @@ export class MailSchema extends BaseModel {
   declare id: number
   @column()
   declare important: boolean
+  @column()
+  declare isRead: boolean
   @column()
   declare isSpam: boolean
   @column()

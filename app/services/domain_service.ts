@@ -103,6 +103,14 @@ export class DomainService {
           `[DomainService]: Failed to setup inbound email for ${domain.name}: ${error instanceof Error ? error.message : String(error)}`
         )
       })
+    } else if (!verified && domain.verified) {
+      // The SES identity was removed or lost verification out-of-band (e.g. deleted
+      // directly in the AWS console) — reconcile our cached flag instead of leaving
+      // it stale, so sends fail fast with a clear error rather than silently.
+      this.logger.warn(
+        `[DomainService]: Domain ${domain.name} is no longer verified in SES, marking unverified`
+      )
+      await this.updateDomain(domain.id, { verified: false })
     }
 
     return verified
@@ -136,7 +144,7 @@ export class DomainService {
       if (existing.userId !== this.userId) {
         throw httpError(409, 'This domain is already registered')
       }
-      return this.recordService.findRecordsByDomainId(existing.id)
+      return this.refreshDomainRecords(existing)
     }
 
     const createDomainEntityPayload: DomainPayload = {
@@ -146,16 +154,49 @@ export class DomainService {
     }
     const domainEntity = await this.createDomain(createDomainEntityPayload)
     await this.sesService.createEmailIdentity(domainEntity.name)
-    const DNSrecords = await this.sesService.getAllRecordsForEmailIdentity(domainEntity.name)
+    return this.storeFreshRecords(domainEntity)
+  }
+
+  /**
+   * A domain already in our DB doesn't guarantee its SES identity still
+   * exists — it may have been deleted directly in the AWS console, out of
+   * band. Detect that and recreate the identity (and its DNS records)
+   * instead of silently handing back stale, no-longer-valid records.
+   */
+  private async refreshDomainRecords(domain: Domain): Promise<Record[]> {
+    const identityExists = await this.sesService
+      .getEmailIdentity(domain.name)
+      .then(() => true)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'NotFoundException') return false
+        throw error
+      })
+
+    if (!identityExists) {
+      this.logger.warn(
+        `[DomainService]: SES identity for ${domain.name} is missing, recreating it`
+      )
+      await this.sesService.createEmailIdentity(domain.name)
+      if (domain.verified) {
+        await this.updateDomain(domain.id, { verified: false })
+      }
+      return this.storeFreshRecords(domain)
+    }
+
+    return this.recordService.findRecordsByDomainId(domain.id)
+  }
+
+  private async storeFreshRecords(domain: Domain): Promise<Record[]> {
+    const DNSrecords = await this.sesService.getAllRecordsForEmailIdentity(domain.name)
+    await this.recordService.deleteRecordsByDomainId(domain.id)
     const createManyRecordPayload = DNSrecords.map((dns) => ({
       name: dns.Name,
       type: dns.Type,
       value: dns.Value,
       priority: dns.Priority || null,
-      domainId: domainEntity.id,
+      domainId: domain.id,
     }))
-    const records = await this.recordService.createManyRecord(createManyRecordPayload)
-    return records
+    return this.recordService.createManyRecord(createManyRecordPayload)
   }
 
   runAutomaticalyDomainVerification(domainName: string, domainId: number) {

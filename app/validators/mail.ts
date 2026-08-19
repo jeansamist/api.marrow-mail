@@ -9,6 +9,7 @@ export const sendMailValidator = vine.create(
     subject: vine.string().trim(),
     bodyHtml: vine.string().optional(),
     bodyText: vine.string().optional(),
+    attachmentIds: vine.array(vine.number()).optional(),
   })
 )
 
@@ -23,6 +24,13 @@ export const draftMailValidator = vine.create(
     subject: vine.string().trim().optional(),
     bodyHtml: vine.string().optional(),
     bodyText: vine.string().optional(),
+    attachmentIds: vine.array(vine.number()).optional(),
+  })
+)
+
+export const markReadValidator = vine.create(
+  vine.object({
+    isRead: vine.boolean(),
   })
 )
 
@@ -68,6 +76,7 @@ export const scheduleMailValidator = vine.create(
     subject: vine.string().trim(),
     bodyHtml: vine.string().optional(),
     bodyText: vine.string().optional(),
+    attachmentIds: vine.array(vine.number()).optional(),
     scheduledAt: vine.date(),
   })
 )

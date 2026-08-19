@@ -3,6 +3,7 @@ import MailAccount from '#models/mail_account'
 import MailAccountProfile from '#models/mail_account_profile'
 import MailAccountProfileRepository from '#repositories/mail_account_profile_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
+import { AuthMailAccountService } from '#services/auth_mail_account_service'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
@@ -18,11 +19,18 @@ interface SetupMailAccountProfilePayload {
   newPassword: string
 }
 
+interface UpdateMailAccountProfilePayload {
+  firstName?: string
+  lastName?: string
+  avatar?: string | null
+}
+
 @inject()
 export class MailAccountProfileService {
   constructor(
     private readonly repository: MailAccountProfileRepository,
     private readonly mailAccountRepository: MailAccountRepository,
+    private readonly authMailAccountService: AuthMailAccountService,
     private readonly ctx: HttpContext,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
@@ -71,6 +79,18 @@ export class MailAccountProfileService {
     }
 
     return profile
+  }
+
+  async updateProfile(data: UpdateMailAccountProfilePayload): Promise<MailAccountProfile> {
+    const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    const profile = await this.repository.findByMailAccountId(mailAccount.id)
+    if (!profile) throw httpError(404, 'Profile not found')
+
+    return this.repository.update(profile, {
+      ...(data.firstName !== undefined && { firstName: data.firstName }),
+      ...(data.lastName !== undefined && { lastName: data.lastName }),
+      ...(data.avatar !== undefined && { avatar: data.avatar }),
+    })
   }
 
   async findByMailAccountId(mailAccountId: number): Promise<MailAccountProfile | null> {

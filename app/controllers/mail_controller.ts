@@ -5,6 +5,7 @@ import {
   draftMailValidator,
   forwardMailValidator,
   markImportantValidator,
+  markReadValidator,
   markSpamValidator,
   moveMailToFolderValidator,
   rescheduleMailValidator,
@@ -97,6 +98,44 @@ export default class MailController {
     return response.ok(
       ApiResponse.success(serialized.data, important ? 'Marked as important' : 'Unstarred')
     )
+  }
+
+  async markRead({ params, request, response, serialize }: HttpContext) {
+    const { isRead } = await request.validateUsing(markReadValidator)
+    const mail = await this.mailService.markRead(params.id, isRead)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(
+      ApiResponse.success(serialized.data, isRead ? 'Marked as read' : 'Marked as unread')
+    )
+  }
+
+  async trash({ params, response, serialize }: HttpContext) {
+    const mail = await this.mailService.trashMail(params.id)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Moved to trash'))
+  }
+
+  async restore({ params, response, serialize }: HttpContext) {
+    const mail = await this.mailService.restoreMail(params.id)
+    const serialized = await serialize(MailTransformer.transform(mail))
+    return response.ok(ApiResponse.success(serialized.data, 'Mail restored'))
+  }
+
+  async destroy({ params, response }: HttpContext) {
+    await this.mailService.permanentlyDeleteMail(params.id)
+    return response.ok(ApiResponse.success(null, 'Mail permanently deleted'))
+  }
+
+  async trashList({ response, serialize }: HttpContext) {
+    const mails = await this.mailService.fetchTrash()
+    const serialized = await serialize(MailTransformer.transform(mails))
+    return response.ok(ApiResponse.success(serialized.data, 'Trash retrieved'))
+  }
+
+  async spamList({ response, serialize }: HttpContext) {
+    const mails = await this.mailService.fetchSpam()
+    const serialized = await serialize(MailTransformer.transform(mails))
+    return response.ok(ApiResponse.success(serialized.data, 'Spam retrieved'))
   }
 
   async forward({ params, request, response, serialize }: HttpContext) {
