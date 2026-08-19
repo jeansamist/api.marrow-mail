@@ -23,4 +23,13 @@ export default class SubscriptionsController {
     const serialized = await serialize(SubscriptionTransformer.transform(subscription))
     return response.ok(ApiResponse.success(serialized.data, 'Subscription status'))
   }
+
+  async current({ response, serialize }: HttpContext) {
+    const subscription = await this.subscriptionService.getCurrentForUser()
+    if (!subscription) {
+      return response.ok(ApiResponse.success(null, 'No subscription found'))
+    }
+    const serialized = await serialize(SubscriptionTransformer.transform(subscription))
+    return response.ok(ApiResponse.success(serialized.data, 'Current subscription retrieved'))
+  }
 }

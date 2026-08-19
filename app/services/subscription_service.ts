@@ -195,6 +195,12 @@ export class SubscriptionService {
     return { subscription, providerPayload: { transactionId: result.transaction_id } }
   }
 
+  async getCurrentForUser(): Promise<Subscription | null> {
+    const active = await this.repository.findLatestActiveForUser(this.userId)
+    if (active) return active
+    return this.repository.findLatestForUser(this.userId)
+  }
+
   async getStatus(subscriptionId: number): Promise<Subscription> {
     const subscription = await this.repository.findById(subscriptionId)
     if (!subscription) throw httpError(404, 'Subscription not found')

@@ -1,4 +1,5 @@
 import User from '#models/user'
+import SubscriptionRepository from '#repositories/subscription_repository'
 import { SubscriptionService } from '#services/subscription_service'
 import { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
@@ -252,4 +253,98 @@ test.group('SubscriptionService', (group) => {
   })
     .timeout(20000)
     .retry(2)
+
+  test('getCurrentForUser prefers the latest active subscription over a pending one', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+
+    await repository.create({
+      userId: user.id,
+      provider: 'stripe',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+    const active = await repository.create({
+      userId: user.id,
+      provider: 'stripe',
+      planId: 'plus',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 7000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const current = await subscriptionService.getCurrentForUser()
+    assert.equal(current!.id, active.id)
+  })
+
+  test('getCurrentForUser falls back to the latest subscription when none are active', async ({
+    assert,
+  }) => {
+    const otherUser = await User.create({
+      firstName: 'NoActive',
+      lastName: 'Tester',
+      email: 'subscription-service.no-active@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: otherUser } }
+    })
+    const otherSubscriptionService = await app.container.make(SubscriptionService)
+    const repository = await app.container.make(SubscriptionRepository)
+
+    const pending = await repository.create({
+      userId: otherUser.id,
+      provider: 'stripe',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const current = await otherSubscriptionService.getCurrentForUser()
+    assert.equal(current!.id, pending.id)
+
+    await otherUser.delete()
+  })
+
+  test('getCurrentForUser returns null for a user with no subscriptions at all', async ({
+    assert,
+  }) => {
+    const freshUser = await User.create({
+      firstName: 'Fresh',
+      lastName: 'Tester',
+      email: 'subscription-service.fresh@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: freshUser } }
+    })
+    const freshSubscriptionService = await app.container.make(SubscriptionService)
+
+    const current = await freshSubscriptionService.getCurrentForUser()
+    assert.isNull(current)
+
+    await freshUser.delete()
+  })
 })

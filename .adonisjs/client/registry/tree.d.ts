@@ -39,19 +39,27 @@ export interface ApiDefinition {
     getBranding: typeof routes['domains.get_branding']
     updateBranding: typeof routes['domains.update_branding']
     createLogoUploadLink: typeof routes['domains.create_logo_upload_link']
+    setCustomLoginHostname: typeof routes['domains.set_custom_login_hostname']
+    verifyCustomLoginHostname: typeof routes['domains.verify_custom_login_hostname']
   }
   storageOverview: {
     usage: typeof routes['storage_overview.usage']
+  }
+  roleAliases: {
+    index: typeof routes['role_aliases.index']
+    store: typeof routes['role_aliases.store']
+    destroy: typeof routes['role_aliases.destroy']
+  }
+  subscriptions: {
+    current: typeof routes['subscriptions.current']
+    checkout: typeof routes['subscriptions.checkout']
+    status: typeof routes['subscriptions.status']
   }
   onboarding: {
     registerDomain: typeof routes['onboarding.register_domain']
     setupMailAccount: typeof routes['onboarding.setup_mail_account']
     getDnsRecords: typeof routes['onboarding.get_dns_records']
     checkDomainStatus: typeof routes['onboarding.check_domain_status']
-  }
-  subscriptions: {
-    checkout: typeof routes['subscriptions.checkout']
-    status: typeof routes['subscriptions.status']
   }
   authMailAccounts: {
     login: typeof routes['auth_mail_accounts.login']

@@ -162,11 +162,47 @@ const routes = {
     tokens: [{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"api","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":1,"val":"id","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"branding","end":""},{"old":"/api/domains/:id/branding/logo-upload-link","type":0,"val":"logo-upload-link","end":""}],
     types: placeholder as Registry['domains.create_logo_upload_link']['types'],
   },
+  'domains.set_custom_login_hostname': {
+    methods: ["PUT"],
+    pattern: '/api/domains/:id/custom-login-hostname',
+    tokens: [{"old":"/api/domains/:id/custom-login-hostname","type":0,"val":"api","end":""},{"old":"/api/domains/:id/custom-login-hostname","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/custom-login-hostname","type":1,"val":"id","end":""},{"old":"/api/domains/:id/custom-login-hostname","type":0,"val":"custom-login-hostname","end":""}],
+    types: placeholder as Registry['domains.set_custom_login_hostname']['types'],
+  },
+  'domains.verify_custom_login_hostname': {
+    methods: ["POST"],
+    pattern: '/api/domains/:id/custom-login-hostname/verify',
+    tokens: [{"old":"/api/domains/:id/custom-login-hostname/verify","type":0,"val":"api","end":""},{"old":"/api/domains/:id/custom-login-hostname/verify","type":0,"val":"domains","end":""},{"old":"/api/domains/:id/custom-login-hostname/verify","type":1,"val":"id","end":""},{"old":"/api/domains/:id/custom-login-hostname/verify","type":0,"val":"custom-login-hostname","end":""},{"old":"/api/domains/:id/custom-login-hostname/verify","type":0,"val":"verify","end":""}],
+    types: placeholder as Registry['domains.verify_custom_login_hostname']['types'],
+  },
   'storage_overview.usage': {
     methods: ["GET","HEAD"],
     pattern: '/api/storage/usage',
     tokens: [{"old":"/api/storage/usage","type":0,"val":"api","end":""},{"old":"/api/storage/usage","type":0,"val":"storage","end":""},{"old":"/api/storage/usage","type":0,"val":"usage","end":""}],
     types: placeholder as Registry['storage_overview.usage']['types'],
+  },
+  'role_aliases.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domains/:domainId/role-aliases',
+    tokens: [{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"api","end":""},{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"domains","end":""},{"old":"/api/domains/:domainId/role-aliases","type":1,"val":"domainId","end":""},{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"role-aliases","end":""}],
+    types: placeholder as Registry['role_aliases.index']['types'],
+  },
+  'role_aliases.store': {
+    methods: ["POST"],
+    pattern: '/api/domains/:domainId/role-aliases',
+    tokens: [{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"api","end":""},{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"domains","end":""},{"old":"/api/domains/:domainId/role-aliases","type":1,"val":"domainId","end":""},{"old":"/api/domains/:domainId/role-aliases","type":0,"val":"role-aliases","end":""}],
+    types: placeholder as Registry['role_aliases.store']['types'],
+  },
+  'role_aliases.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/role-aliases/:id',
+    tokens: [{"old":"/api/role-aliases/:id","type":0,"val":"api","end":""},{"old":"/api/role-aliases/:id","type":0,"val":"role-aliases","end":""},{"old":"/api/role-aliases/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['role_aliases.destroy']['types'],
+  },
+  'subscriptions.current': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/subscriptions/current',
+    tokens: [{"old":"/api/subscriptions/current","type":0,"val":"api","end":""},{"old":"/api/subscriptions/current","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/current","type":0,"val":"current","end":""}],
+    types: placeholder as Registry['subscriptions.current']['types'],
   },
   'onboarding.register_domain': {
     methods: ["POST"],
