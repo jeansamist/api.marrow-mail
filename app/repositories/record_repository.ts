@@ -40,4 +40,8 @@ export default class RecordRepository {
   async findByDomainId(domainId: number): Promise<Record[]> {
     return this.model.findManyBy('domainId', domainId)
   }
+
+  async deleteByDomainId(domainId: number): Promise<void> {
+    await this.model.query().where('domain_id', domainId).delete()
+  }
 }
