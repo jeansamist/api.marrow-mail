@@ -1,4 +1,5 @@
 import User from '#models/user'
+import SubscriptionRepository from '#repositories/subscription_repository'
 import { SubscriptionService } from '#services/subscription_service'
 import { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
@@ -252,4 +253,225 @@ test.group('SubscriptionService', (group) => {
   })
     .timeout(20000)
     .retry(2)
+
+  test('getCurrentForUser prefers the latest active subscription over a pending one', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+
+    await repository.create({
+      userId: user.id,
+      provider: 'stripe',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+    const active = await repository.create({
+      userId: user.id,
+      provider: 'stripe',
+      planId: 'plus',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 7000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const current = await subscriptionService.getCurrentForUser()
+    assert.equal(current!.id, active.id)
+  })
+
+  test('getCurrentForUser falls back to the latest subscription when none are active', async ({
+    assert,
+  }) => {
+    const otherUser = await User.create({
+      firstName: 'NoActive',
+      lastName: 'Tester',
+      email: 'subscription-service.no-active@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: otherUser } }
+    })
+    const otherSubscriptionService = await app.container.make(SubscriptionService)
+    const repository = await app.container.make(SubscriptionRepository)
+
+    const pending = await repository.create({
+      userId: otherUser.id,
+      provider: 'stripe',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const current = await otherSubscriptionService.getCurrentForUser()
+    assert.equal(current!.id, pending.id)
+
+    await otherUser.delete()
+  })
+
+  test('getCurrentForUser returns null for a user with no subscriptions at all', async ({
+    assert,
+  }) => {
+    const freshUser = await User.create({
+      firstName: 'Fresh',
+      lastName: 'Tester',
+      email: 'subscription-service.fresh@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: freshUser } }
+    })
+    const freshSubscriptionService = await app.container.make(SubscriptionService)
+
+    const current = await freshSubscriptionService.getCurrentForUser()
+    assert.isNull(current)
+
+    await freshUser.delete()
+  })
+
+  test('changePlan updates the plan and recomputes amountTotal for a non-Stripe subscription', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 5000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const updated = await subscriptionService.changePlan(subscription.id, 'plus')
+    assert.equal(updated.planId, 'plus')
+    assert.notEqual(updated.amountTotal, 5000)
+  })
+
+  test('changePlan rejects a subscription owned by another user', async ({ assert }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const otherUser = await User.create({
+      firstName: 'Other',
+      lastName: 'Tester',
+      email: 'subscription-service.change-other@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: otherUser } }
+    })
+    const otherSubscriptionService = await app.container.make(SubscriptionService)
+
+    try {
+      await otherSubscriptionService.changePlan(subscription.id, 'plus')
+      assert.fail('Expected changePlan to reject a subscription owned by another user')
+    } catch (error) {
+      assert.equal(httpStatus(error), 403)
+    }
+
+    await otherUser.delete()
+  })
+
+  test('changePlan rejects a non-active subscription', async ({ assert }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    try {
+      await subscriptionService.changePlan(subscription.id, 'plus')
+      assert.fail('Expected changePlan to reject a non-active subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+  })
+
+  test('cancelSubscription marks an active subscription canceled, and reactivateSubscription reverses it', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const canceled = await subscriptionService.cancelSubscription(subscription.id)
+    assert.equal(canceled.status, 'canceled')
+
+    try {
+      await subscriptionService.cancelSubscription(subscription.id)
+      assert.fail('Expected cancelSubscription to reject an already-canceled subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+
+    const reactivated = await subscriptionService.reactivateSubscription(subscription.id)
+    assert.equal(reactivated.status, 'active')
+
+    try {
+      await subscriptionService.reactivateSubscription(subscription.id)
+      assert.fail('Expected reactivateSubscription to reject an already-active subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+  })
 })

@@ -1,9 +1,10 @@
 import Domain from '#models/domain'
 import File from '#models/file'
 import User from '#models/user'
+import SubscriptionRepository from '#repositories/subscription_repository'
 import { MailAccountService } from '#services/mail_account_service'
 import { StorageOverviewService } from '#services/storage_overview_service'
-import { DEFAULT_MAILBOX_STORAGE_BYTES } from '#utils/pricing'
+import { defaultStorageBytesForPlan } from '#utils/pricing'
 import { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
 import testUtils from '@adonisjs/core/services/test_utils'
@@ -76,7 +77,7 @@ test.group('StorageOverviewService', (group) => {
     await User.query().where('email', userEmail).delete()
   })
 
-  test('getUsageForCurrentUser sums file sizes per mailbox and falls back to the default quota', async ({
+  test('getUsageForCurrentUser sums file sizes per mailbox and falls back to the core-plan default quota with no subscription', async ({
     assert,
   }) => {
     const usage = await storageOverviewService.getUsageForCurrentUser()
@@ -84,8 +85,34 @@ test.group('StorageOverviewService', (group) => {
 
     assert.isDefined(mailbox)
     assert.equal(mailbox!.usedBytes, 3000)
-    assert.equal(mailbox!.quotaBytes, DEFAULT_MAILBOX_STORAGE_BYTES)
+    assert.equal(mailbox!.quotaBytes, defaultStorageBytesForPlan('core'))
     assert.equal(usage.totalUsedBytes, 3000)
+  })
+
+  test('getUsageForCurrentUser falls back to the plus-plan default quota when the user has an active plus subscription', async ({
+    assert,
+  }) => {
+    const subscriptionRepository = await app.container.make(SubscriptionRepository)
+    const subscription = await subscriptionRepository.create({
+      userId: user.id,
+      provider: 'stripe',
+      planId: 'plus',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 3500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const usage = await storageOverviewService.getUsageForCurrentUser()
+    const mailbox = usage.mailboxes.find((m) => m.mailAccountId === mailAccountId)
+    assert.equal(mailbox!.quotaBytes, defaultStorageBytesForPlan('plus'))
+
+    await subscription.delete()
   })
 
   test('updateQuota rejects a mail account owned by another user', async ({ assert }) => {
@@ -131,5 +158,28 @@ test.group('StorageOverviewService', (group) => {
     } catch (error) {
       assert.equal(httpStatus(error), 413)
     }
+  })
+
+  // Regression test: assertWithinQuota is called from StorageService during
+  // mail-account-JWT-authenticated upload-link creation, which never
+  // populates ctx.auth.user (that guard is only for owner-session requests).
+  // It must resolve the default quota via the mail account's owner, not
+  // ctx.auth.user, or every upload for a mailbox with no explicit quota
+  // crashes.
+  test('assertWithinQuota works with no ctx.auth.user bound, as in a mail-account-JWT request', async ({
+    assert,
+  }) => {
+    app.container.bind(HttpContext, () => testUtils.createHttpContext())
+    const unauthedStorageOverviewService = await app.container.make(StorageOverviewService)
+
+    const freshMailAccount = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'jwt-context-owner', owner: userEmail }],
+      domainId: domain.id,
+    })
+
+    await unauthedStorageOverviewService.assertWithinQuota(freshMailAccount[0].id, 400)
+    assert.isTrue(true, 'assertWithinQuota resolved without ctx.auth.user')
+
+    await bindUserContext(user)
   })
 })

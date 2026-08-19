@@ -2,6 +2,7 @@ import type MailAccount from '#models/mail_account'
 import FileRepository from '#repositories/file_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
+import RoleAliasRepository from '#repositories/role_alias_repository'
 import { S3Service } from '#services/s3_service'
 import { SESService } from '#services/ses_service'
 import { inject } from '@adonisjs/core'
@@ -34,6 +35,7 @@ export class EmailReceivingService {
   constructor(
     private readonly mailRepository: MailRepository,
     private readonly mailAccountRepository: MailAccountRepository,
+    private readonly roleAliasRepository: RoleAliasRepository,
     private readonly fileRepository: FileRepository,
     private readonly s3Service: S3Service,
     private readonly sesService: SESService,
@@ -57,10 +59,19 @@ export class EmailReceivingService {
       const username = recipientEmail.substring(0, atIndex)
       const domainName = recipientEmail.substring(atIndex + 1)
 
-      const mailAccount = await this.mailAccountRepository.findByUsernameAndDomain(
+      let mailAccount = await this.mailAccountRepository.findByUsernameAndDomain(
         username,
         domainName
       )
+      if (!mailAccount) {
+        const roleAlias = await this.roleAliasRepository.findByDomainNameAndAlias(
+          domainName,
+          username
+        )
+        if (roleAlias) {
+          mailAccount = await this.mailAccountRepository.findById(roleAlias.mailAccountId)
+        }
+      }
       if (!mailAccount) {
         this.logger.warn(`No mail account found for ${recipientEmail}`)
         continue

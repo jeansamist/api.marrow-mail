@@ -319,6 +319,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['createLogoUploadLink']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'domains.set_custom_login_hostname': {
+    methods: ["PUT"]
+    pattern: '/api/domains/:id/custom-login-hostname'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_custom_login_hostname').setCustomLoginHostnameValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_custom_login_hostname').setCustomLoginHostnameValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['setCustomLoginHostname']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['setCustomLoginHostname']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'domains.verify_custom_login_hostname': {
+    methods: ["POST"]
+    pattern: '/api/domains/:id/custom-login-hostname/verify'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['verifyCustomLoginHostname']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domains_controller').default['verifyCustomLoginHostname']>>>
+    }
+  }
   'storage_overview.usage': {
     methods: ["GET","HEAD"]
     pattern: '/api/storage/usage'
@@ -329,6 +353,114 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['usage']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['usage']>>>
+    }
+  }
+  'storage_overview.create_addon_checkout': {
+    methods: ["POST"]
+    pattern: '/api/storage/addon-checkout'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/storage').createStorageAddonCheckoutValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/storage').createStorageAddonCheckoutValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['createAddonCheckout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['createAddonCheckout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'storage_overview.addon_payment_status': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/storage/addon-payments/:paymentId'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { paymentId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['addonPaymentStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/storage_overview_controller').default['addonPaymentStatus']>>>
+    }
+  }
+  'role_aliases.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domains/:domainId/role-aliases'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { domainId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['index']>>>
+    }
+  }
+  'role_aliases.store': {
+    methods: ["POST"]
+    pattern: '/api/domains/:domainId/role-aliases'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/role_alias').createRoleAliasValidator)>>
+      paramsTuple: [ParamValue]
+      params: { domainId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/role_alias').createRoleAliasValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'role_aliases.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/role-aliases/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/role_aliases_controller').default['destroy']>>>
+    }
+  }
+  'subscriptions.current': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/subscriptions/current'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['current']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['current']>>>
+    }
+  }
+  'subscriptions.change_plan': {
+    methods: ["PUT"]
+    pattern: '/api/subscriptions/:id/change-plan'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').changeSubscriptionPlanValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').changeSubscriptionPlanValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'subscriptions.cancel': {
+    methods: ["POST"]
+    pattern: '/api/subscriptions/:id/cancel'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['cancel']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['cancel']>>>
+    }
+  }
+  'subscriptions.reactivate': {
+    methods: ["POST"]
+    pattern: '/api/subscriptions/:id/reactivate'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
     }
   }
   'onboarding.register_domain': {

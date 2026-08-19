@@ -30,7 +30,18 @@ export type ScannedRoutes = {
     'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.set_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.create_addon_checkout': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'role_aliases.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.current': { paramsTuple?: []; params?: {} }
+    'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -101,6 +112,9 @@ export type ScannedRoutes = {
     'domains.index': { paramsTuple?: []; params?: {} }
     'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'subscriptions.current': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -129,6 +143,9 @@ export type ScannedRoutes = {
     'domains.index': { paramsTuple?: []; params?: {} }
     'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.usage': { paramsTuple?: []; params?: {} }
+    'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'subscriptions.current': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -162,6 +179,11 @@ export type ScannedRoutes = {
     'mail_accounts.resend_invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.store': { paramsTuple?: []; params?: {} }
     'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'storage_overview.create_addon_checkout': { paramsTuple?: []; params?: {} }
+    'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
@@ -189,6 +211,8 @@ export type ScannedRoutes = {
     'mail_accounts.update_storage_quota': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.set_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.change_password': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.update_profile': { paramsTuple?: []; params?: {} }
     'mail_forwarding.set_forwarding_email': { paramsTuple?: []; params?: {} }
@@ -208,6 +232,7 @@ export type ScannedRoutes = {
   DELETE: {
     'mail_accounts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'role_aliases.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage.delete_file': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'mail.delete_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.cancel_schedule': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
