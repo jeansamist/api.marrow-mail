@@ -347,4 +347,131 @@ test.group('SubscriptionService', (group) => {
 
     await freshUser.delete()
   })
+
+  test('changePlan updates the plan and recomputes amountTotal for a non-Stripe subscription', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 5000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const updated = await subscriptionService.changePlan(subscription.id, 'plus')
+    assert.equal(updated.planId, 'plus')
+    assert.notEqual(updated.amountTotal, 5000)
+  })
+
+  test('changePlan rejects a subscription owned by another user', async ({ assert }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const otherUser = await User.create({
+      firstName: 'Other',
+      lastName: 'Tester',
+      email: 'subscription-service.change-other@example.com',
+      password: 'password',
+    })
+    app.container.bind(HttpContext, () => {
+      return { ...testUtils.createHttpContext(), auth: { user: otherUser } }
+    })
+    const otherSubscriptionService = await app.container.make(SubscriptionService)
+
+    try {
+      await otherSubscriptionService.changePlan(subscription.id, 'plus')
+      assert.fail('Expected changePlan to reject a subscription owned by another user')
+    } catch (error) {
+      assert.equal(httpStatus(error), 403)
+    }
+
+    await otherUser.delete()
+  })
+
+  test('changePlan rejects a non-active subscription', async ({ assert }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'pending',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    try {
+      await subscriptionService.changePlan(subscription.id, 'plus')
+      assert.fail('Expected changePlan to reject a non-active subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+  })
+
+  test('cancelSubscription marks an active subscription canceled, and reactivateSubscription reverses it', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 2500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    })
+
+    const canceled = await subscriptionService.cancelSubscription(subscription.id)
+    assert.equal(canceled.status, 'canceled')
+
+    try {
+      await subscriptionService.cancelSubscription(subscription.id)
+      assert.fail('Expected cancelSubscription to reject an already-canceled subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+
+    const reactivated = await subscriptionService.reactivateSubscription(subscription.id)
+    assert.equal(reactivated.status, 'active')
+
+    try {
+      await subscriptionService.reactivateSubscription(subscription.id)
+      assert.fail('Expected reactivateSubscription to reject an already-active subscription')
+    } catch (error) {
+      assert.equal(httpStatus(error), 409)
+    }
+  })
 })

@@ -204,6 +204,24 @@ const routes = {
     tokens: [{"old":"/api/subscriptions/current","type":0,"val":"api","end":""},{"old":"/api/subscriptions/current","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/current","type":0,"val":"current","end":""}],
     types: placeholder as Registry['subscriptions.current']['types'],
   },
+  'subscriptions.change_plan': {
+    methods: ["PUT"],
+    pattern: '/api/subscriptions/:id/change-plan',
+    tokens: [{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/change-plan","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"change-plan","end":""}],
+    types: placeholder as Registry['subscriptions.change_plan']['types'],
+  },
+  'subscriptions.cancel': {
+    methods: ["POST"],
+    pattern: '/api/subscriptions/:id/cancel',
+    tokens: [{"old":"/api/subscriptions/:id/cancel","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/cancel","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/cancel","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/cancel","type":0,"val":"cancel","end":""}],
+    types: placeholder as Registry['subscriptions.cancel']['types'],
+  },
+  'subscriptions.reactivate': {
+    methods: ["POST"],
+    pattern: '/api/subscriptions/:id/reactivate',
+    tokens: [{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/reactivate","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"reactivate","end":""}],
+    types: placeholder as Registry['subscriptions.reactivate']['types'],
+  },
   'onboarding.register_domain': {
     methods: ["POST"],
     pattern: '/api/onboarding/register-domain',

@@ -403,6 +403,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['current']>>>
     }
   }
+  'subscriptions.change_plan': {
+    methods: ["PUT"]
+    pattern: '/api/subscriptions/:id/change-plan'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').changeSubscriptionPlanValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').changeSubscriptionPlanValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'subscriptions.cancel': {
+    methods: ["POST"]
+    pattern: '/api/subscriptions/:id/cancel'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['cancel']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['cancel']>>>
+    }
+  }
+  'subscriptions.reactivate': {
+    methods: ["POST"]
+    pattern: '/api/subscriptions/:id/reactivate'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
+    }
+  }
   'onboarding.register_domain': {
     methods: ["POST"]
     pattern: '/api/onboarding/register-domain'

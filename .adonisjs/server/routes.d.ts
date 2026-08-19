@@ -37,6 +37,9 @@ export type ScannedRoutes = {
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'role_aliases.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
+    'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -174,6 +177,8 @@ export type ScannedRoutes = {
     'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
@@ -202,6 +207,7 @@ export type ScannedRoutes = {
     'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.set_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.change_password': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.update_profile': { paramsTuple?: []; params?: {} }
     'mail_forwarding.set_forwarding_email': { paramsTuple?: []; params?: {} }

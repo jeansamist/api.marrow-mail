@@ -98,6 +98,9 @@ router
     router
       .group(() => {
         router.get('/current', [controllers.Subscriptions, 'current'])
+        router.put('/:id/change-plan', [controllers.Subscriptions, 'changePlan'])
+        router.post('/:id/cancel', [controllers.Subscriptions, 'cancel'])
+        router.post('/:id/reactivate', [controllers.Subscriptions, 'reactivate'])
       })
       .prefix('/subscriptions')
       .use([middleware.auth()])

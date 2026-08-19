@@ -201,6 +201,81 @@ export class SubscriptionService {
     return this.repository.findLatestForUser(this.userId)
   }
 
+  async changePlan(subscriptionId: number, planId: PlanId): Promise<Subscription> {
+    const subscription = await this.repository.findById(subscriptionId)
+    if (!subscription) throw httpError(404, 'Subscription not found')
+    this.checkOwnership(subscription)
+    if (subscription.status !== 'active') {
+      throw httpError(409, 'Only an active subscription can change plans')
+    }
+    if (subscription.planId === planId) return subscription
+
+    const pricing = calcMailboxPricing(subscription.mailboxQuantity, subscription.billingMonths, planId)
+
+    if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
+      const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
+        subscription.stripeSubscriptionId
+      )
+      const item = stripeSubscription.items.data[0]
+      const recurring: Stripe.PriceCreateParams.Recurring =
+        subscription.billingMonths === 12
+          ? { interval: 'year', interval_count: 1 }
+          : { interval: 'month', interval_count: subscription.billingMonths }
+
+      await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
+        items: [
+          {
+            id: item.id,
+            price_data: {
+              currency: this.stripeCurrency(),
+              product: this.stripeProductId(planId),
+              unit_amount: Math.round(pricing.total / subscription.mailboxQuantity),
+              recurring,
+            },
+            quantity: subscription.mailboxQuantity,
+          },
+        ],
+        proration_behavior: 'create_prorations',
+      })
+    }
+
+    return this.repository.update(subscription, { planId, amountTotal: pricing.total })
+  }
+
+  async cancelSubscription(subscriptionId: number): Promise<Subscription> {
+    const subscription = await this.repository.findById(subscriptionId)
+    if (!subscription) throw httpError(404, 'Subscription not found')
+    this.checkOwnership(subscription)
+    if (subscription.status !== 'active') {
+      throw httpError(409, 'Only an active subscription can be canceled')
+    }
+
+    if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
+      await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      })
+    }
+
+    return this.repository.update(subscription, { status: 'canceled' })
+  }
+
+  async reactivateSubscription(subscriptionId: number): Promise<Subscription> {
+    const subscription = await this.repository.findById(subscriptionId)
+    if (!subscription) throw httpError(404, 'Subscription not found')
+    this.checkOwnership(subscription)
+    if (subscription.status !== 'canceled') {
+      throw httpError(409, 'Only a canceled subscription can be reactivated')
+    }
+
+    if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
+      await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: false,
+      })
+    }
+
+    return this.repository.update(subscription, { status: 'active' })
+  }
+
   async getStatus(subscriptionId: number): Promise<Subscription> {
     const subscription = await this.repository.findById(subscriptionId)
     if (!subscription) throw httpError(404, 'Subscription not found')

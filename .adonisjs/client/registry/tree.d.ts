@@ -52,6 +52,9 @@ export interface ApiDefinition {
   }
   subscriptions: {
     current: typeof routes['subscriptions.current']
+    changePlan: typeof routes['subscriptions.change_plan']
+    cancel: typeof routes['subscriptions.cancel']
+    reactivate: typeof routes['subscriptions.reactivate']
     checkout: typeof routes['subscriptions.checkout']
     status: typeof routes['subscriptions.status']
   }
