@@ -159,4 +159,27 @@ test.group('StorageOverviewService', (group) => {
       assert.equal(httpStatus(error), 413)
     }
   })
+
+  // Regression test: assertWithinQuota is called from StorageService during
+  // mail-account-JWT-authenticated upload-link creation, which never
+  // populates ctx.auth.user (that guard is only for owner-session requests).
+  // It must resolve the default quota via the mail account's owner, not
+  // ctx.auth.user, or every upload for a mailbox with no explicit quota
+  // crashes.
+  test('assertWithinQuota works with no ctx.auth.user bound, as in a mail-account-JWT request', async ({
+    assert,
+  }) => {
+    app.container.bind(HttpContext, () => testUtils.createHttpContext())
+    const unauthedStorageOverviewService = await app.container.make(StorageOverviewService)
+
+    const freshMailAccount = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'jwt-context-owner', owner: userEmail }],
+      domainId: domain.id,
+    })
+
+    await unauthedStorageOverviewService.assertWithinQuota(freshMailAccount[0].id, 400)
+    assert.isTrue(true, 'assertWithinQuota resolved without ctx.auth.user')
+
+    await bindUserContext(user)
+  })
 })

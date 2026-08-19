@@ -5,7 +5,6 @@ import SubscriptionRepository from '#repositories/subscription_repository'
 import { ElgiopayService } from '#services/elgiopay_service'
 import { GeoService } from '#services/geo_service'
 import { StripeService } from '#services/stripe_service'
-import { SubscriptionService } from '#services/subscription_service'
 import env from '#start/env'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
 import { defaultStorageBytesForPlan, STORAGE_PRICE_PER_GB_XAF, type PlanId } from '#utils/pricing'
@@ -37,7 +36,6 @@ export class StorageOverviewService {
   constructor(
     private readonly fileRepository: FileRepository,
     private readonly mailAccountRepository: MailAccountRepository,
-    private readonly subscriptionService: SubscriptionService,
     private readonly subscriptionRepository: SubscriptionRepository,
     private readonly paymentRepository: PaymentRepository,
     private readonly stripeService: StripeService,
@@ -50,15 +48,23 @@ export class StorageOverviewService {
     return this.ctx.auth.user!.id
   }
 
-  private async defaultQuotaBytes(): Promise<number> {
-    const subscription = await this.subscriptionService.getCurrentForUser()
+  /**
+   * Resolves the plan-derived default quota for a given owner. Takes an
+   * explicit userId rather than reading ctx.auth.user — this is also called
+   * from mail-account-JWT-authenticated requests (upload-link creation),
+   * which never populate the main auth guard at all.
+   */
+  private async defaultQuotaBytesForOwner(userId: number): Promise<number> {
+    const subscription =
+      (await this.subscriptionRepository.findLatestActiveForUser(userId)) ??
+      (await this.subscriptionRepository.findLatestForUser(userId))
     return defaultStorageBytesForPlan((subscription?.planId as PlanId) ?? 'core')
   }
 
   async getUsageForCurrentUser() {
     const [mailAccounts, defaultQuotaBytes] = await Promise.all([
       this.mailAccountRepository.findAllByUserId(this.userId),
-      this.defaultQuotaBytes(),
+      this.defaultQuotaBytesForOwner(this.userId),
     ])
     const usageByAccount = await this.fileRepository.sumSizeByMailAccountIds(
       mailAccounts.map((account) => account.id)
@@ -97,7 +103,8 @@ export class StorageOverviewService {
 
     const usedBytes = await this.fileRepository.sumSizeByMailAccountId(mailAccountId)
     const quotaBytes = Number(
-      mailAccount.storageQuotaBytes ?? (await this.defaultQuotaBytes())
+      mailAccount.storageQuotaBytes ??
+        (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
     )
 
     if (usedBytes + additionalBytes > quotaBytes) {
@@ -247,7 +254,8 @@ export class StorageOverviewService {
     if (!mailAccount) return
 
     const currentQuotaBytes = Number(
-      mailAccount.storageQuotaBytes ?? (await this.defaultQuotaBytes())
+      mailAccount.storageQuotaBytes ??
+        (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
     )
     await this.mailAccountRepository.update(mailAccount, {
       storageQuotaBytes: currentQuotaBytes + metadata.extraGB * BYTES_PER_GB,
