@@ -1,5 +1,9 @@
+import Contact from '#models/contact'
 import Domain from '#models/domain'
 import File from '#models/file'
+import Mail from '#models/mail'
+import MailAccountProfile from '#models/mail_account_profile'
+import Signature from '#models/signature'
 import User from '#models/user'
 import SubscriptionRepository from '#repositories/subscription_repository'
 import { MailAccountService } from '#services/mail_account_service'
@@ -181,5 +185,87 @@ test.group('StorageOverviewService', (group) => {
     assert.isTrue(true, 'assertWithinQuota resolved without ctx.auth.user')
 
     await bindUserContext(user)
+  })
+
+  // Regression: usage previously only summed the `files` table (S3
+  // attachments/avatars), ignoring everything a mailbox stores only in
+  // Postgres — email bodies, profile fields, signature, contacts. A mailbox
+  // with zero files but a large inbox reported 0 bytes used.
+  test('getUsageForCurrentUser counts email bodies, profile, signature, and contacts — not just S3 files', async ({
+    assert,
+  }) => {
+    const created = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'content-usage-owner', owner: userEmail }],
+      domainId: domain.id,
+    })
+    const contentMailAccountId = created[0].id
+
+    await Mail.create({
+      mailAccountId: contentMailAccountId,
+      fromEmail: 'sender@example.com',
+      toAddresses: ['content-usage-owner@storage-overview-test.shop'],
+      ccAddresses: null,
+      bccAddresses: null,
+      replyTo: null,
+      subject: 'a'.repeat(10),
+      bodyHtml: 'b'.repeat(500),
+      bodyText: 'c'.repeat(200),
+      status: 'received',
+      direction: 'received',
+      sesMessageId: null,
+      attachmentIds: null,
+      important: false,
+      isSpam: false,
+      isRead: false,
+      failureReason: null,
+      deleted: false,
+      folderId: null,
+      scheduledAt: null,
+    })
+
+    await MailAccountProfile.create({
+      mailAccountId: contentMailAccountId,
+      firstName: 'Content',
+      lastName: 'Owner',
+      avatar: null,
+    })
+
+    await Signature.create({
+      mailAccountId: contentMailAccountId,
+      name: 'Content Owner',
+      jobTitle: 'd'.repeat(20),
+      phone: null,
+      address: null,
+      website: null,
+      linkedin: null,
+      instagram: null,
+      facebook: null,
+      includeInNewEmails: true,
+      includeInReplies: true,
+      includePhoto: false,
+    })
+
+    await Contact.create({
+      mailAccountId: contentMailAccountId,
+      firstName: 'A',
+      lastName: 'Contact',
+      email: 'a-contact@example.com',
+      phone: null,
+      company: null,
+      notes: 'e'.repeat(50),
+    })
+
+    const usage = await storageOverviewService.getUsageForCurrentUser()
+    const mailbox = usage.mailboxes.find((m) => m.mailAccountId === contentMailAccountId)
+
+    assert.isDefined(mailbox)
+    // No files were ever uploaded for this mailbox — the old, files-only
+    // calculation would have reported 0 here.
+    assert.isAbove(mailbox!.usedBytes, 0)
+
+    await Mail.query().where('mail_account_id', contentMailAccountId).delete()
+    await MailAccountProfile.query().where('mail_account_id', contentMailAccountId).delete()
+    await Signature.query().where('mail_account_id', contentMailAccountId).delete()
+    await Contact.query().where('mail_account_id', contentMailAccountId).delete()
   })
 })
