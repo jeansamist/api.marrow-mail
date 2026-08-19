@@ -5,6 +5,10 @@ export interface ApiDefinition {
   sesWebhook: typeof routes['ses_webhook']
   stripeWebhook: typeof routes['stripe_webhook']
   elgiopayWebhook: typeof routes['elgiopay_webhook']
+  publicDomains: {
+    publicBranding: typeof routes['public_domains.public_branding']
+    byHostname: typeof routes['public_domains.by_hostname']
+  }
   auth: {
     signUp: typeof routes['auth.sign_up']
     verifyEmail: typeof routes['auth.verify_email']
@@ -19,6 +23,9 @@ export interface ApiDefinition {
   mailAccounts: {
     index: typeof routes['mail_accounts.index']
     destroy: typeof routes['mail_accounts.destroy']
+    updateStorageQuota: typeof routes['mail_accounts.update_storage_quota']
+    toggleActive: typeof routes['mail_accounts.toggle_active']
+    resendInvite: typeof routes['mail_accounts.resend_invite']
   }
   mailAccountProfiles: {
     show: typeof routes['mail_account_profiles.show']
@@ -29,6 +36,12 @@ export interface ApiDefinition {
     index: typeof routes['domains.index']
     store: typeof routes['domains.store']
     destroy: typeof routes['domains.destroy']
+    getBranding: typeof routes['domains.get_branding']
+    updateBranding: typeof routes['domains.update_branding']
+    createLogoUploadLink: typeof routes['domains.create_logo_upload_link']
+  }
+  storageOverview: {
+    usage: typeof routes['storage_overview.usage']
   }
   onboarding: {
     registerDomain: typeof routes['onboarding.register_domain']

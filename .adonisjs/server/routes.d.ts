@@ -7,6 +7,8 @@ export type ScannedRoutes = {
     'ses_webhook': { paramsTuple?: []; params?: {} }
     'stripe_webhook': { paramsTuple?: []; params?: {} }
     'elgiopay_webhook': { paramsTuple?: []; params?: {} }
+    'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
+    'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
     'auth.sign_up': { paramsTuple?: []; params?: {} }
     'auth.verify_email': { paramsTuple?: []; params?: {} }
     'auth.sign_in': { paramsTuple?: []; params?: {} }
@@ -19,9 +21,16 @@ export type ScannedRoutes = {
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_accounts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
+    'mail_accounts.update_storage_quota': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail_accounts.resend_invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.index': { paramsTuple?: []; params?: {} }
     'domains.store': { paramsTuple?: []; params?: {} }
     'domains.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'storage_overview.usage': { paramsTuple?: []; params?: {} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -84,10 +93,14 @@ export type ScannedRoutes = {
     'signatures.update': { paramsTuple?: []; params?: {} }
   }
   GET: {
+    'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
+    'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
     'auth.profile': { paramsTuple?: []; params?: {} }
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
     'domains.index': { paramsTuple?: []; params?: {} }
+    'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'storage_overview.usage': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -108,10 +121,14 @@ export type ScannedRoutes = {
     'signatures.show': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
+    'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
+    'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
     'auth.profile': { paramsTuple?: []; params?: {} }
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
     'domains.index': { paramsTuple?: []; params?: {} }
+    'domains.get_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'storage_overview.usage': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -142,7 +159,9 @@ export type ScannedRoutes = {
     'auth.reset_password': { paramsTuple?: []; params?: {} }
     'auth.logout': { paramsTuple?: []; params?: {} }
     'auth.delete_account': { paramsTuple?: []; params?: {} }
+    'mail_accounts.resend_invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.store': { paramsTuple?: []; params?: {} }
+    'domains.create_logo_upload_link': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }
@@ -167,6 +186,9 @@ export type ScannedRoutes = {
   }
   PUT: {
     'auth.update_profile': { paramsTuple?: []; params?: {} }
+    'mail_accounts.update_storage_quota': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'auth_mail_accounts.change_password': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.update_profile': { paramsTuple?: []; params?: {} }
     'mail_forwarding.set_forwarding_email': { paramsTuple?: []; params?: {} }

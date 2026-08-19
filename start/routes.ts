@@ -22,6 +22,14 @@ router.post('/api/webhooks/ses', [controllers.SesWebhook, 'handle'])
 router.post('/api/webhooks/stripe', [controllers.StripeWebhook, 'handle'])
 router.post('/api/webhooks/elgiopay', [controllers.ElgiopayWebhook, 'handle'])
 
+// Public domain branding — no auth, used by the team-login page for teammates
+// who have never touched the browser that did onboarding.
+router.get('/api/domains/:name/public-branding', [controllers.PublicDomains, 'publicBranding'])
+
+// Public custom-login-hostname lookup — no auth, called server-side by the
+// frontend's Host-header middleware to resolve a custom hostname to a domain.
+router.get('/api/domains/by-hostname/:hostname', [controllers.PublicDomains, 'byHostname'])
+
 router
   .group(() => {
     router
@@ -47,6 +55,9 @@ router
         router.get('/', [controllers.MailAccounts, 'index'])
         router.delete('/:id', [controllers.MailAccounts, 'destroy'])
         router.get('/:mailAccountId/profile', [controllers.MailAccountProfiles, 'show'])
+        router.put('/:id/storage-quota', [controllers.MailAccounts, 'updateStorageQuota'])
+        router.put('/:id/toggle-active', [controllers.MailAccounts, 'toggleActive'])
+        router.post('/:id/resend-invite', [controllers.MailAccounts, 'resendInvite'])
       })
       .prefix('/mail-accounts')
       .use([middleware.auth()])
@@ -56,8 +67,18 @@ router
         router.get('/', [controllers.Domains, 'index'])
         router.post('/', [controllers.Domains, 'store'])
         router.delete('/:id', [controllers.Domains, 'destroy'])
+        router.get('/:id/branding', [controllers.Domains, 'getBranding'])
+        router.put('/:id/branding', [controllers.Domains, 'updateBranding'])
+        router.post('/:id/branding/logo-upload-link', [controllers.Domains, 'createLogoUploadLink'])
       })
       .prefix('/domains')
+      .use([middleware.auth()])
+    // Storage overview (account administration — aggregate usage across all mailboxes)
+    router
+      .group(() => {
+        router.get('/usage', [controllers.StorageOverview, 'usage'])
+      })
+      .prefix('/storage')
       .use([middleware.auth()])
     // Onboarding routes
     router

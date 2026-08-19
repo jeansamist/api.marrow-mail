@@ -134,4 +134,66 @@ test.group('MailAccountService', (group) => {
       assert.equal(httpStatus(error), 404)
     }
   })
+
+  test('toggleActive flips the active flag and rejects a mail account owned by another user', async ({
+    assert,
+  }) => {
+    const created = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'toggle-active', owner: userEmail }],
+      domainId: domain.id,
+    })
+    assert.isTrue(created[0].active)
+
+    const disabled = await mailAccountService.toggleActive(created[0].id)
+    assert.isFalse(disabled.active)
+
+    const reenabled = await mailAccountService.toggleActive(created[0].id)
+    assert.isTrue(reenabled.active)
+
+    const otherUser = await User.create({
+      firstName: 'Other',
+      lastName: 'Tester',
+      email: 'mail-account-service.toggle-other@example.com',
+      password: 'password',
+    })
+    await bindUserContext(otherUser)
+    const otherMailAccountService = await app.container.make(MailAccountService)
+
+    try {
+      await otherMailAccountService.toggleActive(created[0].id)
+      assert.fail('Expected toggleActive to reject a mail account owned by another user')
+    } catch (error) {
+      assert.equal(httpStatus(error), 403)
+    }
+
+    await bindUserContext(user)
+    mailAccountService = await app.container.make(MailAccountService)
+    await otherUser.delete()
+  })
+
+  test('resendInvite rejects a mail account with no owner email', async ({ assert }) => {
+    const created = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'no-owner', owner: userEmail }],
+      domainId: domain.id,
+    })
+    const found = await mailAccountService.findById(created[0].id)
+    await found!.merge({ ownerEmail: null }).save()
+
+    try {
+      await mailAccountService.resendInvite(created[0].id)
+      assert.fail('Expected resendInvite to reject a mail account with no owner email')
+    } catch (error) {
+      assert.equal(httpStatus(error), 400)
+    }
+  })
+
+  test('resendInvite succeeds for a mail account with an owner email', async ({ assert }) => {
+    const created = await mailAccountService.setupEmailAddress({
+      data: [{ username: 'has-owner', owner: userEmail }],
+      domainId: domain.id,
+    })
+
+    await mailAccountService.resendInvite(created[0].id)
+    assert.isTrue(true)
+  })
 })

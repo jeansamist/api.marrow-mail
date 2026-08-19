@@ -21,6 +21,31 @@ export default class FileRepository {
     return this.model.query().where('mail_account_id', mailAccountId).orderBy('created_at', 'desc')
   }
 
+  async sumSizeByMailAccountId(mailAccountId: number): Promise<number> {
+    const result = await this.model
+      .query()
+      .where('mail_account_id', mailAccountId)
+      .sum('size as total')
+    return Number(result[0].$extras.total) || 0
+  }
+
+  async sumSizeByMailAccountIds(mailAccountIds: number[]): Promise<Map<number, number>> {
+    const usageByAccount = new Map<number, number>()
+    if (mailAccountIds.length === 0) return usageByAccount
+
+    const rows = await this.model
+      .query()
+      .whereIn('mail_account_id', mailAccountIds)
+      .groupBy('mail_account_id')
+      .select('mail_account_id')
+      .sum('size as total')
+
+    for (const row of rows) {
+      usageByAccount.set(row.mailAccountId!, Number(row.$extras.total) || 0)
+    }
+    return usageByAccount
+  }
+
   async delete(file: File): Promise<void> {
     await file.delete()
   }

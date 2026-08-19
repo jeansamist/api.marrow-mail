@@ -21,6 +21,14 @@ export default class DomainRepository {
   async findByName(name: string) {
     return this.model.findBy('name', name)
   }
+
+  async findByVerifiedCustomLoginHostname(hostname: string) {
+    return this.model
+      .query()
+      .where('custom_login_hostname', hostname)
+      .where('custom_login_hostname_verified', true)
+      .first()
+  }
   async update(
     domain: Domain,
     data: Partial<ModelProps<Domain>>,

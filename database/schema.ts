@@ -57,11 +57,36 @@ export class ContactSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class DomainBrandingSchema extends BaseModel {
+  static $columns = ['accentColor', 'companyName', 'createdAt', 'domainId', 'id', 'logoFileId', 'updatedAt', 'welcomeMessage'] as const
+  $columns = DomainBrandingSchema.$columns
+  @column()
+  declare accentColor: string | null
+  @column()
+  declare companyName: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare domainId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare logoFileId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare welcomeMessage: string | null
+}
+
 export class DomainSchema extends BaseModel {
-  static $columns = ['createdAt', 'description', 'id', 'name', 'updatedAt', 'userId', 'verified'] as const
+  static $columns = ['createdAt', 'customLoginHostname', 'customLoginHostnameVerified', 'description', 'id', 'name', 'updatedAt', 'userId', 'verified'] as const
   $columns = DomainSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
+  @column()
+  declare customLoginHostname: string | null
+  @column()
+  declare customLoginHostnameVerified: boolean
   @column()
   declare description: string | null
   @column({ isPrimary: true })
@@ -134,8 +159,10 @@ export class MailAccountProfileSchema extends BaseModel {
 }
 
 export class MailAccountSchema extends BaseModel {
-  static $columns = ['createdAt', 'cuid', 'domainId', 'forwardingEmail', 'forwardingVerificationToken', 'forwardingVerificationTokenExpiresAt', 'forwardingVerified', 'id', 'keepForwardedCopy', 'ownerEmail', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'setuped', 'twoFactorBackupCodes', 'twoFactorEnabled', 'twoFactorSecret', 'updatedAt', 'userId', 'username'] as const
+  static $columns = ['active', 'createdAt', 'cuid', 'domainId', 'forwardingEmail', 'forwardingVerificationToken', 'forwardingVerificationTokenExpiresAt', 'forwardingVerified', 'id', 'keepForwardedCopy', 'ownerEmail', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'setuped', 'storageQuotaBytes', 'twoFactorBackupCodes', 'twoFactorEnabled', 'twoFactorSecret', 'updatedAt', 'userId', 'username'] as const
   $columns = MailAccountSchema.$columns
+  @column()
+  declare active: boolean
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
@@ -164,6 +191,8 @@ export class MailAccountSchema extends BaseModel {
   declare resetPasswordTokenExpiresAt: DateTime | null
   @column()
   declare setuped: boolean
+  @column()
+  declare storageQuotaBytes: bigint | number | null
   @column()
   declare twoFactorBackupCodes: any | null
   @column()
@@ -279,6 +308,23 @@ export class RecordSchema extends BaseModel {
   declare userId: number | null
   @column()
   declare value: string
+}
+
+export class RoleAliasSchema extends BaseModel {
+  static $columns = ['alias', 'createdAt', 'domainId', 'id', 'mailAccountId', 'updatedAt'] as const
+  $columns = RoleAliasSchema.$columns
+  @column()
+  declare alias: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare domainId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare mailAccountId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
 }
 
 export class SignatureSchema extends BaseModel {

@@ -2,10 +2,12 @@ import Domain from '#models/domain'
 import Record from '#models/record'
 import DomainRepository from '#repositories/domain_repository'
 import { InboundEmailSetupService } from '#services/inbound_email_setup_service'
+import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
 import { Logger } from '@adonisjs/core/logger'
+import dns from 'node:dns/promises'
 import CronManager from '../managers/crons_manager.ts'
 import { RecordService } from './record_service.ts'
 import { SESService } from './ses_service.ts'
@@ -14,6 +16,8 @@ interface DomainPayload {
   name: string
   verified: boolean
   description: string
+  customLoginHostname?: string | null
+  customLoginHostnameVerified?: boolean
 }
 
 interface SetupDomainPayload {
@@ -57,7 +61,12 @@ export class DomainService {
   async createDomain(data: DomainPayload): Promise<Domain> {
     this.logger.info(`[DomainService]: Create new domain`)
 
-    const domain = await this.repository.create({ ...data, userId: this.userId })
+    const domain = await this.repository.create({
+      customLoginHostname: null,
+      customLoginHostnameVerified: false,
+      ...data,
+      userId: this.userId,
+    })
     return domain
   }
 
@@ -189,14 +198,58 @@ export class DomainService {
   private async storeFreshRecords(domain: Domain): Promise<Record[]> {
     const DNSrecords = await this.sesService.getAllRecordsForEmailIdentity(domain.name)
     await this.recordService.deleteRecordsByDomainId(domain.id)
-    const createManyRecordPayload = DNSrecords.map((dns) => ({
-      name: dns.Name,
-      type: dns.Type,
-      value: dns.Value,
-      priority: dns.Priority || null,
+    const createManyRecordPayload = DNSrecords.map((record) => ({
+      name: record.Name,
+      type: record.Type,
+      value: record.Value,
+      priority: record.Priority || null,
       domainId: domain.id,
     }))
     return this.recordService.createManyRecord(createManyRecordPayload)
+  }
+
+  async setCustomLoginHostname(domainId: number, hostname: string): Promise<Domain> {
+    this.logger.info(`[DomainService]: Set custom login hostname`)
+    const domain = await this.findDomainById(domainId)
+    if (!domain) throw httpError(404, 'Domain not found')
+
+    const normalized = hostname.toLowerCase().trim()
+    if (normalized !== domain.name && !normalized.endsWith(`.${domain.name}`)) {
+      throw httpError(422, 'The custom login hostname must be this domain or a subdomain of it')
+    }
+
+    return this.updateDomain(domainId, {
+      customLoginHostname: normalized,
+      customLoginHostnameVerified: false,
+    })
+  }
+
+  async verifyCustomLoginHostname(domainId: number): Promise<boolean> {
+    this.logger.info(`[DomainService]: Verify custom login hostname`)
+    const domain = await this.findDomainById(domainId)
+    if (!domain) throw httpError(404, 'Domain not found')
+    if (!domain.customLoginHostname) {
+      throw httpError(400, 'No custom login hostname is configured for this domain')
+    }
+
+    const verified = await this.resolvesToExpectedIp(domain.customLoginHostname)
+    if (verified !== domain.customLoginHostnameVerified) {
+      await this.repository.update(domain, { customLoginHostnameVerified: verified })
+    }
+
+    return verified
+  }
+
+  private async resolvesToExpectedIp(hostname: string): Promise<boolean> {
+    try {
+      const addresses = await dns.resolve4(hostname)
+      // Vercel assigns a project-specific anycast IP (shown on the domain
+      // card in Settings > Domains) — CUSTOM_LOGIN_HOSTNAME_TARGET_IP must
+      // match that value, it is not always the generic 76.76.21.21.
+      return addresses.includes(env.get('CUSTOM_LOGIN_HOSTNAME_TARGET_IP', '76.76.21.21'))
+    } catch {
+      return false
+    }
   }
 
   runAutomaticalyDomainVerification(domainName: string, domainId: number) {

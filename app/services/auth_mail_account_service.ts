@@ -36,8 +36,10 @@ export class AuthMailAccountService {
       const payload = jwt.verify(token, env.get('JWT_SECRET', 'key')) as { id: number }
       const mailAccount = await this.repository.findById(payload.id)
       if (!mailAccount) throw httpError(401, 'Unauthorized')
+      if (!mailAccount.active) throw httpError(403, 'This mailbox has been disabled')
       return mailAccount
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && 'status' in error) throw error
       throw httpError(401, 'Unauthorized')
     }
   }
@@ -49,6 +51,8 @@ export class AuthMailAccountService {
 
     const isPasswordValid = await hash.verify(mailAccount.password, data.password)
     if (!isPasswordValid) throw httpError(400, 'Invalid email or password')
+
+    if (!mailAccount.active) throw httpError(403, 'This mailbox has been disabled')
 
     return mailAccount
   }
