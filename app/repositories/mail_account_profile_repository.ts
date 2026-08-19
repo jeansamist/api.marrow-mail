@@ -1,6 +1,7 @@
 import { type MailAccountProfileSchema } from '#database/schema'
 import MailAccountProfile from '#models/mail_account_profile'
 import { type ModelProps } from '#utils/generics'
+import db from '@adonisjs/lucid/services/db'
 
 export default class MailAccountProfileRepository {
   private model = MailAccountProfile
@@ -33,5 +34,30 @@ export default class MailAccountProfileRepository {
 
   async delete(profile: MailAccountProfile): Promise<void> {
     await profile.delete()
+  }
+
+  async sumContentSizeByMailAccountIds(mailAccountIds: number[]): Promise<Map<number, number>> {
+    const usageByAccount = new Map<number, number>()
+    if (mailAccountIds.length === 0) return usageByAccount
+
+    const rows = await this.model
+      .query()
+      .whereIn('mail_account_id', mailAccountIds)
+      .groupBy('mail_account_id')
+      .select('mail_account_id')
+      .select(
+        db.raw(`
+          coalesce(sum(
+            octet_length(coalesce(avatar, '')) +
+            octet_length(coalesce(first_name, '')) +
+            octet_length(coalesce(last_name, ''))
+          ), 0) as total
+        `)
+      )
+
+    for (const row of rows) {
+      usageByAccount.set(row.mailAccountId!, Number(row.$extras.total) || 0)
+    }
+    return usageByAccount
   }
 }

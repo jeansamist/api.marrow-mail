@@ -196,4 +196,23 @@ test.group('MailAccountService', (group) => {
     await mailAccountService.resendInvite(created[0].id)
     assert.isTrue(true)
   })
+
+  // Regression: bulk-creating several unassigned mailboxes (all falling back
+  // to the same owner email) used to queue one "mail account created" email
+  // per mailbox. It should now queue a single consolidated email instead —
+  // this exercises the grouping path without throwing.
+  test('setupEmailAddress with multiple mailboxes sharing the same owner email queues without error', async ({
+    assert,
+  }) => {
+    const created = await mailAccountService.setupEmailAddress({
+      data: [
+        { username: 'bulk-unassigned-one', owner: userEmail },
+        { username: 'bulk-unassigned-two', owner: userEmail },
+        { username: 'bulk-unassigned-three', owner: userEmail },
+      ],
+      domainId: domain.id,
+    })
+
+    assert.lengthOf(created, 3)
+  })
 })
