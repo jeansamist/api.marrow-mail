@@ -2,6 +2,7 @@ import DomainRepository from '#repositories/domain_repository'
 import PaymentRepository from '#repositories/payment_repository'
 import { type RegistrantContact, Route53DomainsService } from '#services/route53_domains_service'
 import { ElgiopayService } from '#services/elgiopay_service'
+import { InvoiceService } from '#services/invoice_service'
 import { StripeService } from '#services/stripe_service'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
 import { httpError } from '#utils/http_error'
@@ -40,6 +41,7 @@ export class DomainPurchaseService {
     private readonly route53DomainsService: Route53DomainsService,
     private readonly stripeService: StripeService,
     private readonly elgiopayService: ElgiopayService,
+    private readonly invoiceService: InvoiceService,
     private readonly ctx: HttpContext
   ) {}
 
@@ -199,6 +201,34 @@ export class DomainPurchaseService {
 
     await this.paymentRepository.update(payment, { status: 'completed' })
     const domain = await this.submitRegistration(metadata)
+
+    this.invoiceService.sendForPayment({
+      paymentId: payment.id,
+      recipient: {
+        email: this.ctx.auth.user!.email,
+        firstName: metadata.registrantContact.firstName,
+        lastName: metadata.registrantContact.lastName,
+        businessName: metadata.registrantContact.organizationName ?? null,
+        addressLines: [
+          metadata.registrantContact.addressLine1,
+          metadata.registrantContact.addressLine2,
+          [metadata.registrantContact.city, metadata.registrantContact.state]
+            .filter(Boolean)
+            .join(', '),
+          [metadata.registrantContact.zipCode, metadata.registrantContact.countryCode]
+            .filter(Boolean)
+            .join(' '),
+        ].filter((line): line is string => Boolean(line)),
+      },
+      description: `domain registration for ${metadata.domainName}`,
+      items: [
+        {
+          description: `Domain registration — ${metadata.domainName} (1 year)`,
+          amount: payment.amount,
+        },
+      ],
+      currency: payment.currency,
+    })
 
     return { status: 'completed', domainName: domain.name }
   }

@@ -8,6 +8,7 @@ import SignatureRepository from '#repositories/signature_repository'
 import SubscriptionRepository from '#repositories/subscription_repository'
 import { ElgiopayService } from '#services/elgiopay_service'
 import { GeoService } from '#services/geo_service'
+import { InvoiceService } from '#services/invoice_service'
 import { StripeService } from '#services/stripe_service'
 import env from '#start/env'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
@@ -49,6 +50,7 @@ export class StorageOverviewService {
     private readonly stripeService: StripeService,
     private readonly elgiopayService: ElgiopayService,
     private readonly geoService: GeoService,
+    private readonly invoiceService: InvoiceService,
     private readonly ctx: HttpContext
   ) {}
 
@@ -286,7 +288,30 @@ export class StorageOverviewService {
     if (!succeeded) return { status: 'pending' }
 
     await this.paymentRepository.update(payment, { status: 'completed' })
-    await this.applyStorageAddon(payment.rawResponse as StorageAddonMetadata)
+    const metadata = payment.rawResponse as StorageAddonMetadata
+    await this.applyStorageAddon(metadata)
+
+    const mailAccount = await this.mailAccountRepository.findById(metadata.mailAccountId)
+    const user = this.ctx.auth.user!
+    this.invoiceService.sendForPayment({
+      paymentId: payment.id,
+      recipient: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+      },
+      description: `${metadata.extraGB} GB of extra storage`,
+      items: [
+        {
+          description: `Extra storage — ${metadata.extraGB} GB${
+            mailAccount ? ` (mailbox: ${mailAccount.username})` : ''
+          }`,
+          amount: payment.amount,
+        },
+      ],
+      currency: payment.currency,
+    })
 
     return { status: 'completed' }
   }

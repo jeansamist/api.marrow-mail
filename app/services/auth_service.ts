@@ -61,7 +61,17 @@ export class AuthService {
       this.sendEmailVerificationCodeNotification(existingUser)
       return existingUser
     }
-    const user = await this.userRepository.create({ ...normalizedData, ...restOfData })
+    let user: User
+    try {
+      user = await this.userRepository.create({ ...normalizedData, ...restOfData })
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        // Two concurrent signups for the same new email raced past the check above;
+        // the DB unique constraint is the actual source of truth here.
+        throw httpError(409, 'Email has already been taken')
+      }
+      throw error
+    }
     this.sendEmailVerificationCodeNotification(user)
     return user
   }

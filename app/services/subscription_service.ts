@@ -1,8 +1,10 @@
+import Payment from '#models/payment'
 import Subscription from '#models/subscription'
 import PaymentRepository from '#repositories/payment_repository'
 import SubscriptionRepository from '#repositories/subscription_repository'
 import { ElgiopayService } from '#services/elgiopay_service'
 import { GeoService } from '#services/geo_service'
+import { InvoiceService } from '#services/invoice_service'
 import { StripeService } from '#services/stripe_service'
 import env from '#start/env'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
@@ -33,6 +35,7 @@ export class SubscriptionService {
     private readonly stripeService: StripeService,
     private readonly elgiopayService: ElgiopayService,
     private readonly geoService: GeoService,
+    private readonly invoiceService: InvoiceService,
     private readonly ctx: HttpContext
   ) {}
 
@@ -210,7 +213,11 @@ export class SubscriptionService {
     }
     if (subscription.planId === planId) return subscription
 
-    const pricing = calcMailboxPricing(subscription.mailboxQuantity, subscription.billingMonths, planId)
+    const pricing = calcMailboxPricing(
+      subscription.mailboxQuantity,
+      subscription.billingMonths,
+      planId
+    )
 
     if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
       const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
@@ -357,7 +364,11 @@ export class SubscriptionService {
 
         if (event.type === 'invoice.paid') {
           if (existingPayment) {
+            const wasAlreadyCompleted = existingPayment.status === 'completed'
             await this.paymentRepository.update(existingPayment, { status: 'completed' })
+            if (!wasAlreadyCompleted) {
+              this.sendSubscriptionInvoice(subscription, existingPayment)
+            }
           }
           await this.repository.update(subscription, {
             status: 'active',
@@ -411,7 +422,11 @@ export class SubscriptionService {
     if (!subscription) return
 
     if (envelope.event === 'payment.completed') {
+      const wasAlreadyCompleted = payment.status === 'completed'
       await this.paymentRepository.update(payment, { status: 'completed' })
+      if (!wasAlreadyCompleted) {
+        this.sendSubscriptionInvoice(subscription, payment)
+      }
       await this.repository.update(subscription, {
         status: 'active',
         currentPeriodEnd: DateTime.now().plus({ months: subscription.billingMonths }),
@@ -425,6 +440,27 @@ export class SubscriptionService {
     }
   }
 
+  private sendSubscriptionInvoice(subscription: Subscription, payment: Payment) {
+    const planLabel = subscription.planId === 'plus' ? 'Plus' : 'Core'
+    const mailboxLabel =
+      subscription.mailboxQuantity === 1 ? '1 mailbox' : `${subscription.mailboxQuantity} mailboxes`
+    const monthsLabel =
+      subscription.billingMonths === 1 ? '1 month' : `${subscription.billingMonths} months`
+
+    this.invoiceService.sendForPayment({
+      paymentId: payment.id,
+      recipient: () => this.invoiceService.userAsRecipient(subscription.userId),
+      description: `your ${planLabel} plan subscription`,
+      items: [
+        {
+          description: `${planLabel} plan — ${mailboxLabel} × ${monthsLabel}`,
+          amount: payment.amount,
+        },
+      ],
+      currency: payment.currency,
+    })
+  }
+
   private async syncElgiopayPaymentState(
     subscription: Subscription,
     live: { status: string; transaction_id: string }
@@ -432,7 +468,13 @@ export class SubscriptionService {
     const payment = await this.paymentRepository.findByProviderTransactionId(live.transaction_id)
 
     if (live.status === 'completed') {
-      if (payment) await this.paymentRepository.update(payment, { status: 'completed' })
+      if (payment) {
+        const wasAlreadyCompleted = payment.status === 'completed'
+        await this.paymentRepository.update(payment, { status: 'completed' })
+        if (!wasAlreadyCompleted) {
+          this.sendSubscriptionInvoice(subscription, payment)
+        }
+      }
       await this.repository.update(subscription, {
         status: 'active',
         currentPeriodEnd: DateTime.now().plus({ months: subscription.billingMonths }),
