@@ -7,6 +7,7 @@ export const controllers = {
   Auth: () => import('#controllers/auth_controller'),
   AuthMailAccounts: () => import('#controllers/auth_mail_accounts_controller'),
   Contacts: () => import('#controllers/contacts_controller'),
+  DomainPurchase: () => import('#controllers/domain_purchase_controller'),
   Domains: () => import('#controllers/domains_controller'),
   ElgiopayWebhook: () => import('#controllers/elgiopay_webhook_controller'),
   Folders: () => import('#controllers/folders_controller'),

@@ -42,6 +42,10 @@ export type ScannedRoutes = {
     'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domain_purchase.search': { paramsTuple?: []; params?: {} }
+    'domain_purchase.checkout': { paramsTuple?: []; params?: {} }
+    'domain_purchase.status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'domain_purchase.registration_status': { paramsTuple: [ParamValue]; params: {'domainName': ParamValue} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
@@ -115,6 +119,8 @@ export type ScannedRoutes = {
     'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
     'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
+    'domain_purchase.status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'domain_purchase.registration_status': { paramsTuple: [ParamValue]; params: {'domainName': ParamValue} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -146,6 +152,8 @@ export type ScannedRoutes = {
     'storage_overview.addon_payment_status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
     'role_aliases.index': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
+    'domain_purchase.status': { paramsTuple: [ParamValue]; params: {'paymentId': ParamValue} }
+    'domain_purchase.registration_status': { paramsTuple: [ParamValue]; params: {'domainName': ParamValue} }
     'onboarding.get_dns_records': { paramsTuple?: []; params?: {} }
     'onboarding.check_domain_status': { paramsTuple?: []; params?: {} }
     'subscriptions.status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -184,6 +192,8 @@ export type ScannedRoutes = {
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
     'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'domain_purchase.search': { paramsTuple?: []; params?: {} }
+    'domain_purchase.checkout': { paramsTuple?: []; params?: {} }
     'onboarding.register_domain': { paramsTuple?: []; params?: {} }
     'onboarding.setup_mail_account': { paramsTuple?: []; params?: {} }
     'subscriptions.checkout': { paramsTuple?: []; params?: {} }

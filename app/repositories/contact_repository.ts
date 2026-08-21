@@ -1,6 +1,7 @@
 import { type ContactSchema } from '#database/schema'
 import Contact from '#models/contact'
 import { type ModelProps } from '#utils/generics'
+import db from '@adonisjs/lucid/services/db'
 
 export default class ContactRepository {
   private model = Contact
@@ -42,5 +43,33 @@ export default class ContactRepository {
 
   async delete(contact: Contact): Promise<void> {
     await contact.delete()
+  }
+
+  async sumContentSizeByMailAccountIds(mailAccountIds: number[]): Promise<Map<number, number>> {
+    const usageByAccount = new Map<number, number>()
+    if (mailAccountIds.length === 0) return usageByAccount
+
+    const rows = await this.model
+      .query()
+      .whereIn('mail_account_id', mailAccountIds)
+      .groupBy('mail_account_id')
+      .select('mail_account_id')
+      .select(
+        db.raw(`
+          coalesce(sum(
+            octet_length(coalesce(first_name, '')) +
+            octet_length(coalesce(last_name, '')) +
+            octet_length(coalesce(email, '')) +
+            octet_length(coalesce(phone, '')) +
+            octet_length(coalesce(company, '')) +
+            octet_length(coalesce(notes, ''))
+          ), 0) as total
+        `)
+      )
+
+    for (const row of rows) {
+      usageByAccount.set(row.mailAccountId!, Number(row.$extras.total) || 0)
+    }
+    return usageByAccount
   }
 }

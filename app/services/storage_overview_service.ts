@@ -1,9 +1,14 @@
+import ContactRepository from '#repositories/contact_repository'
 import FileRepository from '#repositories/file_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
+import MailAccountProfileRepository from '#repositories/mail_account_profile_repository'
+import MailRepository from '#repositories/mail_repository'
 import PaymentRepository from '#repositories/payment_repository'
+import SignatureRepository from '#repositories/signature_repository'
 import SubscriptionRepository from '#repositories/subscription_repository'
 import { ElgiopayService } from '#services/elgiopay_service'
 import { GeoService } from '#services/geo_service'
+import { InvoiceService } from '#services/invoice_service'
 import { StripeService } from '#services/stripe_service'
 import env from '#start/env'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
@@ -35,12 +40,17 @@ type StorageAddonCheckoutResult =
 export class StorageOverviewService {
   constructor(
     private readonly fileRepository: FileRepository,
+    private readonly mailRepository: MailRepository,
+    private readonly mailAccountProfileRepository: MailAccountProfileRepository,
+    private readonly signatureRepository: SignatureRepository,
+    private readonly contactRepository: ContactRepository,
     private readonly mailAccountRepository: MailAccountRepository,
     private readonly subscriptionRepository: SubscriptionRepository,
     private readonly paymentRepository: PaymentRepository,
     private readonly stripeService: StripeService,
     private readonly elgiopayService: ElgiopayService,
     private readonly geoService: GeoService,
+    private readonly invoiceService: InvoiceService,
     private readonly ctx: HttpContext
   ) {}
 
@@ -61,14 +71,44 @@ export class StorageOverviewService {
     return defaultStorageBytesForPlan((subscription?.planId as PlanId) ?? 'core')
   }
 
+  /**
+   * Total on-disk footprint per mail account — S3 files (attachments,
+   * avatars, logos) plus everything stored only in Postgres (email
+   * subject/bodies, profile fields, signature, contacts). Everything the
+   * account actually occupies, not just what happens to live in S3.
+   */
+  private async usedBytesByAccount(mailAccountIds: number[]): Promise<Map<number, number>> {
+    const usageByAccount = new Map<number, number>()
+    if (mailAccountIds.length === 0) return usageByAccount
+
+    const sources = await Promise.all([
+      this.fileRepository.sumSizeByMailAccountIds(mailAccountIds),
+      this.mailRepository.sumContentSizeByMailAccountIds(mailAccountIds),
+      this.mailAccountProfileRepository.sumContentSizeByMailAccountIds(mailAccountIds),
+      this.signatureRepository.sumContentSizeByMailAccountIds(mailAccountIds),
+      this.contactRepository.sumContentSizeByMailAccountIds(mailAccountIds),
+    ])
+
+    for (const id of mailAccountIds) {
+      usageByAccount.set(
+        id,
+        sources.reduce((sum, source) => sum + (source.get(id) ?? 0), 0)
+      )
+    }
+    return usageByAccount
+  }
+
+  private async usedBytesForAccount(mailAccountId: number): Promise<number> {
+    const usageByAccount = await this.usedBytesByAccount([mailAccountId])
+    return usageByAccount.get(mailAccountId) ?? 0
+  }
+
   async getUsageForCurrentUser() {
     const [mailAccounts, defaultQuotaBytes] = await Promise.all([
       this.mailAccountRepository.findAllByUserId(this.userId),
       this.defaultQuotaBytesForOwner(this.userId),
     ])
-    const usageByAccount = await this.fileRepository.sumSizeByMailAccountIds(
-      mailAccounts.map((account) => account.id)
-    )
+    const usageByAccount = await this.usedBytesByAccount(mailAccounts.map((account) => account.id))
 
     const mailboxes = mailAccounts.map((account) => {
       const usedBytes = usageByAccount.get(account.id) ?? 0
@@ -101,10 +141,9 @@ export class StorageOverviewService {
     const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
     if (!mailAccount) throw httpError(404, 'Mail account not found')
 
-    const usedBytes = await this.fileRepository.sumSizeByMailAccountId(mailAccountId)
+    const usedBytes = await this.usedBytesForAccount(mailAccountId)
     const quotaBytes = Number(
-      mailAccount.storageQuotaBytes ??
-        (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
+      mailAccount.storageQuotaBytes ?? (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
     )
 
     if (usedBytes + additionalBytes > quotaBytes) {
@@ -166,7 +205,10 @@ export class StorageOverviewService {
         rawResponse: metadata,
       })
 
-      return { paymentId: payment.id, providerPayload: { clientSecret: paymentIntent.client_secret } }
+      return {
+        paymentId: payment.id,
+        providerPayload: { clientSecret: paymentIntent.client_secret },
+      }
     }
 
     if (!data.customerPhone) {
@@ -212,7 +254,9 @@ export class StorageOverviewService {
     const payment = await this.paymentRepository.findById(paymentId)
     if (!payment) throw httpError(404, 'Payment not found')
 
-    const subscription = await this.subscriptionRepository.findById(payment.subscriptionId)
+    const subscription = payment.subscriptionId
+      ? await this.subscriptionRepository.findById(payment.subscriptionId)
+      : null
     if (!subscription || subscription.userId !== this.userId) {
       throw httpError(403, 'You are not allowed to access this payment')
     }
@@ -244,7 +288,30 @@ export class StorageOverviewService {
     if (!succeeded) return { status: 'pending' }
 
     await this.paymentRepository.update(payment, { status: 'completed' })
-    await this.applyStorageAddon(payment.rawResponse as StorageAddonMetadata)
+    const metadata = payment.rawResponse as StorageAddonMetadata
+    await this.applyStorageAddon(metadata)
+
+    const mailAccount = await this.mailAccountRepository.findById(metadata.mailAccountId)
+    const user = this.ctx.auth.user!
+    this.invoiceService.sendForPayment({
+      paymentId: payment.id,
+      recipient: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+      },
+      description: `${metadata.extraGB} GB of extra storage`,
+      items: [
+        {
+          description: `Extra storage — ${metadata.extraGB} GB${
+            mailAccount ? ` (mailbox: ${mailAccount.username})` : ''
+          }`,
+          amount: payment.amount,
+        },
+      ],
+      currency: payment.currency,
+    })
 
     return { status: 'completed' }
   }
@@ -254,8 +321,7 @@ export class StorageOverviewService {
     if (!mailAccount) return
 
     const currentQuotaBytes = Number(
-      mailAccount.storageQuotaBytes ??
-        (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
+      mailAccount.storageQuotaBytes ?? (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
     )
     await this.mailAccountRepository.update(mailAccount, {
       storageQuotaBytes: currentQuotaBytes + metadata.extraGB * BYTES_PER_GB,

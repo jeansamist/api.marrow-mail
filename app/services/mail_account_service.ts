@@ -1,4 +1,5 @@
 import MailAccountCreatedNotification from '#mails/mail_account_created_notification'
+import MailAccountsCreatedBatchNotification from '#mails/mail_accounts_created_batch_notification'
 import MailAccount from '#models/mail_account'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import env from '#start/env'
@@ -109,6 +110,31 @@ export class MailAccountService {
     )
   }
 
+  /**
+   * One consolidated email per owner listing every mailbox they were just
+   * assigned, instead of a separate email per mailbox — bulk-creating N
+   * unassigned mailboxes (which all default to the account owner's own
+   * email) used to flood that owner with N near-identical emails.
+   */
+  private queueMailAccountsCreatedBatchNotification(ownerEmail: string, accounts: MailAccount[]) {
+    const entries = accounts.map((account) => ({
+      mailAccountEmail: `${account.username}@${account.domain.name}`,
+      setupLink: `${env.get('FRONTEND_APP_URL')}/en/domain/${account.domain.name}/setup-profile?cuid=${account.cuid}`,
+    }))
+    const notification = new MailAccountsCreatedBatchNotification(ownerEmail, entries)
+
+    this.cronManager.addQueueJob(
+      'emails',
+      async () => {
+        this.logger.info(
+          `Send batch mail accounts created notification (${entries.length} accounts)`
+        )
+        await mail.send(notification)
+      },
+      { retries: 2, retryDelayMs: 1000 }
+    )
+  }
+
   async createMailAccount(data: MailAccountPayload): Promise<MailAccount> {
     const hashedPassword = await hash.make(data.password)
     const cuid = this.randText({
@@ -176,15 +202,25 @@ export class MailAccountService {
     )
     const mailAccounts = await this.repository.createMany(hashedData)
 
-    const accountsWithOwner = mailAccounts.filter(
-      (account) => data.find((d) => d.username === account.username)?.ownerEmail
-    )
+    const accountsByOwnerEmail = new Map<string, MailAccount[]>()
+    for (const account of mailAccounts) {
+      const ownerEmail = data.find((d) => d.username === account.username)?.ownerEmail
+      if (!ownerEmail) continue
+      accountsByOwnerEmail.set(ownerEmail, [
+        ...(accountsByOwnerEmail.get(ownerEmail) ?? []),
+        account,
+      ])
+    }
 
-    if (accountsWithOwner.length) {
-      await Promise.all(accountsWithOwner.map((a) => a.load('domain')))
-      for (const account of accountsWithOwner) {
-        const ownerEmail = data.find((d) => d.username === account.username)!.ownerEmail!
-        this.queueMailAccountCreatedNotification(account, ownerEmail)
+    if (accountsByOwnerEmail.size) {
+      const accountsToNotify = [...accountsByOwnerEmail.values()].flat()
+      await Promise.all(accountsToNotify.map((a) => a.load('domain')))
+      for (const [ownerEmail, accounts] of accountsByOwnerEmail) {
+        if (accounts.length === 1) {
+          this.queueMailAccountCreatedNotification(accounts[0], ownerEmail)
+        } else {
+          this.queueMailAccountsCreatedBatchNotification(ownerEmail, accounts)
+        }
       }
     }
 
