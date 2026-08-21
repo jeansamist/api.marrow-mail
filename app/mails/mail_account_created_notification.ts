@@ -4,7 +4,7 @@ import { BaseMail } from '@adonisjs/mail'
 import { render } from '@react-email/render'
 
 export default class MailAccountCreatedNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
   subject = 'Your mail account is ready to set up'
 
   constructor(

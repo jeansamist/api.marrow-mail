@@ -5,7 +5,7 @@ import { BaseMail } from '@adonisjs/mail'
 import { render } from '@react-email/render'
 
 export default class EmailVerificationCodeNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
   subject = 'Email verification code'
   constructor(private user: User) {
     super()

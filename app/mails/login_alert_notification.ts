@@ -5,7 +5,7 @@ import { BaseMail } from '@adonisjs/mail'
 import { render } from '@react-email/render'
 
 export default class LoginAlertNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
   subject = 'Security alert: New login detected'
   constructor(
     private user: User,

@@ -9,7 +9,7 @@ interface MailAccountEntry {
 }
 
 export default class MailAccountsCreatedBatchNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
   subject: string
 
   constructor(
