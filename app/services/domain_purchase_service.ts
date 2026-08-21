@@ -55,13 +55,26 @@ export class DomainPurchaseService {
     return tld
   }
 
-  async checkAvailability(domainName: string) {
-    const tld = this.tldOf(domainName)
-    const [available, price] = await Promise.all([
-      this.route53DomainsService.checkAvailability(domainName),
-      this.route53DomainsService.getPrice(tld),
-    ])
-    return { available, priceUsd: price.amount }
+  /**
+   * Checks every supported TLD for a base name in a single request — the
+   * frontend used to fire one request per TLD in parallel, which is fragile
+   * (any single failed call silently dropped the result) for no benefit,
+   * since the AWS calls underneath are just as concurrent either way.
+   */
+  async searchDomains(slug: string) {
+    const settled = await Promise.allSettled(
+      SUPPORTED_TLDS.map(async (tld) => {
+        const domainName = `${slug}.${tld}`
+        const [available, price] = await Promise.all([
+          this.route53DomainsService.checkAvailability(domainName),
+          this.route53DomainsService.getPrice(tld),
+        ])
+        return { domain: domainName, available, priceUsd: price.amount }
+      })
+    )
+    // One TLD's AWS call failing shouldn't sink the whole search — return
+    // whichever TLDs resolved successfully.
+    return settled.filter((result) => result.status === 'fulfilled').map((result) => result.value)
   }
 
   async createPurchaseCheckout(

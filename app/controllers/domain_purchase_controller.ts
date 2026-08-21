@@ -1,8 +1,8 @@
 import { DomainPurchaseService } from '#services/domain_purchase_service'
 import { ApiResponse } from '#utils/api_response'
 import {
-  checkDomainAvailabilityValidator,
   createDomainPurchaseCheckoutValidator,
+  searchDomainsValidator,
 } from '#validators/domain_purchase'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -11,10 +11,10 @@ import type { HttpContext } from '@adonisjs/core/http'
 export default class DomainPurchaseController {
   constructor(private readonly domainPurchaseService: DomainPurchaseService) {}
 
-  async checkAvailability({ request, response }: HttpContext) {
-    const data = await request.validateUsing(checkDomainAvailabilityValidator)
-    const result = await this.domainPurchaseService.checkAvailability(data.domainName)
-    return response.ok(ApiResponse.success(result, 'Domain availability checked'))
+  async search({ request, response }: HttpContext) {
+    const data = await request.validateUsing(searchDomainsValidator)
+    const result = await this.domainPurchaseService.searchDomains(data.slug)
+    return response.ok(ApiResponse.success(result, 'Domain search results'))
   }
 
   async checkout({ request, response }: HttpContext) {

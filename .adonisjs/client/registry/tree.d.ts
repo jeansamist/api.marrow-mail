@@ -61,7 +61,7 @@ export interface ApiDefinition {
     status: typeof routes['subscriptions.status']
   }
   domainPurchase: {
-    checkAvailability: typeof routes['domain_purchase.check_availability']
+    search: typeof routes['domain_purchase.search']
     checkout: typeof routes['domain_purchase.checkout']
     status: typeof routes['domain_purchase.status']
     registrationStatus: typeof routes['domain_purchase.registration_status']

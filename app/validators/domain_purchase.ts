@@ -7,9 +7,14 @@ const domainNameRule = vine
   .maxLength(255)
   .regex(/^(?=.{1,253}$)(?!-)([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}$/)
 
-export const checkDomainAvailabilityValidator = vine.create(
+export const searchDomainsValidator = vine.create(
   vine.object({
-    domainName: domainNameRule,
+    slug: vine
+      .string()
+      .trim()
+      .minLength(1)
+      .maxLength(63)
+      .regex(/^[a-z0-9-]+$/),
   })
 )
 

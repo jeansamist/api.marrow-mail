@@ -112,7 +112,7 @@ router
     // Domain purchase (buy a brand-new domain via AWS Route53 Domains)
     router
       .group(() => {
-        router.post('/check-availability', [controllers.DomainPurchase, 'checkAvailability'])
+        router.post('/search', [controllers.DomainPurchase, 'search'])
         router.post('/checkout', [controllers.DomainPurchase, 'checkout'])
         router.get('/status/:paymentId', [controllers.DomainPurchase, 'status'])
         router.get('/registration-status/:domainName', [

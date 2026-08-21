@@ -234,11 +234,11 @@ const routes = {
     tokens: [{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/reactivate","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"reactivate","end":""}],
     types: placeholder as Registry['subscriptions.reactivate']['types'],
   },
-  'domain_purchase.check_availability': {
+  'domain_purchase.search': {
     methods: ["POST"],
-    pattern: '/api/domain-purchase/check-availability',
-    tokens: [{"old":"/api/domain-purchase/check-availability","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/check-availability","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/check-availability","type":0,"val":"check-availability","end":""}],
-    types: placeholder as Registry['domain_purchase.check_availability']['types'],
+    pattern: '/api/domain-purchase/search',
+    tokens: [{"old":"/api/domain-purchase/search","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/search","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/search","type":0,"val":"search","end":""}],
+    types: placeholder as Registry['domain_purchase.search']['types'],
   },
   'domain_purchase.checkout': {
     methods: ["POST"],

@@ -463,16 +463,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
     }
   }
-  'domain_purchase.check_availability': {
+  'domain_purchase.search': {
     methods: ["POST"]
-    pattern: '/api/domain-purchase/check-availability'
+    pattern: '/api/domain-purchase/search'
     types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/domain_purchase').checkDomainAvailabilityValidator)>>
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_purchase').searchDomainsValidator)>>
       paramsTuple: []
       params: {}
-      query: ExtractQuery<InferInput<(typeof import('#validators/domain_purchase').checkDomainAvailabilityValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkAvailability']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkAvailability']>>> | { status: 422; response: { errors: SimpleError[] } }
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_purchase').searchDomainsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['search']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['search']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'domain_purchase.checkout': {
