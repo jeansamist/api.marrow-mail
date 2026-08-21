@@ -48,6 +48,10 @@ const mailConfig = defineConfig({
         secretAccessKey: env.get('AWS_SECRET_ACCESS_KEY'),
       },
     }),
+    resend: transports.resend({
+      key: env.get('RESEND_API_KEY') ?? '',
+      baseUrl: 'https://api.resend.com',
+    }),
   },
 })
 

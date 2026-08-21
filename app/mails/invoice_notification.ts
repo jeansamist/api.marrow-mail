@@ -4,7 +4,7 @@ import { BaseMail } from '@adonisjs/mail'
 import { render } from '@react-email/render'
 
 export default class InvoiceNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
 
   constructor(
     private recipientEmail: string,

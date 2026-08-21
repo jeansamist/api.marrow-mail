@@ -5,7 +5,7 @@ import { BaseMail } from '@adonisjs/mail'
 import { render } from '@react-email/render'
 
 export default class PasswordResetAlertNotification extends BaseMail {
-  from = env.get('SMTP_USERNAME')
+  from = env.get('MAIL_FROM_ADDRESS')
   subject = 'Security alert: Password changed'
   constructor(
     private user: User,
