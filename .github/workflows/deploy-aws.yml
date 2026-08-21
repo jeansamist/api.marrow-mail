@@ -213,7 +213,7 @@ jobs:
               --launch-type FARGATE \
               --started-by "gha-migrate-${GITHUB_SHA::7}" \
               --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNETS],securityGroups=[$ECS_SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
-              --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"node\",\"ace\",\"migration:fresh\",\"--force\"]}]}" \
+              --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"node\",\"ace\",\"migration:run\",\"--force\"]}]}" \
               --query 'tasks[0].taskArn' --output text)
 
             if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then

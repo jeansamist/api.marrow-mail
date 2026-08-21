@@ -20,8 +20,15 @@ export default class AuthController {
       return response.conflict(ApiResponse.failure(null, 'You can not sign up while logged in'))
     }
     const data = await request.validateUsing(signUpValidator)
-    await this.authService.signUp(data)
-    return response.ok(ApiResponse.success(null, 'User created successfully'))
+    const { isNewAccount } = await this.authService.signUp(data)
+    return response.ok(
+      ApiResponse.success(
+        null,
+        isNewAccount
+          ? 'User created successfully'
+          : 'An account with this email already exists but is not verified yet. We have resent the verification code.'
+      )
+    )
   }
 
   async verifyEmail({ request, response, auth }: HttpContext) {

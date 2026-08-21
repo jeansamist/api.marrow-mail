@@ -59,7 +59,7 @@ export class AuthService {
       // Update the unverified user and resend the verification code
       await this.userRepository.update(existingUser, { ...normalizedData, ...restOfData })
       this.sendEmailVerificationCodeNotification(existingUser)
-      return existingUser
+      return { user: existingUser, isNewAccount: false }
     }
     let user: User
     try {
@@ -73,7 +73,7 @@ export class AuthService {
       throw error
     }
     this.sendEmailVerificationCodeNotification(user)
-    return user
+    return { user, isNewAccount: true }
   }
 
   async signIn(data: Pick<ModelProps<User>, 'email' | 'password'>) {
