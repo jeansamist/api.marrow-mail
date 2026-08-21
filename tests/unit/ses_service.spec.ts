@@ -67,6 +67,15 @@ test.group('SESService', (group) => {
     assert.match(txt!.Value, /v=spf1 include:amazonses\.com/)
   }).timeout(AWS_TIMEOUT)
 
+  test('getDmarcDNS returns a monitor-only DMARC TXT record in the correct shape', ({ assert }) => {
+    // Pure in-memory — no AWS call needed
+    const record = sesService.getDmarcDNS(domainName)
+
+    assert.equal(record.Type, 'TXT')
+    assert.equal(record.Name, `_dmarc.${domainName}`)
+    assert.match(record.Value, /^v=DMARC1; p=none;/)
+  }).timeout(AWS_TIMEOUT)
+
   test('wait for email identity to be verified', async ({ assert }) => {
     const records = await sesService.getAllRecordsForEmailIdentity(domainName)
     console.log('Records:', sesService.formatDNSRecordsForTheConsole(records))

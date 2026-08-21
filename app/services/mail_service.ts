@@ -5,6 +5,7 @@ import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
 import { AuthMailAccountService } from '#services/auth_mail_account_service'
 import { SESService } from '#services/ses_service'
+import { SuppressionService } from '#services/suppression_service'
 import { describeSendFailure } from '#utils/ses_send_error'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
@@ -55,6 +56,7 @@ export class MailService {
     private readonly mailAccountRepository: MailAccountRepository,
     private readonly authMailAccountService: AuthMailAccountService,
     private readonly sesService: SESService,
+    private readonly suppressionService: SuppressionService,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
   ) {}
@@ -392,10 +394,28 @@ export class MailService {
     }
   }
 
+  private async findSuppressedRecipients(recipients: string[]): Promise<string[]> {
+    const results = await Promise.all(
+      recipients.map(async (email) => ({
+        email,
+        suppressed: await this.suppressionService.isSuppressed(email),
+      }))
+    )
+    return results.filter((r) => r.suppressed).map((r) => r.email)
+  }
+
   private queueSesSend(mail: Mail, fromDisplay: string, data: SendMailPayload) {
     this.cronManager.addQueueJob(
       'mails',
       async () => {
+        const suppressedRecipients = await this.findSuppressedRecipients(data.to)
+        if (suppressedRecipients.length > 0) {
+          const message = `Recipient previously bounced or complained: ${suppressedRecipients.join(', ')}`
+          await this.mailRepository.update(mail, { status: 'failed', failureReason: message })
+          this.logger.warn(`Mail ${mail.id} not sent — ${message}`)
+          return
+        }
+
         const response = await this.sesService.sendRichEmail({
           from: fromDisplay,
           to: data.to,

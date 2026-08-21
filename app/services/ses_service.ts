@@ -1,6 +1,7 @@
 import env from '#start/env'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
+import { toPlainText } from '@react-email/render'
 import {
   CreateEmailIdentityCommand,
   DeleteEmailIdentityCommand,
@@ -69,8 +70,9 @@ export class SESService {
   async getAllRecordsForEmailIdentity(domainName: string): Promise<DNSRecord[]> {
     const dkimRecords = await this.getDKIMRecordsForEmailIdentity(domainName)
     const mailFromRecords = this.getMailFromDNS(domainName)
+    const dmarcRecord = this.getDmarcDNS(domainName)
 
-    return [...dkimRecords, ...mailFromRecords]
+    return [...dkimRecords, ...mailFromRecords, dmarcRecord]
   }
   async putEmailIdentityMailFromAttributes(domainName: string) {
     const emailIdentity = await this.client
@@ -185,6 +187,16 @@ export class SESService {
       },
     ]
   }
+  getDmarcDNS(domainName: string): DNSRecord {
+    // p=none: monitor-only. We don't yet collect aggregate reports (no rua=)
+    // or know the customer's desired enforcement policy, so we only publish
+    // a record that makes DMARC alignment checkable, not enforceable.
+    return {
+      Name: `_dmarc.${domainName}`,
+      Type: 'TXT',
+      Value: 'v=DMARC1; p=none;',
+    }
+  }
   async sendEmailUsing(
     domainName: string,
     config: { to: string; subject: string; text: string; from?: string }
@@ -232,6 +244,9 @@ export class SESService {
     bodyHtml?: string
     bodyText?: string
   }) {
+    // Mail filters penalize HTML-only messages; always carry a text/plain
+    // alternative, deriving one from the HTML when the caller didn't supply it.
+    const bodyText = config.bodyText || (config.bodyHtml ? toPlainText(config.bodyHtml) : undefined)
     return this.client
       .send(
         new SendEmailCommand({
@@ -247,7 +262,7 @@ export class SESService {
               Subject: { Data: config.subject },
               Body: {
                 ...(config.bodyHtml ? { Html: { Data: config.bodyHtml } } : {}),
-                ...(config.bodyText ? { Text: { Data: config.bodyText } } : {}),
+                ...(bodyText ? { Text: { Data: bodyText } } : {}),
               },
             },
           },
