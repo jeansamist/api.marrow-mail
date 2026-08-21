@@ -107,19 +107,14 @@ def add_mail_sink(task_def: dict, log_group: str, region: str) -> None:
     """
     Attach a Mailpit sidecar to non-production tasks.
 
-    The application is a mail product, so a dev or staging box that can reach a
-    real SMTP relay will eventually send real mail to a real person — a stray
-    fixture, a copied-down database, a developer testing with their own
-    address. Convention does not prevent that; topology does.
-
-    Containers in an awsvpc task share one network namespace, so the app's
-    SMTP_HOST of localhost:1025 lands inside the task and goes nowhere else.
-    Mailpit accepts and stores the message but has no relay, so there is no
-    configuration mistake that turns dev into an outbound mail server.
-
-    Marked non-essential deliberately: if the sink dies the API should keep
-    serving, because mail capture is a development convenience, not a
-    dependency of the service under test.
+    Historically this contained every mail a dev/staging box could send: the
+    app's SMTP_HOST of localhost:1025 stayed inside the task's network
+    namespace, so no configuration mistake could turn dev into an outbound
+    mail server. That protection no longer applies now that MAIL_MAILER is
+    "resend" in all three environments — Resend is an HTTP API, not SMTP, so
+    dev/staging mail bypasses this sidecar entirely and goes out for real.
+    The container is left attached (non-essential, so it costs nothing to
+    keep) in case mail is ever pointed back at SMTP for a given environment.
     """
     task_def["containerDefinitions"].append({
         "name": "mailpit",
