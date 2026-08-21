@@ -64,6 +64,11 @@ export class DomainService {
     const domain = await this.repository.create({
       customLoginHostname: null,
       customLoginHostnameVerified: false,
+      registrationStatus: 'not_purchased',
+      registrationOperationId: null,
+      registrantContact: null,
+      hostedZoneId: null,
+      purchasedAt: null,
       ...data,
       userId: this.userId,
     })

@@ -252,7 +252,9 @@ export class StorageOverviewService {
     const payment = await this.paymentRepository.findById(paymentId)
     if (!payment) throw httpError(404, 'Payment not found')
 
-    const subscription = await this.subscriptionRepository.findById(payment.subscriptionId)
+    const subscription = payment.subscriptionId
+      ? await this.subscriptionRepository.findById(payment.subscriptionId)
+      : null
     if (!subscription || subscription.userId !== this.userId) {
       throw httpError(403, 'You are not allowed to access this payment')
     }

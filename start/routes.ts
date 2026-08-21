@@ -109,6 +109,15 @@ router
       })
       .prefix('/subscriptions')
       .use([middleware.auth()])
+    // Domain purchase (buy a brand-new domain via AWS Route53 Domains)
+    router
+      .group(() => {
+        router.post('/check-availability', [controllers.DomainPurchase, 'checkAvailability'])
+        router.post('/checkout', [controllers.DomainPurchase, 'checkout'])
+        router.get('/status/:paymentId', [controllers.DomainPurchase, 'status'])
+      })
+      .prefix('/domain-purchase')
+      .use([middleware.auth()])
     // Onboarding routes
     router
       .group(() => {

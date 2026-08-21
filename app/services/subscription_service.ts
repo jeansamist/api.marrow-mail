@@ -405,7 +405,7 @@ export class SubscriptionService {
     if (!transactionId) return
 
     const payment = await this.paymentRepository.findByProviderTransactionId(transactionId)
-    if (!payment) return
+    if (!payment || !payment.subscriptionId) return
 
     const subscription = await this.repository.findById(payment.subscriptionId)
     if (!subscription) return

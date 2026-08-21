@@ -49,6 +49,10 @@ export default class DomainRepository {
     return this.model.query().where('user_id', userId).orderBy('created_at', 'desc')
   }
 
+  async findAllByRegistrationStatus(status: string): Promise<Domain[]> {
+    return this.model.query().where('registration_status', status)
+  }
+
   async delete(domain: Domain) {
     return domain.delete()
   }

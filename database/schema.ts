@@ -79,7 +79,7 @@ export class DomainBrandingSchema extends BaseModel {
 }
 
 export class DomainSchema extends BaseModel {
-  static $columns = ['createdAt', 'customLoginHostname', 'customLoginHostnameVerified', 'description', 'id', 'name', 'updatedAt', 'userId', 'verified'] as const
+  static $columns = ['createdAt', 'customLoginHostname', 'customLoginHostnameVerified', 'description', 'hostedZoneId', 'id', 'name', 'purchasedAt', 'registrantContact', 'registrationOperationId', 'registrationStatus', 'updatedAt', 'userId', 'verified'] as const
   $columns = DomainSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -89,10 +89,20 @@ export class DomainSchema extends BaseModel {
   declare customLoginHostnameVerified: boolean
   @column()
   declare description: string | null
+  @column()
+  declare hostedZoneId: string | null
   @column({ isPrimary: true })
   declare id: number
   @column()
   declare name: string
+  @column.dateTime()
+  declare purchasedAt: DateTime | null
+  @column()
+  declare registrantContact: any | null
+  @column()
+  declare registrationOperationId: string | null
+  @column()
+  declare registrationStatus: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
@@ -282,7 +292,7 @@ export class PaymentSchema extends BaseModel {
   @column()
   declare status: string
   @column()
-  declare subscriptionId: number
+  declare subscriptionId: number | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }
