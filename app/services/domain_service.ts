@@ -168,6 +168,7 @@ export class DomainService {
     }
     const domainEntity = await this.createDomain(createDomainEntityPayload)
     await this.sesService.createEmailIdentity(domainEntity.name)
+    await this.sesService.putEmailIdentityMailFromAttributes(domainEntity.name)
     return this.storeFreshRecords(domainEntity)
   }
 
@@ -187,10 +188,9 @@ export class DomainService {
       })
 
     if (!identityExists) {
-      this.logger.warn(
-        `[DomainService]: SES identity for ${domain.name} is missing, recreating it`
-      )
+      this.logger.warn(`[DomainService]: SES identity for ${domain.name} is missing, recreating it`)
       await this.sesService.createEmailIdentity(domain.name)
+      await this.sesService.putEmailIdentityMailFromAttributes(domain.name)
       if (domain.verified) {
         await this.updateDomain(domain.id, { verified: false })
       }

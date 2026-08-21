@@ -2,6 +2,7 @@ import type Mail from '#models/mail'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
 import { SESService } from '#services/ses_service'
+import { SuppressionService } from '#services/suppression_service'
 import { describeSendFailure } from '#utils/ses_send_error'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
@@ -20,6 +21,7 @@ export class ScheduledMailDispatchService {
     private readonly mailRepository: MailRepository,
     private readonly mailAccountRepository: MailAccountRepository,
     private readonly sesService: SESService,
+    private readonly suppressionService: SuppressionService,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
   ) {}
@@ -69,6 +71,17 @@ export class ScheduledMailDispatchService {
       this.logger.error(
         `Scheduled mail ${mail.id} not sent: domain ${mailAccount.domain.name} is not verified`
       )
+      return
+    }
+
+    const suppressed = await Promise.all(
+      to.map((email) => this.suppressionService.isSuppressed(email))
+    )
+    const suppressedRecipients = to.filter((_, i) => suppressed[i])
+    if (suppressedRecipients.length > 0) {
+      const message = `Recipient previously bounced or complained: ${suppressedRecipients.join(', ')}`
+      await this.mailRepository.update(mail, { status: 'failed', failureReason: message })
+      this.logger.warn(`Scheduled mail ${mail.id} not sent — ${message}`)
       return
     }
 

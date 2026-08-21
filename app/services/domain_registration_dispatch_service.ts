@@ -58,6 +58,7 @@ export class DomainRegistrationDispatchService {
     const hostedZoneId = hostedZone.HostedZone?.Id?.replace('/hostedzone/', '') ?? null
 
     await this.sesService.createEmailIdentity(domain.name)
+    await this.sesService.putEmailIdentityMailFromAttributes(domain.name)
     const dnsRecords = await this.sesService.getAllRecordsForEmailIdentity(domain.name)
 
     if (hostedZoneId) {

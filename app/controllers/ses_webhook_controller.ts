@@ -1,4 +1,5 @@
 import { EmailReceivingService } from '#services/email_receiving_service'
+import { SuppressionService } from '#services/suppression_service'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -20,6 +21,7 @@ interface SNSNotification {
 export default class SesWebhookController {
   constructor(
     private readonly emailReceivingService: EmailReceivingService,
+    private readonly suppressionService: SuppressionService,
     private readonly logger: Logger
   ) {}
 
@@ -56,6 +58,37 @@ export default class SesWebhookController {
             `Failed to process incoming email: ${error instanceof Error ? error.message : String(error)}`
           )
         })
+      }
+
+      if (message['notificationType'] === 'Bounce') {
+        const bounce = message['bounce'] as {
+          bounceType?: string
+          bouncedRecipients?: { emailAddress: string }[]
+        }
+        for (const recipient of bounce?.bouncedRecipients ?? []) {
+          this.suppressionService
+            .recordBounce(recipient.emailAddress, bounce?.bounceType ?? '')
+            .catch((error: unknown) => {
+              this.logger.error(
+                `Failed to record bounce for ${recipient.emailAddress}: ${error instanceof Error ? error.message : String(error)}`
+              )
+            })
+        }
+      }
+
+      if (message['notificationType'] === 'Complaint') {
+        const complaint = message['complaint'] as {
+          complainedRecipients?: { emailAddress: string }[]
+        }
+        for (const recipient of complaint?.complainedRecipients ?? []) {
+          this.suppressionService
+            .recordComplaint(recipient.emailAddress)
+            .catch((error: unknown) => {
+              this.logger.error(
+                `Failed to record complaint for ${recipient.emailAddress}: ${error instanceof Error ? error.message : String(error)}`
+              )
+            })
+        }
       }
     }
 
