@@ -115,6 +115,10 @@ router
         router.post('/check-availability', [controllers.DomainPurchase, 'checkAvailability'])
         router.post('/checkout', [controllers.DomainPurchase, 'checkout'])
         router.get('/status/:paymentId', [controllers.DomainPurchase, 'status'])
+        router.get('/registration-status/:domainName', [
+          controllers.DomainPurchase,
+          'registrationStatus',
+        ])
       })
       .prefix('/domain-purchase')
       .use([middleware.auth()])

@@ -60,6 +60,12 @@ export interface ApiDefinition {
     checkout: typeof routes['subscriptions.checkout']
     status: typeof routes['subscriptions.status']
   }
+  domainPurchase: {
+    checkAvailability: typeof routes['domain_purchase.check_availability']
+    checkout: typeof routes['domain_purchase.checkout']
+    status: typeof routes['domain_purchase.status']
+    registrationStatus: typeof routes['domain_purchase.registration_status']
+  }
   onboarding: {
     registerDomain: typeof routes['onboarding.register_domain']
     setupMailAccount: typeof routes['onboarding.setup_mail_account']

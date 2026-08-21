@@ -234,6 +234,30 @@ const routes = {
     tokens: [{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/reactivate","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/reactivate","type":0,"val":"reactivate","end":""}],
     types: placeholder as Registry['subscriptions.reactivate']['types'],
   },
+  'domain_purchase.check_availability': {
+    methods: ["POST"],
+    pattern: '/api/domain-purchase/check-availability',
+    tokens: [{"old":"/api/domain-purchase/check-availability","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/check-availability","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/check-availability","type":0,"val":"check-availability","end":""}],
+    types: placeholder as Registry['domain_purchase.check_availability']['types'],
+  },
+  'domain_purchase.checkout': {
+    methods: ["POST"],
+    pattern: '/api/domain-purchase/checkout',
+    tokens: [{"old":"/api/domain-purchase/checkout","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/checkout","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/checkout","type":0,"val":"checkout","end":""}],
+    types: placeholder as Registry['domain_purchase.checkout']['types'],
+  },
+  'domain_purchase.status': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domain-purchase/status/:paymentId',
+    tokens: [{"old":"/api/domain-purchase/status/:paymentId","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/status/:paymentId","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/status/:paymentId","type":0,"val":"status","end":""},{"old":"/api/domain-purchase/status/:paymentId","type":1,"val":"paymentId","end":""}],
+    types: placeholder as Registry['domain_purchase.status']['types'],
+  },
+  'domain_purchase.registration_status': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/domain-purchase/registration-status/:domainName',
+    tokens: [{"old":"/api/domain-purchase/registration-status/:domainName","type":0,"val":"api","end":""},{"old":"/api/domain-purchase/registration-status/:domainName","type":0,"val":"domain-purchase","end":""},{"old":"/api/domain-purchase/registration-status/:domainName","type":0,"val":"registration-status","end":""},{"old":"/api/domain-purchase/registration-status/:domainName","type":1,"val":"domainName","end":""}],
+    types: placeholder as Registry['domain_purchase.registration_status']['types'],
+  },
   'onboarding.register_domain': {
     methods: ["POST"],
     pattern: '/api/onboarding/register-domain',

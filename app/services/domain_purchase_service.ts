@@ -190,6 +190,21 @@ export class DomainPurchaseService {
     return { status: 'completed', domainName: domain.name }
   }
 
+  /**
+   * The completed/failed states getPurchaseStatus returns only reflect the
+   * *payment* (i.e. registration was submitted to AWS) — AWS registration
+   * itself is asynchronous and finishes later, tracked here via the
+   * Domain row that DomainRegistrationDispatchService's cron job updates.
+   */
+  async getRegistrationStatus(domainName: string): Promise<{ registrationStatus: string }> {
+    const domain = await this.domainRepository.findByName(domainName)
+    if (!domain) throw httpError(404, 'Domain not found')
+    if (domain.userId !== this.userId) {
+      throw httpError(403, 'You are not allowed to access this domain')
+    }
+    return { registrationStatus: domain.registrationStatus }
+  }
+
   private async submitRegistration(metadata: DomainPurchaseMetadata) {
     const domain = await this.domainRepository.create({
       name: metadata.domainName,

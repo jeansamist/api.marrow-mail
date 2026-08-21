@@ -32,4 +32,9 @@ export default class DomainPurchaseController {
     const result = await this.domainPurchaseService.getPurchaseStatus(Number(params.paymentId))
     return response.ok(ApiResponse.success(result, 'Domain purchase status'))
   }
+
+  async registrationStatus({ params, response }: HttpContext) {
+    const result = await this.domainPurchaseService.getRegistrationStatus(params.domainName)
+    return response.ok(ApiResponse.success(result, 'Domain registration status'))
+  }
 }

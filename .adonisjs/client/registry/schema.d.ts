@@ -463,6 +463,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['reactivate']>>>
     }
   }
+  'domain_purchase.check_availability': {
+    methods: ["POST"]
+    pattern: '/api/domain-purchase/check-availability'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_purchase').checkDomainAvailabilityValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_purchase').checkDomainAvailabilityValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkAvailability']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkAvailability']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'domain_purchase.checkout': {
+    methods: ["POST"]
+    pattern: '/api/domain-purchase/checkout'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/domain_purchase').createDomainPurchaseCheckoutValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/domain_purchase').createDomainPurchaseCheckoutValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['checkout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'domain_purchase.status': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domain-purchase/status/:paymentId'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { paymentId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['status']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['status']>>>
+    }
+  }
+  'domain_purchase.registration_status': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/domain-purchase/registration-status/:domainName'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { domainName: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['registrationStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/domain_purchase_controller').default['registrationStatus']>>>
+    }
+  }
   'onboarding.register_domain': {
     methods: ["POST"]
     pattern: '/api/onboarding/register-domain'
