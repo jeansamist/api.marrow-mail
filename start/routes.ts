@@ -55,7 +55,6 @@ router
         router.get('/', [controllers.MailAccounts, 'index'])
         router.delete('/:id', [controllers.MailAccounts, 'destroy'])
         router.get('/:mailAccountId/profile', [controllers.MailAccountProfiles, 'show'])
-        router.put('/:id/storage-quota', [controllers.MailAccounts, 'updateStorageQuota'])
         router.put('/:id/toggle-active', [controllers.MailAccounts, 'toggleActive'])
         router.post('/:id/resend-invite', [controllers.MailAccounts, 'resendInvite'])
       })
@@ -104,6 +103,7 @@ router
       .group(() => {
         router.get('/current', [controllers.Subscriptions, 'current'])
         router.put('/:id/change-plan', [controllers.Subscriptions, 'changePlan'])
+        router.post('/:id/upgrade-checkout', [controllers.Subscriptions, 'upgradeCheckout'])
         router.post('/:id/cancel', [controllers.Subscriptions, 'cancel'])
         router.post('/:id/reactivate', [controllers.Subscriptions, 'reactivate'])
       })

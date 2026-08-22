@@ -13,5 +13,14 @@ export const checkoutSubscriptionValidator = vine.create(
 export const changeSubscriptionPlanValidator = vine.create(
   vine.object({
     planId: vine.enum(['core', 'plus'] as const),
+    currentPassword: vine.string().minLength(1).optional(),
+  })
+)
+
+export const upgradeSubscriptionValidator = vine.create(
+  vine.object({
+    planId: vine.enum(['core', 'plus'] as const),
+    paymentMethod: vine.enum(['card', 'mtn_mobile_money', 'orange_money'] as const),
+    customerPhone: vine.string().trim().minLength(6).maxLength(20).optional(),
   })
 )

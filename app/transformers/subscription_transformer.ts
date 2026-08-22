@@ -13,6 +13,7 @@ export default class SubscriptionTransformer extends BaseTransformer<Subscriptio
       'currency',
       'amountTotal',
       'currentPeriodEnd',
+      'pendingPlanId',
       'createdAt',
       'updatedAt',
     ])

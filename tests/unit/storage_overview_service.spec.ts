@@ -2,6 +2,7 @@ import Contact from '#models/contact'
 import Domain from '#models/domain'
 import File from '#models/file'
 import Mail from '#models/mail'
+import MailAccount from '#models/mail_account'
 import MailAccountProfile from '#models/mail_account_profile'
 import Signature from '#models/signature'
 import User from '#models/user'
@@ -110,6 +111,8 @@ test.group('StorageOverviewService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const usage = await storageOverviewService.getUsageForCurrentUser()
@@ -119,40 +122,11 @@ test.group('StorageOverviewService', (group) => {
     await subscription.delete()
   })
 
-  test('updateQuota rejects a mail account owned by another user', async ({ assert }) => {
-    const otherUser = await User.create({
-      firstName: 'Other',
-      lastName: 'Tester',
-      email: 'storage-overview.other@example.com',
-      password: 'password',
-    })
-    await bindUserContext(otherUser)
-    const otherStorageOverviewService = await app.container.make(StorageOverviewService)
-
-    try {
-      await otherStorageOverviewService.updateQuota(mailAccountId, 1000)
-      assert.fail('Expected updateQuota to reject a mail account owned by another user')
-    } catch (error) {
-      assert.equal(httpStatus(error), 403)
-    }
-
-    await bindUserContext(user)
-    await otherUser.delete()
-  })
-
-  test('updateQuota changes the stored quota and getUsageForCurrentUser reflects it', async ({
-    assert,
-  }) => {
-    await storageOverviewService.updateQuota(mailAccountId, 5000)
-    const usage = await storageOverviewService.getUsageForCurrentUser()
-    const mailbox = usage.mailboxes.find((m) => m.mailAccountId === mailAccountId)
-    assert.equal(mailbox!.quotaBytes, 5000)
-  })
-
   test('assertWithinQuota throws once usage plus the additional bytes would exceed the quota', async ({
     assert,
   }) => {
-    await storageOverviewService.updateQuota(mailAccountId, 3500)
+    const mailAccount = await MailAccount.findOrFail(mailAccountId)
+    await mailAccount.merge({ storageQuotaBytes: 3500 }).save()
 
     await storageOverviewService.assertWithinQuota(mailAccountId, 400)
 

@@ -4,6 +4,7 @@ import { ApiResponse } from '#utils/api_response'
 import {
   changeSubscriptionPlanValidator,
   checkoutSubscriptionValidator,
+  upgradeSubscriptionValidator,
 } from '#validators/subscription'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -38,9 +39,30 @@ export default class SubscriptionsController {
 
   async changePlan({ params, request, response, serialize }: HttpContext) {
     const data = await request.validateUsing(changeSubscriptionPlanValidator)
-    const subscription = await this.subscriptionService.changePlan(Number(params.id), data.planId)
+    const subscription = await this.subscriptionService.changePlan(
+      Number(params.id),
+      data.planId,
+      data.currentPassword
+    )
     const serialized = await serialize(SubscriptionTransformer.transform(subscription))
-    return response.ok(ApiResponse.success(serialized.data, 'Plan changed'))
+    return response.ok(ApiResponse.success(serialized.data, 'Plan change scheduled'))
+  }
+
+  async upgradeCheckout({ params, request, response, serialize }: HttpContext) {
+    const data = await request.validateUsing(upgradeSubscriptionValidator)
+    const result = await this.subscriptionService.initiateUpgrade(
+      Number(params.id),
+      data.planId,
+      data.paymentMethod,
+      data.customerPhone
+    )
+    const serialized = await serialize(SubscriptionTransformer.transform(result.subscription))
+    return response.ok(
+      ApiResponse.success(
+        { ...serialized.data, ...result.providerPayload },
+        'Upgrade checkout created'
+      )
+    )
   }
 
   async cancel({ params, response, serialize }: HttpContext) {

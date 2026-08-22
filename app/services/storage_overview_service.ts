@@ -128,15 +128,6 @@ export class StorageOverviewService {
     }
   }
 
-  async updateQuota(mailAccountId: number, quotaBytes: number) {
-    const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
-    if (!mailAccount) throw httpError(404, 'Mail account not found')
-    if (mailAccount.userId !== this.userId) {
-      throw httpError(403, 'You are not allowed to access this mail account')
-    }
-    return this.mailAccountRepository.update(mailAccount, { storageQuotaBytes: quotaBytes })
-  }
-
   async assertWithinQuota(mailAccountId: number, additionalBytes: number): Promise<void> {
     const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
     if (!mailAccount) throw httpError(404, 'Mail account not found')

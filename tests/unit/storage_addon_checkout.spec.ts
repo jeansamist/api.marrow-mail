@@ -159,6 +159,8 @@ test.group('StorageOverviewService / storage add-on checkout', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
     const payment = await paymentRepository.create({
       subscriptionId: subscription.id,
@@ -203,6 +205,8 @@ test.group('StorageOverviewService / storage add-on checkout', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
     const payment = await paymentRepository.create({
       subscriptionId: subscription.id,

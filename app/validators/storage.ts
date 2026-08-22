@@ -14,12 +14,6 @@ export const createUploadLinksValidator = vine.create(
   })
 )
 
-export const updateStorageQuotaValidator = vine.create(
-  vine.object({
-    quotaBytes: vine.number().min(0),
-  })
-)
-
 export const createStorageAddonCheckoutValidator = vine.create(
   vine.object({
     mailAccountId: vine.number(),

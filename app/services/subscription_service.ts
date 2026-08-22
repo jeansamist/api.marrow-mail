@@ -9,9 +9,10 @@ import { StripeService } from '#services/stripe_service'
 import env from '#start/env'
 import { resolveCurrencyForCountry } from '#utils/currency_for_country'
 import { httpError } from '#utils/http_error'
-import { calcMailboxPricing, type PlanId } from '#utils/pricing'
+import { calcMailboxPricing, PLAN_BASE_PRICE_XAF, type PlanId } from '#utils/pricing'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
+import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import type Stripe from 'stripe'
 
@@ -85,6 +86,8 @@ export class SubscriptionService {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const user = this.ctx.auth.user!
@@ -170,6 +173,8 @@ export class SubscriptionService {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const result = await this.elgiopayService.createPayment({
@@ -200,11 +205,25 @@ export class SubscriptionService {
 
   async getCurrentForUser(): Promise<Subscription | null> {
     const active = await this.repository.findLatestActiveForUser(this.userId)
-    if (active) return active
+    if (active) return this.applyDueDowngradeIfNeeded(active)
     return this.repository.findLatestForUser(this.userId)
   }
 
-  async changePlan(subscriptionId: number, planId: PlanId): Promise<Subscription> {
+  private isUpgrade(fromPlanId: PlanId, toPlanId: PlanId): boolean {
+    return PLAN_BASE_PRICE_XAF[toPlanId] > PLAN_BASE_PRICE_XAF[fromPlanId]
+  }
+
+  /**
+   * Downgrade only — an upgrade must go through initiateUpgrade() and pay
+   * before it takes effect. A downgrade takes effect at currentPeriodEnd
+   * (applied lazily by applyDueDowngradeIfNeeded), so this just schedules it
+   * once the user's current password confirms they meant it.
+   */
+  async changePlan(
+    subscriptionId: number,
+    planId: PlanId,
+    currentPassword?: string
+  ): Promise<Subscription> {
     const subscription = await this.repository.findById(subscriptionId)
     if (!subscription) throw httpError(404, 'Subscription not found')
     this.checkOwnership(subscription)
@@ -212,6 +231,107 @@ export class SubscriptionService {
       throw httpError(409, 'Only an active subscription can change plans')
     }
     if (subscription.planId === planId) return subscription
+    if (subscription.pendingPlanId) {
+      throw httpError(409, 'A plan change is already in progress for this subscription')
+    }
+    if (this.isUpgrade(subscription.planId as PlanId, planId)) {
+      throw httpError(422, 'Upgrading a plan requires payment — use upgrade-checkout instead')
+    }
+
+    if (!currentPassword) {
+      throw httpError(422, 'currentPassword is required to downgrade')
+    }
+    const user = this.ctx.auth.user!
+    const isPasswordValid = await hash.verify(user.password, currentPassword)
+    if (!isPasswordValid) throw httpError(400, 'Current password is incorrect')
+
+    return this.repository.update(subscription, { pendingPlanId: planId })
+  }
+
+  /** Applies a scheduled downgrade once its billing period has actually ended. */
+  private async applyDueDowngradeIfNeeded(subscription: Subscription): Promise<Subscription> {
+    if (
+      !subscription.pendingPlanId ||
+      subscription.pendingCheckoutPaymentId ||
+      !subscription.currentPeriodEnd ||
+      subscription.currentPeriodEnd > DateTime.now()
+    ) {
+      return subscription
+    }
+
+    const planId = subscription.pendingPlanId as PlanId
+    const pricing = calcMailboxPricing(
+      subscription.mailboxQuantity,
+      subscription.billingMonths,
+      planId
+    )
+
+    if (subscription.provider === 'stripe') {
+      await this.applyStripePlanPrice(subscription, planId, pricing.total)
+    }
+
+    return this.repository.update(subscription, {
+      planId,
+      amountTotal: pricing.total,
+      pendingPlanId: null,
+    })
+  }
+
+  private async applyStripePlanPrice(
+    subscription: Subscription,
+    planId: PlanId,
+    amountTotal: number
+  ): Promise<void> {
+    if (!subscription.stripeSubscriptionId) return
+
+    const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
+      subscription.stripeSubscriptionId
+    )
+    const item = stripeSubscription.items.data[0]
+    const recurring: Stripe.PriceCreateParams.Recurring =
+      subscription.billingMonths === 12
+        ? { interval: 'year', interval_count: 1 }
+        : { interval: 'month', interval_count: subscription.billingMonths }
+
+    await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
+      items: [
+        {
+          id: item.id,
+          price_data: {
+            currency: this.stripeCurrency(),
+            product: this.stripeProductId(planId),
+            unit_amount: Math.round(amountTotal / subscription.mailboxQuantity),
+            recurring,
+          },
+          quantity: subscription.mailboxQuantity,
+        },
+      ],
+      // The customer already paid full price up front (upgrade) or the swap
+      // lands exactly on the period boundary (downgrade) — either way Stripe
+      // must not also generate a proration invoice item.
+      proration_behavior: 'none',
+    })
+  }
+
+  /** Upgrade only — charges the full new-plan price before it takes effect. */
+  async initiateUpgrade(
+    subscriptionId: number,
+    planId: PlanId,
+    paymentMethod: 'card' | 'mtn_mobile_money' | 'orange_money',
+    customerPhone: string | undefined
+  ): Promise<CheckoutResult> {
+    const subscription = await this.repository.findById(subscriptionId)
+    if (!subscription) throw httpError(404, 'Subscription not found')
+    this.checkOwnership(subscription)
+    if (subscription.status !== 'active') {
+      throw httpError(409, 'Only an active subscription can be upgraded')
+    }
+    if (subscription.pendingPlanId) {
+      throw httpError(409, 'A plan change is already in progress for this subscription')
+    }
+    if (!this.isUpgrade(subscription.planId as PlanId, planId)) {
+      throw httpError(422, 'planId must be a higher tier than the current plan')
+    }
 
     const pricing = calcMailboxPricing(
       subscription.mailboxQuantity,
@@ -219,34 +339,158 @@ export class SubscriptionService {
       planId
     )
 
-    if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
-      const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
-        subscription.stripeSubscriptionId
-      )
-      const item = stripeSubscription.items.data[0]
-      const recurring: Stripe.PriceCreateParams.Recurring =
-        subscription.billingMonths === 12
-          ? { interval: 'year', interval_count: 1 }
-          : { interval: 'month', interval_count: subscription.billingMonths }
+    if (paymentMethod === 'card') {
+      return this.initiateUpgradeWithStripe(subscription, planId, pricing.total)
+    }
+    if (!customerPhone) {
+      throw httpError(422, 'customerPhone is required for mobile money payments')
+    }
+    return this.initiateUpgradeWithElgiopay(
+      subscription,
+      planId,
+      pricing.total,
+      paymentMethod,
+      customerPhone
+    )
+  }
 
-      await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
-        items: [
-          {
-            id: item.id,
-            price_data: {
-              currency: this.stripeCurrency(),
-              product: this.stripeProductId(planId),
-              unit_amount: Math.round(pricing.total / subscription.mailboxQuantity),
-              recurring,
-            },
-            quantity: subscription.mailboxQuantity,
-          },
-        ],
-        proration_behavior: 'create_prorations',
-      })
+  private async initiateUpgradeWithStripe(
+    subscription: Subscription,
+    planId: PlanId,
+    amountTotal: number
+  ): Promise<CheckoutResult> {
+    if (!subscription.stripeCustomerId) {
+      throw httpError(422, 'This subscription has no card on file to charge')
+    }
+    const currency = this.stripeCurrency()
+
+    const paymentIntent = await this.stripeService.client.paymentIntents.create({
+      amount: Math.round(amountTotal),
+      currency,
+      customer: subscription.stripeCustomerId,
+      payment_method_types: ['card'],
+      metadata: { subscriptionId: String(subscription.id), upgradeToPlanId: planId },
+    })
+
+    const payment = await this.paymentRepository.create({
+      subscriptionId: subscription.id,
+      provider: 'stripe',
+      providerTransactionId: paymentIntent.id,
+      amount: amountTotal,
+      currency: currency.toUpperCase(),
+      status: 'pending',
+      customerPhone: null,
+      failureReason: null,
+      rawResponse: null,
+    })
+
+    const updated = await this.repository.update(subscription, {
+      pendingPlanId: planId,
+      pendingCheckoutPaymentId: payment.id,
+    })
+
+    return { subscription: updated, providerPayload: { clientSecret: paymentIntent.client_secret } }
+  }
+
+  private async initiateUpgradeWithElgiopay(
+    subscription: Subscription,
+    planId: PlanId,
+    amountTotal: number,
+    paymentMethod: 'mtn_mobile_money' | 'orange_money',
+    customerPhone: string
+  ): Promise<CheckoutResult> {
+    const user = this.ctx.auth.user!
+
+    const result = await this.elgiopayService.createPayment({
+      amount: amountTotal,
+      currency: subscription.currency as 'XAF' | 'XOF' | 'USD',
+      payment_method: paymentMethod,
+      customer_phone: customerPhone,
+      customer_name: `${user.firstName} ${user.lastName}`,
+      customer_email: user.email,
+      reference: `subscription-${subscription.id}-upgrade`,
+      metadata: { subscriptionId: subscription.id, upgradeToPlanId: planId },
+    })
+
+    const payment = await this.paymentRepository.create({
+      subscriptionId: subscription.id,
+      provider: 'elgiopay',
+      providerTransactionId: result.transaction_id,
+      amount: amountTotal,
+      currency: subscription.currency,
+      status: 'pending',
+      customerPhone,
+      failureReason: null,
+      rawResponse: null,
+    })
+
+    const updated = await this.repository.update(subscription, {
+      pendingPlanId: planId,
+      pendingCheckoutPaymentId: payment.id,
+    })
+
+    return { subscription: updated, providerPayload: { transactionId: result.transaction_id } }
+  }
+
+  private async completeUpgrade(subscription: Subscription, payment: Payment): Promise<void> {
+    const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
+    if (!justCompleted) return
+
+    const planId = subscription.pendingPlanId as PlanId
+    const pricing = calcMailboxPricing(
+      subscription.mailboxQuantity,
+      subscription.billingMonths,
+      planId
+    )
+
+    if (subscription.provider === 'stripe') {
+      await this.applyStripePlanPrice(subscription, planId, pricing.total)
     }
 
-    return this.repository.update(subscription, { planId, amountTotal: pricing.total })
+    await this.repository.update(subscription, {
+      planId,
+      amountTotal: pricing.total,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+    this.sendSubscriptionInvoice(subscription, payment)
+  }
+
+  private async failUpgrade(
+    subscription: Subscription,
+    payment: Payment,
+    reason: string
+  ): Promise<void> {
+    await this.paymentRepository.update(payment, { status: 'failed', failureReason: reason })
+    await this.repository.update(subscription, {
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+  }
+
+  /** Polled by the frontend while an upgrade payment is in flight. */
+  private async syncUpgradePaymentState(subscription: Subscription): Promise<void> {
+    const payment = await this.paymentRepository.findById(subscription.pendingCheckoutPaymentId!)
+    if (!payment || payment.status !== 'pending' || !payment.providerTransactionId) return
+
+    if (payment.provider === 'stripe') {
+      const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
+        payment.providerTransactionId
+      )
+      if (paymentIntent.status === 'succeeded') {
+        await this.completeUpgrade(subscription, payment)
+      } else if (paymentIntent.status === 'canceled') {
+        await this.failUpgrade(subscription, payment, 'Stripe payment canceled')
+      }
+      return
+    }
+
+    const live = await this.elgiopayService.getPayment(payment.providerTransactionId)
+    if (live.status === 'completed') {
+      await this.completeUpgrade(subscription, payment)
+    } else if (live.status === 'failed') {
+      await this.failUpgrade(subscription, payment, 'Elgiopay payment failed')
+    }
   }
 
   async cancelSubscription(subscriptionId: number): Promise<Subscription> {
@@ -288,8 +532,13 @@ export class SubscriptionService {
     if (!subscription) throw httpError(404, 'Subscription not found')
     this.checkOwnership(subscription)
 
+    if (subscription.pendingCheckoutPaymentId) {
+      await this.syncUpgradePaymentState(subscription)
+      return (await this.repository.findById(subscriptionId))!
+    }
+
     if (subscription.status !== 'pending') {
-      return subscription
+      return this.applyDueDowngradeIfNeeded(subscription)
     }
 
     if (subscription.provider === 'elgiopay') {
@@ -400,6 +649,24 @@ export class SubscriptionService {
         await this.repository.update(subscription, { status: 'canceled' })
         return
       }
+      case 'payment_intent.succeeded':
+      case 'payment_intent.payment_failed': {
+        // Only a pending upgrade's one-off PaymentIntent matches
+        // pendingCheckoutPaymentId — the initial checkout's PaymentIntent
+        // (reached via its invoice) doesn't, so it's a no-op here.
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const payment = await this.paymentRepository.findByProviderTransactionId(paymentIntent.id)
+        if (!payment || !payment.subscriptionId) return
+        const subscription = await this.repository.findById(payment.subscriptionId)
+        if (!subscription || subscription.pendingCheckoutPaymentId !== payment.id) return
+
+        if (event.type === 'payment_intent.succeeded') {
+          await this.completeUpgrade(subscription, payment)
+        } else {
+          await this.failUpgrade(subscription, payment, 'Stripe payment failed')
+        }
+        return
+      }
       default:
         return
     }
@@ -421,6 +688,19 @@ export class SubscriptionService {
 
     const subscription = await this.repository.findById(payment.subscriptionId)
     if (!subscription) return
+
+    if (subscription.pendingCheckoutPaymentId === payment.id) {
+      if (envelope.event === 'payment.completed') {
+        await this.completeUpgrade(subscription, payment)
+      } else {
+        await this.failUpgrade(
+          subscription,
+          payment,
+          envelope.data.message ?? 'Elgiopay payment failed'
+        )
+      }
+      return
+    }
 
     if (envelope.event === 'payment.completed') {
       const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)

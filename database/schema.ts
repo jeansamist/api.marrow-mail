@@ -373,7 +373,7 @@ export class SignatureSchema extends BaseModel {
 }
 
 export class SubscriptionSchema extends BaseModel {
-  static $columns = ['amountTotal', 'billingMonths', 'countryCode', 'createdAt', 'currency', 'currentPeriodEnd', 'id', 'mailboxQuantity', 'planId', 'provider', 'status', 'stripeCustomerId', 'stripeSubscriptionId', 'updatedAt', 'userId'] as const
+  static $columns = ['amountTotal', 'billingMonths', 'countryCode', 'createdAt', 'currency', 'currentPeriodEnd', 'id', 'mailboxQuantity', 'pendingCheckoutPaymentId', 'pendingPlanId', 'planId', 'provider', 'status', 'stripeCustomerId', 'stripeSubscriptionId', 'updatedAt', 'userId'] as const
   $columns = SubscriptionSchema.$columns
   @column()
   declare amountTotal: number
@@ -391,6 +391,10 @@ export class SubscriptionSchema extends BaseModel {
   declare id: number
   @column()
   declare mailboxQuantity: number
+  @column()
+  declare pendingCheckoutPaymentId: number | null
+  @column()
+  declare pendingPlanId: string | null
   @column()
   declare planId: string
   @column()

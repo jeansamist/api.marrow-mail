@@ -272,6 +272,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
     const active = await repository.create({
       userId: user.id,
@@ -286,6 +288,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const current = await subscriptionService.getCurrentForUser()
@@ -320,6 +324,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const current = await otherSubscriptionService.getCurrentForUser()
@@ -348,7 +354,7 @@ test.group('SubscriptionService', (group) => {
     await freshUser.delete()
   })
 
-  test('changePlan updates the plan and recomputes amountTotal for a non-Stripe subscription', async ({
+  test('changePlan rejects an upgrade — it must go through initiateUpgrade instead', async ({
     assert,
   }) => {
     const repository = await app.container.make(SubscriptionRepository)
@@ -365,12 +371,159 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
-    const updated = await subscriptionService.changePlan(subscription.id, 'plus')
-    assert.equal(updated.planId, 'plus')
-    assert.notEqual(updated.amountTotal, 5000)
+    try {
+      await subscriptionService.changePlan(subscription.id, 'plus', 'password')
+      assert.fail('Expected changePlan to reject an upgrade')
+    } catch (error) {
+      assert.equal(httpStatus(error), 422)
+    }
   })
+
+  test('changePlan requires a correct currentPassword to schedule a downgrade', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'plus',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 7000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+
+    try {
+      await subscriptionService.changePlan(subscription.id, 'core')
+      assert.fail('Expected changePlan to require currentPassword')
+    } catch (error) {
+      assert.equal(httpStatus(error), 422)
+    }
+
+    try {
+      await subscriptionService.changePlan(subscription.id, 'core', 'wrong-password')
+      assert.fail('Expected changePlan to reject an incorrect password')
+    } catch (error) {
+      assert.equal(httpStatus(error), 400)
+    }
+
+    const unchanged = await repository.findById(subscription.id)
+    assert.isNull(unchanged!.pendingPlanId)
+  })
+
+  test('changePlan schedules a downgrade that only applies once currentPeriodEnd has passed', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'plus',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 7000,
+      status: 'active',
+      currentPeriodEnd: DateTime.now().plus({ days: 10 }),
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+
+    const scheduled = await subscriptionService.changePlan(subscription.id, 'core', 'password')
+    assert.equal(scheduled.planId, 'plus', 'plan stays put until the period ends')
+    assert.equal(scheduled.pendingPlanId, 'core')
+
+    // Not due yet — getCurrentForUser must not apply it early.
+    const stillPending = await subscriptionService.getCurrentForUser()
+    assert.equal(stillPending!.planId, 'plus')
+    assert.equal(stillPending!.pendingPlanId, 'core')
+
+    await repository.update(scheduled, { currentPeriodEnd: DateTime.now().minus({ days: 1 }) })
+
+    const applied = await subscriptionService.getCurrentForUser()
+    assert.equal(applied!.planId, 'core')
+    assert.isNull(applied!.pendingPlanId)
+    assert.notEqual(applied!.amountTotal, 7000)
+  })
+
+  test('initiateUpgrade rejects a target plan that is not a higher tier', async ({ assert }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'plus',
+      mailboxQuantity: 1,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 3500,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+
+    try {
+      await subscriptionService.initiateUpgrade(subscription.id, 'core', 'mtn_mobile_money', '677000000')
+      assert.fail('Expected initiateUpgrade to reject a same-or-lower tier target')
+    } catch (error) {
+      assert.equal(httpStatus(error), 422)
+    }
+  })
+
+  test('initiateUpgrade charges the full new-plan price and activates it once payment completes', async ({
+    assert,
+  }) => {
+    const repository = await app.container.make(SubscriptionRepository)
+    const subscription = await repository.create({
+      userId: user.id,
+      provider: 'elgiopay',
+      planId: 'core',
+      mailboxQuantity: 2,
+      billingMonths: 1,
+      countryCode: null,
+      currency: 'XAF',
+      amountTotal: 5000,
+      status: 'active',
+      currentPeriodEnd: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
+    })
+
+    const result = await subscriptionService.initiateUpgrade(
+      subscription.id,
+      'plus',
+      'mtn_mobile_money',
+      '677000000' // Elgiopay sandbox number: immediate success
+    )
+    assert.equal(result.subscription.pendingPlanId, 'plus')
+    assert.isTrue('transactionId' in result.providerPayload)
+    // Still on the old plan — payment hasn't been confirmed yet.
+    assert.equal(result.subscription.planId, 'core')
+
+    const status = await subscriptionService.getStatus(subscription.id)
+    assert.equal(status.planId, 'plus')
+    assert.isNull(status.pendingPlanId)
+    assert.notEqual(status.amountTotal, 5000)
+  }).timeout(15000)
 
   test('changePlan rejects a subscription owned by another user', async ({ assert }) => {
     const repository = await app.container.make(SubscriptionRepository)
@@ -387,6 +540,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const otherUser = await User.create({
@@ -425,6 +580,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     try {
@@ -452,6 +609,8 @@ test.group('SubscriptionService', (group) => {
       currentPeriodEnd: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      pendingPlanId: null,
+      pendingCheckoutPaymentId: null,
     })
 
     const canceled = await subscriptionService.cancelSubscription(subscription.id)
