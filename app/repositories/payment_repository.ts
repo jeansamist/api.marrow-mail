@@ -28,4 +28,23 @@ export default class PaymentRepository {
   async update(payment: Payment, data: Partial<ModelProps<PaymentSchema>>): Promise<Payment> {
     return payment.merge(data).save()
   }
+
+  /**
+   * Atomically transitions a payment from pending to completed, returning
+   * whether THIS call performed the transition. Payment confirmation is
+   * reachable from more than one path at once (the frontend's status-polling
+   * loop and the provider's webhook can both observe "succeeded" around the
+   * same time) — a plain read-then-write update() lets both callers read
+   * status:'pending' before either commits, so both would fire a side effect
+   * like sending an invoice. The WHERE clause below makes Postgres's row
+   * lock the tie-breaker: only one UPDATE can match status='pending'.
+   */
+  async markCompletedIfPending(paymentId: number): Promise<boolean> {
+    const rows = await this.model
+      .query()
+      .where('id', paymentId)
+      .where('status', 'pending')
+      .update({ status: 'completed' }, ['id'])
+    return rows.length > 0
+  }
 }

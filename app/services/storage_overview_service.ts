@@ -287,7 +287,12 @@ export class StorageOverviewService {
 
     if (!succeeded) return { status: 'pending' }
 
-    await this.paymentRepository.update(payment, { status: 'completed' })
+    // Guards against a race between concurrent polls: only the caller that
+    // actually wins the pending -> completed transition applies the quota
+    // bump and sends the invoice, so extra storage is never granted twice.
+    const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
+    if (!justCompleted) return { status: 'completed' }
+
     const metadata = payment.rawResponse as StorageAddonMetadata
     await this.applyStorageAddon(metadata)
 

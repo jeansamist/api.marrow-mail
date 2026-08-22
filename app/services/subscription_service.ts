@@ -364,9 +364,10 @@ export class SubscriptionService {
 
         if (event.type === 'invoice.paid') {
           if (existingPayment) {
-            const wasAlreadyCompleted = existingPayment.status === 'completed'
-            await this.paymentRepository.update(existingPayment, { status: 'completed' })
-            if (!wasAlreadyCompleted) {
+            const justCompleted = await this.paymentRepository.markCompletedIfPending(
+              existingPayment.id
+            )
+            if (justCompleted) {
               this.sendSubscriptionInvoice(subscription, existingPayment)
             }
           }
@@ -422,9 +423,8 @@ export class SubscriptionService {
     if (!subscription) return
 
     if (envelope.event === 'payment.completed') {
-      const wasAlreadyCompleted = payment.status === 'completed'
-      await this.paymentRepository.update(payment, { status: 'completed' })
-      if (!wasAlreadyCompleted) {
+      const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
+      if (justCompleted) {
         this.sendSubscriptionInvoice(subscription, payment)
       }
       await this.repository.update(subscription, {
@@ -469,9 +469,8 @@ export class SubscriptionService {
 
     if (live.status === 'completed') {
       if (payment) {
-        const wasAlreadyCompleted = payment.status === 'completed'
-        await this.paymentRepository.update(payment, { status: 'completed' })
-        if (!wasAlreadyCompleted) {
+        const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
+        if (justCompleted) {
           this.sendSubscriptionInvoice(subscription, payment)
         }
       }

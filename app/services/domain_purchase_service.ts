@@ -199,7 +199,15 @@ export class DomainPurchaseService {
 
     if (!succeeded) return { status: 'pending' }
 
-    await this.paymentRepository.update(payment, { status: 'completed' })
+    // Guards against a race between concurrent polls (or a poll racing the
+    // webhook-less nature of this flow): only the caller that actually wins
+    // the pending -> completed transition submits the AWS registration and
+    // sends the invoice, so a domain is never registered twice.
+    const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
+    if (!justCompleted) {
+      return { status: 'completed', domainName: metadata.domainName }
+    }
+
     const domain = await this.submitRegistration(metadata)
 
     this.invoiceService.sendForPayment({
