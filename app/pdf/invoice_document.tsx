@@ -159,7 +159,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
 
         <Text style={styles.footer}>
           MarrowMail — Thank you for your business. Questions about this invoice? Contact
-          support@marrowmail.com.
+          support@marrowmails.com.
         </Text>
       </Page>
     </Document>

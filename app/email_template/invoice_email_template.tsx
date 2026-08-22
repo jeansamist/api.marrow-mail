@@ -50,7 +50,7 @@ export function InvoiceEmailTemplate({
               You're receiving this because a payment was made on your MarrowMail account.
             </Text>
             <Text className="text-xs text-gray-400 m-0">
-              Questions about this invoice? Contact support@marrowmail.com.
+              Questions about this invoice? Contact support@marrowmails.com.
             </Text>
           </Container>
         </Body>
