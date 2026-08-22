@@ -407,6 +407,25 @@ export class SubscriptionSchema extends BaseModel {
   declare userId: number
 }
 
+export class SuppressedAddressSchema extends BaseModel {
+  static $columns = ['bounceType', 'createdAt', 'email', 'id', 'lastEventAt', 'reason', 'updatedAt'] as const
+  $columns = SuppressedAddressSchema.$columns
+  @column()
+  declare bounceType: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare email: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column.dateTime()
+  declare lastEventAt: DateTime
+  @column()
+  declare reason: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['avatar', 'businessName', 'createdAt', 'email', 'emailVerificationCode', 'emailVerificationCodeExpiresAt', 'emailVerified', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'resetPasswordToken', 'resetPasswordTokenExpiresAt', 'updatedAt'] as const
   $columns = UserSchema.$columns
