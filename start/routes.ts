@@ -190,6 +190,7 @@ router
             router.get('/', [controllers.Mail, 'index'])
             router.get('/sent', [controllers.Mail, 'sent'])
             router.get('/received', [controllers.Mail, 'received'])
+            router.get('/:id/attachments', [controllers.Mail, 'attachments'])
             router.get('/drafts', [controllers.Mail, 'drafts'])
             router.post('/drafts', [controllers.Mail, 'saveDraft'])
             router.put('/drafts/:id', [controllers.Mail, 'updateDraft'])

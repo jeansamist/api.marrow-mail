@@ -1,4 +1,5 @@
 import { MailService } from '#services/mail_service'
+import FileTransformer from '#transformers/file_transformer'
 import MailTransformer from '#transformers/mail_transformer'
 import { ApiResponse } from '#utils/api_response'
 import {
@@ -24,6 +25,12 @@ export default class MailController {
     const mail = await this.mailService.sendMail(data)
     const serialized = await serialize(MailTransformer.transform(mail))
     return response.ok(ApiResponse.success(serialized.data, 'Mail queued for sending'))
+  }
+
+  async attachments({ params, response, serialize }: HttpContext) {
+    const files = await this.mailService.getAttachments(Number(params.id))
+    const serialized = await serialize(FileTransformer.transform(files))
+    return response.ok(ApiResponse.success(serialized.data, 'Attachments retrieved'))
   }
 
   async index({ response, serialize }: HttpContext) {

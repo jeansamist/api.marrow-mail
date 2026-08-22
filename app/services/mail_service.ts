@@ -1,5 +1,7 @@
 import type MailAccount from '#models/mail_account'
 import type Mail from '#models/mail'
+import type File from '#models/file'
+import FileRepository from '#repositories/file_repository'
 import FolderRepository from '#repositories/folder_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
@@ -59,6 +61,7 @@ export class MailService {
     private readonly sesService: SESService,
     private readonly suppressionService: SuppressionService,
     private readonly attachmentResolver: MailAttachmentResolverService,
+    private readonly fileRepository: FileRepository,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
   ) {}
@@ -345,6 +348,18 @@ export class MailService {
     const { mailAccount, mail } = await this.getOwnedMail(id)
     if (mail.status !== 'scheduled') throw httpError(404, 'Scheduled mail not found')
     return { mailAccount, scheduled: mail }
+  }
+
+  /** Resolves a mail's attachmentIds to full file metadata (name, size, download URL). */
+  async getAttachments(id: number): Promise<File[]> {
+    const { mail } = await this.getOwnedMail(id)
+    const attachmentIds = (mail.attachmentIds as number[] | null) ?? []
+    if (attachmentIds.length === 0) return []
+
+    const files = await Promise.all(
+      attachmentIds.map((fileId) => this.fileRepository.findById(fileId))
+    )
+    return files.filter((file): file is File => file !== null)
   }
 
   private async getOwnedMail(id: number): Promise<{ mailAccount: MailAccount; mail: Mail }> {
