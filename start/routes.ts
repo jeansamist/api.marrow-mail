@@ -30,6 +30,10 @@ router.get('/api/domains/:name/public-branding', [controllers.PublicDomains, 'pu
 // frontend's Host-header middleware to resolve a custom hostname to a domain.
 router.get('/api/domains/by-hostname/:hostname', [controllers.PublicDomains, 'byHostname'])
 
+// Public voice-note playback — no auth, opened by whoever received the email.
+// Looked up by an opaque token, not the numeric file id.
+router.get('/api/voice-notes/:token', [controllers.VoiceNotes, 'show'])
+
 router
   .group(() => {
     router

@@ -4,6 +4,7 @@ const fileDescriptor = vine.object({
   originalName: vine.string().trim(),
   mimeType: vine.string().trim().optional(),
   size: vine.number().optional(),
+  kind: vine.enum(['file', 'voice_note'] as const).optional(),
 })
 
 export const createUploadLinkValidator = vine.create(fileDescriptor)

@@ -71,6 +71,8 @@ export class DomainBrandingService {
       mimeType: data.mimeType ?? null,
       size: data.size ?? null,
       mailAccountId: null,
+      kind: 'file',
+      publicToken: null,
     })
 
     const uploadUrl = await this.s3Service.generateUploadURL(bucket, uniqueKey, 3600, data.mimeType)

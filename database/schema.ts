@@ -112,7 +112,7 @@ export class DomainSchema extends BaseModel {
 }
 
 export class FileSchema extends BaseModel {
-  static $columns = ['bucket', 'createdAt', 'id', 'key', 'mailAccountId', 'mimeType', 'originalName', 'size', 'updatedAt'] as const
+  static $columns = ['bucket', 'createdAt', 'id', 'key', 'kind', 'mailAccountId', 'mimeType', 'originalName', 'publicToken', 'size', 'updatedAt'] as const
   $columns = FileSchema.$columns
   @column()
   declare bucket: string
@@ -123,11 +123,15 @@ export class FileSchema extends BaseModel {
   @column()
   declare key: string
   @column()
+  declare kind: string
+  @column()
   declare mailAccountId: number | null
   @column()
   declare mimeType: string | null
   @column()
   declare originalName: string
+  @column()
+  declare publicToken: string | null
   @column()
   declare size: bigint | number | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })

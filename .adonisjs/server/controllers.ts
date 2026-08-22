@@ -24,4 +24,5 @@ export const controllers = {
   StorageOverview: () => import('#controllers/storage_overview_controller'),
   StripeWebhook: () => import('#controllers/stripe_webhook_controller'),
   Subscriptions: () => import('#controllers/subscriptions_controller'),
+  VoiceNotes: () => import('#controllers/voice_notes_controller'),
 }

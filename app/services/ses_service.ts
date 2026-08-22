@@ -243,6 +243,13 @@ export class SESService {
     subject: string
     bodyHtml?: string
     bodyText?: string
+    attachments?: {
+      filename: string
+      contentType: string
+      content: Uint8Array
+      disposition?: 'ATTACHMENT' | 'INLINE'
+      contentId?: string
+    }[]
   }) {
     // Mail filters penalize HTML-only messages; always carry a text/plain
     // alternative, deriving one from the HTML when the caller didn't supply it.
@@ -264,6 +271,15 @@ export class SESService {
                 ...(config.bodyHtml ? { Html: { Data: config.bodyHtml } } : {}),
                 ...(bodyText ? { Text: { Data: bodyText } } : {}),
               },
+              Attachments: config.attachments?.length
+                ? config.attachments.map((attachment) => ({
+                    RawContent: attachment.content,
+                    FileName: attachment.filename,
+                    ContentType: attachment.contentType,
+                    ContentDisposition: attachment.disposition ?? 'ATTACHMENT',
+                    ...(attachment.contentId ? { ContentId: attachment.contentId } : {}),
+                  }))
+                : undefined,
             },
           },
         })

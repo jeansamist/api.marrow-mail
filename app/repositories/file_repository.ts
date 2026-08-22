@@ -17,6 +17,14 @@ export default class FileRepository {
     return this.model.findBy('key', key)
   }
 
+  async findByPublicToken(publicToken: string): Promise<File | null> {
+    return this.model.findBy('public_token', publicToken)
+  }
+
+  async update(file: File, data: Partial<ModelProps<FileSchema>>): Promise<File> {
+    return file.merge(data).save()
+  }
+
   async findByMailAccount(mailAccountId: number): Promise<File[]> {
     return this.model.query().where('mail_account_id', mailAccountId).orderBy('created_at', 'desc')
   }

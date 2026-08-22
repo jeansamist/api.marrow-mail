@@ -5,6 +5,9 @@ import { StorageOverviewService } from '#services/storage_overview_service'
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
+import { randomBytes } from 'node:crypto'
+
+type FileKind = 'file' | 'voice_note'
 
 @inject()
 export class StorageService {
@@ -15,13 +18,20 @@ export class StorageService {
     private readonly storageOverviewService: StorageOverviewService
   ) {}
 
-  async createUploadLink(data: { originalName: string; mimeType?: string; size?: number }) {
+  async createUploadLink(data: {
+    originalName: string
+    mimeType?: string
+    size?: number
+    kind?: FileKind
+  }) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     await this.storageOverviewService.assertWithinQuota(mailAccount.id, data.size ?? 0)
     return this.buildUploadLink(mailAccount.id, data)
   }
 
-  async createUploadLinks(files: { originalName: string; mimeType?: string; size?: number }[]) {
+  async createUploadLinks(
+    files: { originalName: string; mimeType?: string; size?: number; kind?: FileKind }[]
+  ) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     const totalSize = files.reduce((sum, file) => sum + (file.size ?? 0), 0)
     await this.storageOverviewService.assertWithinQuota(mailAccount.id, totalSize)
@@ -30,11 +40,12 @@ export class StorageService {
 
   private async buildUploadLink(
     mailAccountId: number,
-    data: { originalName: string; mimeType?: string; size?: number }
+    data: { originalName: string; mimeType?: string; size?: number; kind?: FileKind }
   ) {
     const extension = data.originalName.includes('.') ? data.originalName.split('.').pop()! : ''
     const uniqueKey = `mail-accounts/${mailAccountId}/${this.generateKey()}${extension ? `.${extension}` : ''}`
     const bucket = env.get('AWS_BUCKET')
+    const kind = data.kind ?? 'file'
 
     const file = await this.fileRepository.create({
       key: uniqueKey,
@@ -43,6 +54,10 @@ export class StorageService {
       mimeType: data.mimeType ?? null,
       size: data.size ?? null,
       mailAccountId,
+      kind,
+      // Generated up front — a voice note's link never needs to change even
+      // if it's later attached to more than one email.
+      publicToken: kind === 'voice_note' ? randomBytes(24).toString('hex') : null,
     })
 
     const uploadUrl = await this.s3Service.generateUploadURL(bucket, uniqueKey, 3600, data.mimeType)
@@ -60,6 +75,14 @@ export class StorageService {
     const file = await this.getFileByKey(key)
     const url = await this.s3Service.generateGetSignedUrl(file.bucket, file.key, 3600)
     return url
+  }
+
+  /** Public — no mail-account auth. Looked up by the opaque publicToken, not the numeric id. */
+  async getPublicVoiceNote(token: string) {
+    const file = await this.fileRepository.findByPublicToken(token)
+    if (!file || file.kind !== 'voice_note') throw httpError(404, 'Voice message not found')
+    const audioUrl = await this.s3Service.generateGetSignedUrl(file.bucket, file.key, 3600)
+    return { audioUrl, originalName: file.originalName, mimeType: file.mimeType }
   }
 
   async listFiles() {

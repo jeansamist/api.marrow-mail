@@ -4,6 +4,7 @@ import FolderRepository from '#repositories/folder_repository'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
 import { AuthMailAccountService } from '#services/auth_mail_account_service'
+import { MailAttachmentResolverService } from '#services/mail_attachment_resolver_service'
 import { SESService } from '#services/ses_service'
 import { SuppressionService } from '#services/suppression_service'
 import { describeSendFailure } from '#utils/ses_send_error'
@@ -57,6 +58,7 @@ export class MailService {
     private readonly authMailAccountService: AuthMailAccountService,
     private readonly sesService: SESService,
     private readonly suppressionService: SuppressionService,
+    private readonly attachmentResolver: MailAttachmentResolverService,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
   ) {}
@@ -179,6 +181,7 @@ export class MailService {
       subject: draft.subject,
       bodyHtml: draft.bodyHtml ?? undefined,
       bodyText: draft.bodyText ?? undefined,
+      attachmentIds: (draft.attachmentIds as number[] | null) ?? undefined,
     }
 
     const mail = await this.mailRepository.update(draft, {
@@ -279,6 +282,7 @@ export class MailService {
       subject,
       bodyHtml: original.bodyHtml || data.bodyHtml ? bodyHtml : undefined,
       bodyText: original.bodyText || data.bodyText ? bodyText : undefined,
+      attachmentIds: (original.attachmentIds as number[] | null) ?? undefined,
     })
   }
 
@@ -416,6 +420,11 @@ export class MailService {
           return
         }
 
+        const { attachments, voiceNoteHtml } = await this.attachmentResolver.resolve(
+          data.attachmentIds
+        )
+        const bodyHtml = voiceNoteHtml ? `${data.bodyHtml ?? ''}${voiceNoteHtml}` : data.bodyHtml
+
         const response = await this.sesService.sendRichEmail({
           from: fromDisplay,
           to: data.to,
@@ -423,8 +432,9 @@ export class MailService {
           bcc: data.bcc,
           replyTo: data.replyTo,
           subject: data.subject,
-          bodyHtml: data.bodyHtml,
+          bodyHtml,
           bodyText: data.bodyText,
+          attachments,
         })
         await this.mailRepository.update(mail, {
           status: 'sent',

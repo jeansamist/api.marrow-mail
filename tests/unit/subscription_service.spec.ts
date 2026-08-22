@@ -481,7 +481,12 @@ test.group('SubscriptionService', (group) => {
     })
 
     try {
-      await subscriptionService.initiateUpgrade(subscription.id, 'core', 'mtn_mobile_money', '677000000')
+      await subscriptionService.initiateUpgrade(
+        subscription.id,
+        'core',
+        'mtn_mobile_money',
+        '677000000'
+      )
       assert.fail('Expected initiateUpgrade to reject a same-or-lower tier target')
     } catch (error) {
       assert.equal(httpStatus(error), 422)

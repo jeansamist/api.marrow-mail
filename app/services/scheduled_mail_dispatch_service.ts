@@ -1,6 +1,7 @@
 import type Mail from '#models/mail'
 import MailAccountRepository from '#repositories/mail_account_repository'
 import MailRepository from '#repositories/mail_repository'
+import { MailAttachmentResolverService } from '#services/mail_attachment_resolver_service'
 import { SESService } from '#services/ses_service'
 import { SuppressionService } from '#services/suppression_service'
 import { describeSendFailure } from '#utils/ses_send_error'
@@ -22,6 +23,7 @@ export class ScheduledMailDispatchService {
     private readonly mailAccountRepository: MailAccountRepository,
     private readonly sesService: SESService,
     private readonly suppressionService: SuppressionService,
+    private readonly attachmentResolver: MailAttachmentResolverService,
     private readonly logger: Logger,
     private readonly cronManager: CronManager
   ) {}
@@ -95,6 +97,13 @@ export class ScheduledMailDispatchService {
     this.cronManager.addQueueJob(
       'mails',
       async () => {
+        const { attachments, voiceNoteHtml } = await this.attachmentResolver.resolve(
+          (mail.attachmentIds as number[] | null) ?? undefined
+        )
+        const bodyHtml = voiceNoteHtml
+          ? `${mail.bodyHtml ?? ''}${voiceNoteHtml}`
+          : (mail.bodyHtml ?? undefined)
+
         const response = await this.sesService.sendRichEmail({
           from: fromDisplay,
           to,
@@ -102,8 +111,9 @@ export class ScheduledMailDispatchService {
           bcc: (mail.bccAddresses as string[] | null) ?? undefined,
           replyTo: mail.replyTo ?? undefined,
           subject: mail.subject!,
-          bodyHtml: mail.bodyHtml ?? undefined,
+          bodyHtml,
           bodyText: mail.bodyText ?? undefined,
+          attachments,
         })
         await this.mailRepository.update(queued, {
           status: 'sent',

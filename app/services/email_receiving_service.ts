@@ -5,6 +5,7 @@ import MailRepository from '#repositories/mail_repository'
 import RoleAliasRepository from '#repositories/role_alias_repository'
 import { S3Service } from '#services/s3_service'
 import { SESService } from '#services/ses_service'
+import env from '#start/env'
 import { inject } from '@adonisjs/core'
 import { Logger } from '@adonisjs/core/logger'
 import { simpleParser, type ParsedMail } from 'mailparser'
@@ -89,11 +90,21 @@ export class EmailReceivingService {
       }
 
       const attachmentIds: number[] = []
+      // Maps a MIME Content-ID (mailparser's `cid`) to the file's own
+      // serving URL, so `cid:` references inside the stored HTML — inline
+      // images and signature logos — resolve to something the app can
+      // actually fetch, instead of a dead scheme the browser can't load.
+      const cidToUrl = new Map<string, string>()
       for (const attachment of parsed.attachments) {
         const filename = attachment.filename ?? `attachment-${Date.now()}`
         const s3Key = `received/${mail.messageId}/attachments/${filename}`
 
-        await this.s3Service.putObject(bucketName, s3Key, attachment.content, attachment.contentType)
+        await this.s3Service.putObject(
+          bucketName,
+          s3Key,
+          attachment.content,
+          attachment.contentType
+        )
 
         const file = await this.fileRepository.create({
           key: s3Key,
@@ -102,9 +113,17 @@ export class EmailReceivingService {
           mimeType: attachment.contentType ?? null,
           size: attachment.size ?? attachment.content.length,
           mailAccountId: mailAccount.id,
+          kind: 'file',
+          publicToken: null,
         })
         attachmentIds.push(file.id)
+        if (attachment.cid) {
+          cidToUrl.set(attachment.cid, `${env.get('APP_URL')}/api/mail/storage/files/${file.key}`)
+        }
       }
+
+      const bodyHtml =
+        typeof parsed.html === 'string' ? this.rewriteCidReferences(parsed.html, cidToUrl) : null
 
       const toAddresses = parsed.to
         ? (Array.isArray(parsed.to) ? parsed.to : [parsed.to]).flatMap((addr) =>
@@ -126,7 +145,7 @@ export class EmailReceivingService {
         bccAddresses: null,
         replyTo: parsed.replyTo?.text ?? null,
         subject: parsed.subject ?? '(no subject)',
-        bodyHtml: typeof parsed.html === 'string' ? parsed.html : null,
+        bodyHtml,
         bodyText: parsed.text ?? null,
         status: 'received',
         direction: 'received',
@@ -147,11 +166,16 @@ export class EmailReceivingService {
     }
   }
 
+  private rewriteCidReferences(html: string, cidToUrl: Map<string, string>): string {
+    if (cidToUrl.size === 0) return html
+    return html.replace(/cid:([^"'\s)]+)/g, (match, cid) => cidToUrl.get(cid) ?? match)
+  }
+
   /**
-   * Relays a received email's text/html content to the mailbox's verified
-   * forwarding address. Attachments aren't carried over — SES's Simple
-   * content API used here doesn't support them (same limitation as
-   * MailService.forwardMail's user-initiated forwards).
+   * Relays a received email's content — including attachments and inline
+   * images — to the mailbox's verified forwarding address. Attachment bytes
+   * come straight from the parsed MIME, not the uploaded File rows, since
+   * this runs before (and independently of) the attachment-upload loop.
    */
   private queueForward(mailAccount: MailAccount, parsed: ParsedMail) {
     this.cronManager.addQueueJob(
@@ -172,10 +196,19 @@ export class EmailReceivingService {
           to: [mailAccount.forwardingEmail!],
           replyTo: parsed.from?.value?.[0]?.address,
           subject: parsed.subject ? `Fwd: ${parsed.subject}` : 'Fwd: (no subject)',
-          bodyText: [forwardedHeaderText, parsed.text].filter((part): part is string => !!part).join('\n\n'),
+          bodyText: [forwardedHeaderText, parsed.text]
+            .filter((part): part is string => !!part)
+            .join('\n\n'),
           bodyHtml: parsed.html
             ? `<p>${forwardedHeaderText.replace(/\n/g, '<br/>')}</p>${parsed.html}`
             : undefined,
+          attachments: parsed.attachments.map((attachment) => ({
+            filename: attachment.filename ?? `attachment-${Date.now()}`,
+            contentType: attachment.contentType,
+            content: attachment.content,
+            disposition: attachment.contentDisposition === 'inline' ? 'INLINE' : 'ATTACHMENT',
+            contentId: attachment.cid,
+          })),
         })
         this.logger.info(`Forwarded mail to ${mailAccount.forwardingEmail}`)
       },
