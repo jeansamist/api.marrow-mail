@@ -70,12 +70,28 @@ test.group('DomainService', (group) => {
     assert.isNull(existingDomain)
   })
 
-  test('setupDomain is idempotent for the same owner', async ({ assert }) => {
+  test('setupDomain is idempotent for the same owner and never touches SES', async ({ assert }) => {
     const setupDomainName = 'idempotent-test-domain.shop'
-    const firstRecords = await domainService.setupDomain({ name: setupDomainName })
+    const first = await domainService.setupDomain({ name: setupDomainName })
+    assert.equal(first.name, setupDomainName)
+    assert.isFalse(first.verified)
+
+    const second = await domainService.setupDomain({ name: setupDomainName })
+    assert.equal(second.id, first.id)
+
+    await domainService.deleteDomain(first.id)
+  })
+
+  test('provisionSendingRecords creates the SES identity once and is idempotent', async ({
+    assert,
+  }) => {
+    const setupDomainName = 'idempotent-test-domain-3.shop'
+    await domainService.setupDomain({ name: setupDomainName })
+
+    const firstRecords = await domainService.provisionSendingRecords(setupDomainName)
     assert.isTrue(firstRecords.length > 0)
 
-    const secondRecords = await domainService.setupDomain({ name: setupDomainName })
+    const secondRecords = await domainService.provisionSendingRecords(setupDomainName)
     assert.deepEqual(secondRecords.map((r) => r.id).sort(), firstRecords.map((r) => r.id).sort())
 
     const registeredDomain = await domainService.findDomainByName(setupDomainName)

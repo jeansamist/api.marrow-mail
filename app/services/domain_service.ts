@@ -159,7 +159,13 @@ export class DomainService {
     return await this.updateDomain(domainId, { verified: true })
   }
 
-  async setupDomain(data: SetupDomainPayload): Promise<Record[]> {
+  /**
+   * Just claims the domain name — no SES identity is created yet. That only
+   * happens once the user has actually paid for mailboxes/a subscription
+   * (see provisionSendingRecords), so onboarding attempts that never
+   * convert don't burn SES identity quota or leave orphaned identities.
+   */
+  async setupDomain(data: SetupDomainPayload): Promise<Domain> {
     this.logger.info(`[DomainService]: Setup domain`)
 
     const existing = await this.repository.findByName(data.name)
@@ -167,7 +173,7 @@ export class DomainService {
       if (existing.userId !== this.userId) {
         throw httpError(409, 'This domain is already registered')
       }
-      return this.refreshDomainRecords(existing)
+      return existing
     }
 
     const createDomainEntityPayload: DomainPayload = {
@@ -175,10 +181,19 @@ export class DomainService {
       description: `Marrowmail Domain Entity`,
       verified: false,
     }
-    const domainEntity = await this.createDomain(createDomainEntityPayload)
-    await this.sesService.createEmailIdentity(domainEntity.name)
-    await this.sesService.putEmailIdentityMailFromAttributes(domainEntity.name)
-    return this.storeFreshRecords(domainEntity)
+    return this.createDomain(createDomainEntityPayload)
+  }
+
+  /**
+   * Creates the domain's SES identity (if it doesn't exist yet) and returns
+   * its DNS records. Called from the onboarding DNS-setup step, which only
+   * loads after the user has completed payment for mailboxes/subscription —
+   * this is deliberately NOT part of setupDomain(), see its docstring.
+   */
+  async provisionSendingRecords(domainName: string): Promise<Record[]> {
+    const domain = await this.findDomainByNameOrFail(domainName)
+    this.checkOwnership(domain)
+    return this.refreshDomainRecords(domain)
   }
 
   /**

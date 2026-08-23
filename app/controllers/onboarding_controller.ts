@@ -2,7 +2,6 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 import { DomainService } from '#services/domain_service'
 import { MailAccountService } from '#services/mail_account_service'
-import { RecordService } from '#services/record_service'
 import { SubscriptionService } from '#services/subscription_service'
 import DomainTransformer from '#transformers/domain_transformer'
 import MailAccountTransformer from '#transformers/mail_account_transformer'
@@ -16,20 +15,18 @@ import { inject } from '@adonisjs/core'
 export default class OnboardingController {
   constructor(
     protected readonly domainService: DomainService,
-    protected readonly recordService: RecordService,
     protected readonly mailAccountService: MailAccountService,
     protected readonly subscriptionService: SubscriptionService
   ) {}
   async registerDomain({ request, response, serialize }: HttpContext) {
     const data = await request.validateUsing(createDomainValidator)
-    const records = await this.domainService.setupDomain(data)
-    const serialized = await serialize(RecordTransformer.transform(records))
+    const domain = await this.domainService.setupDomain(data)
+    const serialized = await serialize(DomainTransformer.transform(domain))
     return await response.ok(ApiResponse.success(serialized.data, 'Domain created'))
   }
   async getDNSRecords({ request, response, serialize }: HttpContext) {
     const domainName = request.input('domainName')
-    const domain = await this.domainService.findDomainByNameOrFail(domainName)
-    const records = await this.recordService.findRecordsByDomainId(domain.id)
+    const records = await this.domainService.provisionSendingRecords(domainName)
     const serialized = await serialize(RecordTransformer.transform(records))
     return await response.ok(ApiResponse.success(serialized.data, 'DNS Records'))
   }
