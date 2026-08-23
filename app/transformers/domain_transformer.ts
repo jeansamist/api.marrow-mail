@@ -8,6 +8,7 @@ export default class DomainTransformer extends BaseTransformer<Domain> {
       'name',
       'description',
       'verified',
+      'mailFromVerified',
       'customLoginHostname',
       'customLoginHostnameVerified',
       'createdAt',

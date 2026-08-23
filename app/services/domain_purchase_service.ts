@@ -264,6 +264,7 @@ export class DomainPurchaseService {
       userId: this.userId,
       customLoginHostname: null,
       customLoginHostnameVerified: false,
+      mailFromVerified: false,
       registrationStatus: 'pending_registration',
       registrationOperationId: null,
       registrantContact: metadata.registrantContact,

@@ -4,6 +4,7 @@ import { DomainService } from '#services/domain_service'
 import { MailAccountService } from '#services/mail_account_service'
 import { RecordService } from '#services/record_service'
 import { SubscriptionService } from '#services/subscription_service'
+import DomainTransformer from '#transformers/domain_transformer'
 import MailAccountTransformer from '#transformers/mail_account_transformer'
 import RecordTransformer from '#transformers/record_transformer'
 import { ApiResponse } from '#utils/api_response'
@@ -33,10 +34,17 @@ export default class OnboardingController {
     return await response.ok(ApiResponse.success(serialized.data, 'DNS Records'))
   }
 
-  async checkDomainStatus({ request, response }: HttpContext) {
+  async checkDomainStatus({ request, response, serialize }: HttpContext) {
     const domainName = request.input('domainName')
     const verified = await this.domainService.checkDomainStatusByName(domainName)
-    return await response.ok(ApiResponse.success({ verified }, 'Domain status'))
+    const domain = await this.domainService.findDomainByNameOrFail(domainName)
+    const serialized = await serialize(DomainTransformer.transform(domain))
+    return await response.ok(
+      ApiResponse.success(
+        { verified, mailFromVerified: serialized.data.mailFromVerified },
+        'Domain status'
+      )
+    )
   }
 
   async setupMailAccount({ request, response, serialize }: HttpContext) {

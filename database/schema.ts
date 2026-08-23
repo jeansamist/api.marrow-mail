@@ -79,7 +79,7 @@ export class DomainBrandingSchema extends BaseModel {
 }
 
 export class DomainSchema extends BaseModel {
-  static $columns = ['createdAt', 'customLoginHostname', 'customLoginHostnameVerified', 'description', 'hostedZoneId', 'id', 'name', 'purchasedAt', 'registrantContact', 'registrationOperationId', 'registrationStatus', 'updatedAt', 'userId', 'verified'] as const
+  static $columns = ['createdAt', 'customLoginHostname', 'customLoginHostnameVerified', 'description', 'hostedZoneId', 'id', 'mailFromVerified', 'name', 'purchasedAt', 'registrantContact', 'registrationOperationId', 'registrationStatus', 'updatedAt', 'userId', 'verified'] as const
   $columns = DomainSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -93,6 +93,8 @@ export class DomainSchema extends BaseModel {
   declare hostedZoneId: string | null
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare mailFromVerified: boolean
   @column()
   declare name: string
   @column.dateTime()

@@ -18,6 +18,7 @@ interface DomainPayload {
   description: string
   customLoginHostname?: string | null
   customLoginHostnameVerified?: boolean
+  mailFromVerified?: boolean
 }
 
 interface SetupDomainPayload {
@@ -64,6 +65,7 @@ export class DomainService {
     const domain = await this.repository.create({
       customLoginHostname: null,
       customLoginHostnameVerified: false,
+      mailFromVerified: false,
       registrationStatus: 'not_purchased',
       registrationOperationId: null,
       registrantContact: null,
@@ -108,7 +110,7 @@ export class DomainService {
   async checkDomainStatusByName(domainName: string) {
     this.logger.info(`[DomainService]: Check domain satus by name`)
     const domain = await this.findDomainByNameOrFail(domainName)
-    const verified = await this.sesService.checkEmailIdentity(domain.name)
+    const { verified, mailFromVerified } = await this.sesService.checkEmailIdentity(domain.name)
 
     if (verified && !domain.verified) {
       await this.changeDomainToVerify(domain.id)
@@ -125,6 +127,13 @@ export class DomainService {
         `[DomainService]: Domain ${domain.name} is no longer verified in SES, marking unverified`
       )
       await this.updateDomain(domain.id, { verified: false })
+    }
+
+    // Tracked separately from `verified` — a missing/misaligned MAIL FROM
+    // subdomain degrades deliverability (SPF/DMARC) but doesn't block
+    // sending, so it must never gate the `verified` flag itself.
+    if (mailFromVerified !== domain.mailFromVerified) {
+      await this.updateDomain(domain.id, { mailFromVerified })
     }
 
     return verified

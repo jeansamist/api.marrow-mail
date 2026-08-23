@@ -149,16 +149,17 @@ export class SESService {
 
     throw new Error(`Domain ${domainName} not verified after timeout`)
   }
-  async checkEmailIdentity(domainName: string): Promise<boolean> {
+  async checkEmailIdentity(
+    domainName: string
+  ): Promise<{ verified: boolean; mailFromVerified: boolean }> {
     const identity = await this.getEmailIdentity(domainName)
     const verified = identity?.VerifiedForSendingStatus
     const dkimStatus = identity?.DkimAttributes?.Status
-    this.logger.info(`Check : verified=${verified}, dkim=${dkimStatus}`)
-    if (verified === true && dkimStatus === 'SUCCESS') {
-      this.logger.info(`Domain ${domainName} fully verified and DKIM setup successful`)
-      return true
-    } else {
-      return false
+    const mailFromStatus = identity?.MailFromAttributes?.MailFromDomainStatus
+    this.logger.info(`Check : verified=${verified}, dkim=${dkimStatus}, mailFrom=${mailFromStatus}`)
+    return {
+      verified: verified === true && dkimStatus === 'SUCCESS',
+      mailFromVerified: mailFromStatus === 'SUCCESS',
     }
   }
   getMailFromDNS(domainName: string): DNSRecord[] {
