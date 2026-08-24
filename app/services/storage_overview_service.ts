@@ -176,7 +176,7 @@ export class StorageOverviewService {
     if (data.paymentMethod === 'card') {
       throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
-    void this.stripeCurrency // referenced so it isn't flagged unused while blocked above
+    void this.stripeCurrency // referenced so it isn't flagged unused while blocked above.
     // if (data.paymentMethod === 'card') {
     //   const currency = this.stripeCurrency()
     //   const paymentIntent = await this.stripeService.client.paymentIntents.create({
