@@ -172,35 +172,40 @@ export class StorageOverviewService {
       extraGB: data.extraGB,
     }
 
+    // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
-      const currency = this.stripeCurrency()
-      const paymentIntent = await this.stripeService.client.paymentIntents.create({
-        amount,
-        currency,
-        metadata: {
-          userId: String(this.userId),
-          mailAccountId: String(data.mailAccountId),
-          extraGB: String(data.extraGB),
-        },
-      })
-
-      const payment = await this.paymentRepository.create({
-        subscriptionId: subscription.id,
-        provider: 'stripe',
-        providerTransactionId: paymentIntent.id,
-        amount,
-        currency: currency.toUpperCase(),
-        status: 'pending',
-        customerPhone: null,
-        failureReason: null,
-        rawResponse: metadata,
-      })
-
-      return {
-        paymentId: payment.id,
-        providerPayload: { clientSecret: paymentIntent.client_secret },
-      }
+      throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
+    void this.stripeCurrency // referenced so it isn't flagged unused while blocked above
+    // if (data.paymentMethod === 'card') {
+    //   const currency = this.stripeCurrency()
+    //   const paymentIntent = await this.stripeService.client.paymentIntents.create({
+    //     amount,
+    //     currency,
+    //     metadata: {
+    //       userId: String(this.userId),
+    //       mailAccountId: String(data.mailAccountId),
+    //       extraGB: String(data.extraGB),
+    //     },
+    //   })
+    //
+    //   const payment = await this.paymentRepository.create({
+    //     subscriptionId: subscription.id,
+    //     provider: 'stripe',
+    //     providerTransactionId: paymentIntent.id,
+    //     amount,
+    //     currency: currency.toUpperCase(),
+    //     status: 'pending',
+    //     customerPhone: null,
+    //     failureReason: null,
+    //     rawResponse: metadata,
+    //   })
+    //
+    //   return {
+    //     paymentId: payment.id,
+    //     providerPayload: { clientSecret: paymentIntent.client_secret },
+    //   }
+    // }
 
     if (!data.customerPhone) {
       throw httpError(422, 'customerPhone is required for mobile money payments')

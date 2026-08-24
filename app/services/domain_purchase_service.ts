@@ -102,30 +102,34 @@ export class DomainPurchaseService {
       registrantContact: data.registrantContact,
     }
 
+    // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
-      const paymentIntent = await this.stripeService.client.paymentIntents.create({
-        amount: amountCents,
-        currency: 'usd',
-        metadata: { userId: String(this.userId), domainName: data.domainName },
-      })
-
-      const payment = await this.paymentRepository.create({
-        subscriptionId: null,
-        provider: 'stripe',
-        providerTransactionId: paymentIntent.id,
-        amount: amountCents,
-        currency: 'USD',
-        status: 'pending',
-        customerPhone: null,
-        failureReason: null,
-        rawResponse: metadata,
-      })
-
-      return {
-        paymentId: payment.id,
-        providerPayload: { clientSecret: paymentIntent.client_secret },
-      }
+      throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
+    // if (data.paymentMethod === 'card') {
+    //   const paymentIntent = await this.stripeService.client.paymentIntents.create({
+    //     amount: amountCents,
+    //     currency: 'usd',
+    //     metadata: { userId: String(this.userId), domainName: data.domainName },
+    //   })
+    //
+    //   const payment = await this.paymentRepository.create({
+    //     subscriptionId: null,
+    //     provider: 'stripe',
+    //     providerTransactionId: paymentIntent.id,
+    //     amount: amountCents,
+    //     currency: 'USD',
+    //     status: 'pending',
+    //     customerPhone: null,
+    //     failureReason: null,
+    //     rawResponse: metadata,
+    //   })
+    //
+    //   return {
+    //     paymentId: payment.id,
+    //     providerPayload: { clientSecret: paymentIntent.client_secret },
+    //   }
+    // }
 
     if (!data.customerPhone) {
       throw httpError(422, 'customerPhone is required for mobile money payments')

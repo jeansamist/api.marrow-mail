@@ -55,9 +55,14 @@ export class SubscriptionService {
     const pricing = calcMailboxPricing(data.mailboxQuantity, data.billingMonths, data.planId)
     const countryCode = this.geoService.resolveCountryCode(ip)
 
+    // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
-      return this.checkoutWithStripe(data, pricing.total, countryCode)
+      throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
+    void this.checkoutWithStripe // referenced so it isn't flagged unused while blocked above
+    // if (data.paymentMethod === 'card') {
+    //   return this.checkoutWithStripe(data, pricing.total, countryCode)
+    // }
 
     if (!data.customerPhone) {
       throw httpError(422, 'customerPhone is required for mobile money payments')
@@ -339,9 +344,14 @@ export class SubscriptionService {
       planId
     )
 
+    // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (paymentMethod === 'card') {
-      return this.initiateUpgradeWithStripe(subscription, planId, pricing.total)
+      throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
+    void this.initiateUpgradeWithStripe // referenced so it isn't flagged unused while blocked above
+    // if (paymentMethod === 'card') {
+    //   return this.initiateUpgradeWithStripe(subscription, planId, pricing.total)
+    // }
     if (!customerPhone) {
       throw httpError(422, 'customerPhone is required for mobile money payments')
     }
