@@ -22,7 +22,7 @@ export default class ElgiopayWebhookController {
       id: string
       event: string
       created: number
-      data: { transaction_id?: string; id?: string; message?: string }
+      data: { transaction_id?: string; id?: string; message?: string; failure_reason?: string }
     }
 
     await this.subscriptionService.applyElgiopayWebhookEvent(envelope)

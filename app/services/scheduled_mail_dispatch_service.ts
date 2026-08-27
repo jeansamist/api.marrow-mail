@@ -30,12 +30,16 @@ export class ScheduledMailDispatchService {
 
   async dispatchDueMails(): Promise<void> {
     const dueMails = await this.mailRepository.findDueScheduledMails(DateTime.now())
+    if (dueMails.length > 0) {
+      this.logger.info(`Dispatch due scheduled mails count: ${dueMails.length}`)
+    }
     for (const mail of dueMails) {
       await this.dispatchOne(mail)
     }
   }
 
   private async dispatchOne(mail: Mail): Promise<void> {
+    this.logger.info(`Dispatch scheduled mail: ${mail.id} for mail account: ${mail.mailAccountId}`)
     const mailAccount = await this.mailAccountRepository.findById(mail.mailAccountId)
     if (!mailAccount) {
       await this.mailRepository.update(mail, {

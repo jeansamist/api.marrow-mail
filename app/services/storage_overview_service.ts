@@ -16,6 +16,7 @@ import { defaultStorageBytesForPlan, STORAGE_PRICE_PER_GB_XAF, type PlanId } fro
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
+import { Logger } from '@adonisjs/core/logger'
 
 const BYTES_PER_GB = 1024 * 1024 * 1024
 
@@ -51,7 +52,8 @@ export class StorageOverviewService {
     private readonly elgiopayService: ElgiopayService,
     private readonly geoService: GeoService,
     private readonly invoiceService: InvoiceService,
-    private readonly ctx: HttpContext
+    private readonly ctx: HttpContext,
+    private readonly logger: Logger
   ) {}
 
   private get userId() {
@@ -108,6 +110,9 @@ export class StorageOverviewService {
       this.mailAccountRepository.findAllByUserId(this.userId),
       this.defaultQuotaBytesForOwner(this.userId),
     ])
+    this.logger.info(
+      `Get storage usage for user: ${this.userId} mail accounts: ${mailAccounts.length}`
+    )
     const usageByAccount = await this.usedBytesByAccount(mailAccounts.map((account) => account.id))
 
     const mailboxes = mailAccounts.map((account) => {
@@ -129,8 +134,16 @@ export class StorageOverviewService {
   }
 
   async assertWithinQuota(mailAccountId: number, additionalBytes: number): Promise<void> {
+    this.logger.info(
+      `Check storage quota for mail account: ${mailAccountId} additional bytes: ${additionalBytes}`
+    )
     const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
-    if (!mailAccount) throw httpError(404, 'Mail account not found')
+    if (!mailAccount) {
+      this.logger.warn(
+        `Storage quota check rejected for mail account: ${mailAccountId}: mail account not found`
+      )
+      throw httpError(404, 'Mail account not found')
+    }
 
     const usedBytes = await this.usedBytesForAccount(mailAccountId)
     const quotaBytes = Number(
@@ -138,6 +151,9 @@ export class StorageOverviewService {
     )
 
     if (usedBytes + additionalBytes > quotaBytes) {
+      this.logger.warn(
+        `Storage quota exceeded for mail account: ${mailAccountId} used: ${usedBytes} additional: ${additionalBytes} quota: ${quotaBytes}`
+      )
       throw httpError(413, 'Storage quota exceeded')
     }
   }
@@ -152,16 +168,35 @@ export class StorageOverviewService {
     data: StorageAddonCheckoutPayload,
     ip: string
   ): Promise<StorageAddonCheckoutResult> {
-    if (data.extraGB <= 0) throw httpError(422, 'extraGB must be greater than zero')
+    this.logger.info(
+      `Create storage addon checkout for user: ${this.userId} mail account: ${data.mailAccountId} extra GB: ${data.extraGB} method: ${data.paymentMethod}`
+    )
+    if (data.extraGB <= 0) {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: extraGB must be greater than zero`
+      )
+      throw httpError(422, 'extraGB must be greater than zero')
+    }
 
     const mailAccount = await this.mailAccountRepository.findById(data.mailAccountId)
-    if (!mailAccount) throw httpError(404, 'Mail account not found')
+    if (!mailAccount) {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: mail account: ${data.mailAccountId} not found`
+      )
+      throw httpError(404, 'Mail account not found')
+    }
     if (mailAccount.userId !== this.userId) {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: mail account: ${data.mailAccountId} belongs to another user`
+      )
       throw httpError(403, 'You are not allowed to access this mail account')
     }
 
     const subscription = await this.subscriptionRepository.findLatestActiveForUser(this.userId)
     if (!subscription) {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: no active subscription`
+      )
       throw httpError(402, 'An active subscription is required to buy additional storage')
     }
 
@@ -174,6 +209,9 @@ export class StorageOverviewService {
 
     // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: card payments are temporarily unavailable`
+      )
       throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
     void this.stripeCurrency // referenced so it isn't flagged unused while blocked above.
@@ -208,6 +246,9 @@ export class StorageOverviewService {
     // }
 
     if (!data.customerPhone) {
+      this.logger.warn(
+        `Storage addon checkout rejected for user: ${this.userId}: customerPhone is required for mobile money payments`
+      )
       throw httpError(422, 'customerPhone is required for mobile money payments')
     }
 
@@ -237,6 +278,9 @@ export class StorageOverviewService {
       failureReason: null,
       rawResponse: metadata,
     })
+    this.logger.info(
+      `Created storage addon payment: ${payment.id} transaction: ${result.transaction_id} amount: ${amount} currency: ${currency} extra GB: ${data.extraGB} for mail account: ${data.mailAccountId}`
+    )
 
     return { paymentId: payment.id, providerPayload: { transactionId: result.transaction_id } }
   }
@@ -247,13 +291,24 @@ export class StorageOverviewService {
    * transition — never at checkout time.
    */
   async getStorageAddonPaymentStatus(paymentId: number): Promise<{ status: string }> {
+    this.logger.info(
+      `Get storage addon payment status for payment: ${paymentId} user: ${this.userId}`
+    )
     const payment = await this.paymentRepository.findById(paymentId)
-    if (!payment) throw httpError(404, 'Payment not found')
+    if (!payment) {
+      this.logger.warn(
+        `Storage addon payment status rejected for user: ${this.userId}: payment: ${paymentId} not found`
+      )
+      throw httpError(404, 'Payment not found')
+    }
 
     const subscription = payment.subscriptionId
       ? await this.subscriptionRepository.findById(payment.subscriptionId)
       : null
     if (!subscription || subscription.userId !== this.userId) {
+      this.logger.warn(
+        `Storage addon payment status rejected for user: ${this.userId}: payment: ${paymentId} belongs to another user`
+      )
       throw httpError(403, 'You are not allowed to access this payment')
     }
 
@@ -269,6 +324,9 @@ export class StorageOverviewService {
       )
       if (paymentIntent.status === 'succeeded') succeeded = true
       else if (paymentIntent.status === 'canceled') {
+        this.logger.warn(
+          `Storage addon payment: ${payment.id} failed: Stripe payment intent canceled`
+        )
         await this.paymentRepository.update(payment, { status: 'failed' })
         return { status: 'failed' }
       }
@@ -276,6 +334,9 @@ export class StorageOverviewService {
       const live = await this.elgiopayService.getPayment(payment.providerTransactionId)
       if (live.status === 'completed') succeeded = true
       else if (live.status === 'failed') {
+        this.logger.warn(
+          `Storage addon payment: ${payment.id} failed: Elgiopay transaction: ${payment.providerTransactionId} failed`
+        )
         await this.paymentRepository.update(payment, { status: 'failed' })
         return { status: 'failed' }
       }
@@ -287,9 +348,17 @@ export class StorageOverviewService {
     // actually wins the pending -> completed transition applies the quota
     // bump and sends the invoice, so extra storage is never granted twice.
     const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
-    if (!justCompleted) return { status: 'completed' }
+    if (!justCompleted) {
+      this.logger.warn(
+        `Storage addon payment: ${payment.id} already completed by a concurrent poll: skip quota bump`
+      )
+      return { status: 'completed' }
+    }
 
     const metadata = payment.rawResponse as StorageAddonMetadata
+    this.logger.info(
+      `Completed storage addon payment: ${payment.id} extra GB: ${metadata.extraGB} for mail account: ${metadata.mailAccountId} user: ${this.userId}`
+    )
     await this.applyStorageAddon(metadata)
 
     const mailAccount = await this.mailAccountRepository.findById(metadata.mailAccountId)
@@ -319,10 +388,16 @@ export class StorageOverviewService {
 
   private async applyStorageAddon(metadata: StorageAddonMetadata): Promise<void> {
     const mailAccount = await this.mailAccountRepository.findById(metadata.mailAccountId)
-    if (!mailAccount) return
+    if (!mailAccount) {
+      this.logger.warn(`Skip storage addon: mail account: ${metadata.mailAccountId} not found`)
+      return
+    }
 
     const currentQuotaBytes = Number(
       mailAccount.storageQuotaBytes ?? (await this.defaultQuotaBytesForOwner(mailAccount.userId!))
+    )
+    this.logger.info(
+      `Apply storage addon for mail account: ${mailAccount.id} extra GB: ${metadata.extraGB} quota from: ${currentQuotaBytes} to: ${currentQuotaBytes + metadata.extraGB * BYTES_PER_GB}`
     )
     await this.mailAccountRepository.update(mailAccount, {
       storageQuotaBytes: currentQuotaBytes + metadata.extraGB * BYTES_PER_GB,

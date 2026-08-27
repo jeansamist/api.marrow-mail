@@ -68,6 +68,7 @@ export class SESService {
     return emailIdentity
   }
   async getAllRecordsForEmailIdentity(domainName: string): Promise<DNSRecord[]> {
+    this.logger.info(`Collect DNS records for email identity domain: ${domainName}`)
     const dkimRecords = await this.getDKIMRecordsForEmailIdentity(domainName)
     const mailFromRecords = this.getMailFromDNS(domainName)
     const dmarcRecord = this.getDmarcDNS(domainName)
@@ -128,6 +129,7 @@ export class SESService {
     maxAttempts = 20,
     delayMs = 15000
   ): Promise<boolean> {
+    this.logger.info(`Verify email identity domain: ${domainName} max attempts: ${maxAttempts}`)
     let attempts = 0
 
     while (attempts < maxAttempts) {
@@ -147,6 +149,9 @@ export class SESService {
       attempts++
     }
 
+    this.logger.error(
+      `Failed to verify email identity domain: ${domainName} after ${maxAttempts} attempts`
+    )
     throw new Error(`Domain ${domainName} not verified after timeout`)
   }
   async checkEmailIdentity(

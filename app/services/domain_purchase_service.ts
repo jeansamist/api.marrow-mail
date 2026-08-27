@@ -8,6 +8,7 @@ import { resolveCurrencyForCountry } from '#utils/currency_for_country'
 import { httpError } from '#utils/http_error'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
+import { Logger } from '@adonisjs/core/logger'
 import { DateTime } from 'luxon'
 
 // Curated to generic gTLDs with plain ICANN registration requirements —
@@ -42,7 +43,8 @@ export class DomainPurchaseService {
     private readonly stripeService: StripeService,
     private readonly elgiopayService: ElgiopayService,
     private readonly invoiceService: InvoiceService,
-    private readonly ctx: HttpContext
+    private readonly ctx: HttpContext,
+    private readonly logger: Logger
   ) {}
 
   private get userId() {
@@ -52,6 +54,7 @@ export class DomainPurchaseService {
   private tldOf(domainName: string): string {
     const tld = domainName.split('.').pop()?.toLowerCase()
     if (!tld || !SUPPORTED_TLDS.includes(tld)) {
+      this.logger.warn(`Domain purchase rejected for domain: ${domainName}: unsupported extension`)
       throw httpError(422, `.${tld ?? ''} is not a supported extension for domain purchase`)
     }
     return tld
@@ -64,6 +67,7 @@ export class DomainPurchaseService {
    * since the AWS calls underneath are just as concurrent either way.
    */
   async searchDomains(slug: string) {
+    this.logger.info(`Search domains for slug: ${slug} user: ${this.userId}`)
     const settled = await Promise.allSettled(
       SUPPORTED_TLDS.map(async (tld) => {
         const domainName = `${slug}.${tld}`
@@ -76,22 +80,41 @@ export class DomainPurchaseService {
     )
     // One TLD's AWS call failing shouldn't sink the whole search — return
     // whichever TLDs resolved successfully.
+    const failedCount = settled.filter((result) => result.status === 'rejected').length
+    if (failedCount > 0) {
+      this.logger.warn(
+        `Search domains for slug: ${slug} skipped ${failedCount} of ${SUPPORTED_TLDS.length} extensions: AWS lookup failed`
+      )
+    }
     return settled.filter((result) => result.status === 'fulfilled').map((result) => result.value)
   }
 
   async createPurchaseCheckout(
     data: CreatePurchaseCheckoutPayload
   ): Promise<PurchaseCheckoutResult> {
+    this.logger.info(
+      `Create domain purchase checkout for domain: ${data.domainName} user: ${this.userId} paymentMethod: ${data.paymentMethod}`
+    )
     const tld = this.tldOf(data.domainName)
 
     const existing = await this.domainRepository.findByName(data.domainName)
-    if (existing) throw httpError(409, 'This domain has already been purchased or connected')
+    if (existing) {
+      this.logger.warn(
+        `Domain purchase rejected for domain: ${data.domainName}: already purchased or connected`
+      )
+      throw httpError(409, 'This domain has already been purchased or connected')
+    }
 
     const [available, price] = await Promise.all([
       this.route53DomainsService.checkAvailability(data.domainName),
       this.route53DomainsService.getPrice(tld),
     ])
-    if (!available) throw httpError(409, 'This domain is no longer available')
+    if (!available) {
+      this.logger.warn(
+        `Domain purchase rejected for domain: ${data.domainName}: no longer available`
+      )
+      throw httpError(409, 'This domain is no longer available')
+    }
 
     // Route53 prices are USD — charged in USD regardless of provider so the
     // amount always matches what AWS will actually bill, no FX guesswork.
@@ -104,6 +127,9 @@ export class DomainPurchaseService {
 
     // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
+      this.logger.warn(
+        `Domain purchase rejected for domain: ${data.domainName}: card payments temporarily unavailable`
+      )
       throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
     // if (data.paymentMethod === 'card') {
@@ -132,6 +158,9 @@ export class DomainPurchaseService {
     // }
 
     if (!data.customerPhone) {
+      this.logger.warn(
+        `Domain purchase rejected for domain: ${data.domainName}: customerPhone is required for mobile money`
+      )
       throw httpError(422, 'customerPhone is required for mobile money payments')
     }
 
@@ -163,6 +192,9 @@ export class DomainPurchaseService {
       rawResponse: metadata,
     })
 
+    this.logger.info(
+      `Created domain purchase payment: ${payment.id} for domain: ${data.domainName} user: ${this.userId} transaction: ${result.transaction_id} amount: ${amountCents} currency: ${currency}`
+    )
     return { paymentId: payment.id, providerPayload: { transactionId: result.transaction_id } }
   }
 
@@ -173,7 +205,15 @@ export class DomainPurchaseService {
    */
   async getPurchaseStatus(paymentId: number): Promise<{ status: string; domainName?: string }> {
     const payment = await this.paymentRepository.findById(paymentId)
-    if (!payment) throw httpError(404, 'Payment not found')
+    if (!payment) {
+      this.logger.warn(
+        `Domain purchase status lookup failed for payment: ${paymentId}: payment not found`
+      )
+      throw httpError(404, 'Payment not found')
+    }
+    this.logger.info(
+      `Get domain purchase status for payment: ${payment.id} provider: ${payment.provider} status: ${payment.status}`
+    )
 
     const metadata = payment.rawResponse as DomainPurchaseMetadata
 
@@ -189,6 +229,9 @@ export class DomainPurchaseService {
       )
       if (paymentIntent.status === 'succeeded') succeeded = true
       else if (paymentIntent.status === 'canceled') {
+        this.logger.warn(
+          `Domain purchase payment: ${payment.id} marked failed: Stripe payment intent canceled`
+        )
         await this.paymentRepository.update(payment, { status: 'failed' })
         return { status: 'failed' }
       }
@@ -196,6 +239,9 @@ export class DomainPurchaseService {
       const live = await this.elgiopayService.getPayment(payment.providerTransactionId)
       if (live.status === 'completed') succeeded = true
       else if (live.status === 'failed') {
+        this.logger.warn(
+          `Domain purchase payment: ${payment.id} marked failed: Elgiopay transaction failed`
+        )
         await this.paymentRepository.update(payment, { status: 'failed' })
         return { status: 'failed' }
       }
@@ -209,9 +255,15 @@ export class DomainPurchaseService {
     // sends the invoice, so a domain is never registered twice.
     const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
     if (!justCompleted) {
+      this.logger.warn(
+        `Domain purchase payment: ${payment.id} already completed by a concurrent poll, skipping registration`
+      )
       return { status: 'completed', domainName: metadata.domainName }
     }
 
+    this.logger.info(
+      `Domain purchase payment: ${payment.id} completed, submitting registration for domain: ${metadata.domainName}`
+    )
     const domain = await this.submitRegistration(metadata)
 
     this.invoiceService.sendForPayment({
@@ -253,14 +305,26 @@ export class DomainPurchaseService {
    */
   async getRegistrationStatus(domainName: string): Promise<{ registrationStatus: string }> {
     const domain = await this.domainRepository.findByName(domainName)
-    if (!domain) throw httpError(404, 'Domain not found')
+    if (!domain) {
+      this.logger.warn(
+        `Registration status lookup failed for domain: ${domainName}: domain not found`
+      )
+      throw httpError(404, 'Domain not found')
+    }
     if (domain.userId !== this.userId) {
+      this.logger.warn(
+        `Registration status lookup rejected for domain: ${domain.name} user: ${this.userId}: not the owner`
+      )
       throw httpError(403, 'You are not allowed to access this domain')
     }
+    this.logger.info(
+      `Get registration status for domain: ${domain.name} user: ${this.userId} status: ${domain.registrationStatus}`
+    )
     return { registrationStatus: domain.registrationStatus }
   }
 
   private async submitRegistration(metadata: DomainPurchaseMetadata) {
+    this.logger.info(`Submit domain registration: ${metadata.domainName} user: ${this.userId}`)
     const domain = await this.domainRepository.create({
       name: metadata.domainName,
       description: 'Purchased through MarrowMail',
@@ -281,6 +345,9 @@ export class DomainPurchaseService {
       metadata.registrantContact
     )
 
+    this.logger.info(
+      `Submitted domain registration: ${metadata.domainName} domain: ${domain.id} operation: ${operationId}`
+    )
     return this.domainRepository.update(domain, { registrationOperationId: operationId })
   }
 }

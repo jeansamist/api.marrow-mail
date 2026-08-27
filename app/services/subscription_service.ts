@@ -12,6 +12,7 @@ import { httpError } from '#utils/http_error'
 import { calcMailboxPricing, PLAN_BASE_PRICE_XAF, type PlanId } from '#utils/pricing'
 import { inject } from '@adonisjs/core'
 import { HttpContext } from '@adonisjs/core/http'
+import { Logger } from '@adonisjs/core/logger'
 import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import type Stripe from 'stripe'
@@ -37,7 +38,8 @@ export class SubscriptionService {
     private readonly elgiopayService: ElgiopayService,
     private readonly geoService: GeoService,
     private readonly invoiceService: InvoiceService,
-    private readonly ctx: HttpContext
+    private readonly ctx: HttpContext,
+    private readonly logger: Logger
   ) {}
 
   private get userId() {
@@ -54,9 +56,15 @@ export class SubscriptionService {
     const user = this.ctx.auth.user!
     const pricing = calcMailboxPricing(data.mailboxQuantity, data.billingMonths, data.planId)
     const countryCode = this.geoService.resolveCountryCode(ip)
+    this.logger.info(
+      `Checkout subscription for user: ${user.id} plan: ${data.planId} mailboxes: ${data.mailboxQuantity} months: ${data.billingMonths} method: ${data.paymentMethod} country: ${countryCode ?? 'unknown'} amount: ${pricing.total}`
+    )
 
     // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (data.paymentMethod === 'card') {
+      this.logger.warn(
+        `Checkout rejected for user: ${user.id}: card payments are temporarily unavailable`
+      )
       throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
     void this.checkoutWithStripe // referenced so it isn't flagged unused while blocked above
@@ -94,6 +102,9 @@ export class SubscriptionService {
       pendingPlanId: null,
       pendingCheckoutPaymentId: null,
     })
+    this.logger.info(
+      `Created pending Stripe subscription: ${subscription.id} for user: ${this.userId} currency: ${currency.toUpperCase()} amount: ${amountTotal}`
+    )
 
     const user = this.ctx.auth.user!
     const customer = await this.stripeService.client.customers.create({
@@ -133,6 +144,9 @@ export class SubscriptionService {
       stripeCustomerId: customer.id,
       stripeSubscriptionId: stripeSubscription.id,
     })
+    this.logger.info(
+      `Stripe customer: ${customer.id} and Stripe subscription: ${stripeSubscription.id} created for subscription: ${subscription.id}`
+    )
 
     const latestInvoice = stripeSubscription.latest_invoice as Stripe.Invoice & {
       payment_intent?: Stripe.PaymentIntent
@@ -150,6 +164,9 @@ export class SubscriptionService {
       failureReason: null,
       rawResponse: null,
     })
+    this.logger.info(
+      `Stripe checkout payment recorded for subscription: ${subscription.id} payment intent: ${paymentIntent?.id ?? 'none'}`
+    )
 
     return {
       subscription,
@@ -181,6 +198,9 @@ export class SubscriptionService {
       pendingPlanId: null,
       pendingCheckoutPaymentId: null,
     })
+    this.logger.info(
+      `Created pending Elgiopay subscription: ${subscription.id} for user: ${this.userId} currency: ${currency} amount: ${amountTotal}`
+    )
 
     const result = await this.elgiopayService.createPayment({
       amount: amountTotal,
@@ -204,6 +224,9 @@ export class SubscriptionService {
       failureReason: null,
       rawResponse: null,
     })
+    this.logger.info(
+      `Elgiopay checkout payment recorded for subscription: ${subscription.id} transaction: ${result.transaction_id}`
+    )
 
     return { subscription, providerPayload: { transactionId: result.transaction_id } }
   }
@@ -248,8 +271,16 @@ export class SubscriptionService {
     }
     const user = this.ctx.auth.user!
     const isPasswordValid = await hash.verify(user.password, currentPassword)
-    if (!isPasswordValid) throw httpError(400, 'Current password is incorrect')
+    if (!isPasswordValid) {
+      this.logger.warn(
+        `Downgrade rejected for subscription: ${subscription.id} user: ${user.id}: incorrect password`
+      )
+      throw httpError(400, 'Current password is incorrect')
+    }
 
+    this.logger.info(
+      `Schedule downgrade for subscription: ${subscription.id} from plan: ${subscription.planId} to plan: ${planId} effective at: ${subscription.currentPeriodEnd?.toISO() ?? 'unknown'}`
+    )
     return this.repository.update(subscription, { pendingPlanId: planId })
   }
 
@@ -270,6 +301,9 @@ export class SubscriptionService {
       subscription.billingMonths,
       planId
     )
+    this.logger.info(
+      `Apply due downgrade for subscription: ${subscription.id} from plan: ${subscription.planId} to plan: ${planId} amount: ${pricing.total}`
+    )
 
     if (subscription.provider === 'stripe') {
       await this.applyStripePlanPrice(subscription, planId, pricing.total)
@@ -287,8 +321,16 @@ export class SubscriptionService {
     planId: PlanId,
     amountTotal: number
   ): Promise<void> {
-    if (!subscription.stripeSubscriptionId) return
+    if (!subscription.stripeSubscriptionId) {
+      this.logger.warn(
+        `Skip Stripe price update for subscription: ${subscription.id}: no Stripe subscription id`
+      )
+      return
+    }
 
+    this.logger.info(
+      `Update Stripe subscription: ${subscription.stripeSubscriptionId} price for subscription: ${subscription.id} plan: ${planId} amount: ${amountTotal}`
+    )
     const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
       subscription.stripeSubscriptionId
     )
@@ -343,9 +385,15 @@ export class SubscriptionService {
       subscription.billingMonths,
       planId
     )
+    this.logger.info(
+      `Initiate upgrade for subscription: ${subscription.id} from plan: ${subscription.planId} to plan: ${planId} method: ${paymentMethod} amount: ${pricing.total}`
+    )
 
     // TEMPORARY: card/Stripe payments are blocked for now. Uncomment below to re-enable.
     if (paymentMethod === 'card') {
+      this.logger.warn(
+        `Upgrade rejected for subscription: ${subscription.id}: card payments are temporarily unavailable`
+      )
       throw httpError(503, 'Card payments are temporarily unavailable — please use mobile money.')
     }
     void this.initiateUpgradeWithStripe // referenced so it isn't flagged unused while blocked above
@@ -370,6 +418,9 @@ export class SubscriptionService {
     amountTotal: number
   ): Promise<CheckoutResult> {
     if (!subscription.stripeCustomerId) {
+      this.logger.warn(
+        `Upgrade rejected for subscription: ${subscription.id}: no Stripe customer on file`
+      )
       throw httpError(422, 'This subscription has no card on file to charge')
     }
     const currency = this.stripeCurrency()
@@ -398,6 +449,9 @@ export class SubscriptionService {
       pendingPlanId: planId,
       pendingCheckoutPaymentId: payment.id,
     })
+    this.logger.info(
+      `Stripe upgrade payment: ${payment.id} pending for subscription: ${subscription.id} payment intent: ${paymentIntent.id}`
+    )
 
     return { subscription: updated, providerPayload: { clientSecret: paymentIntent.client_secret } }
   }
@@ -438,15 +492,26 @@ export class SubscriptionService {
       pendingPlanId: planId,
       pendingCheckoutPaymentId: payment.id,
     })
+    this.logger.info(
+      `Elgiopay upgrade payment: ${payment.id} pending for subscription: ${subscription.id} transaction: ${result.transaction_id}`
+    )
 
     return { subscription: updated, providerPayload: { transactionId: result.transaction_id } }
   }
 
   private async completeUpgrade(subscription: Subscription, payment: Payment): Promise<void> {
     const justCompleted = await this.paymentRepository.markCompletedIfPending(payment.id)
-    if (!justCompleted) return
+    if (!justCompleted) {
+      this.logger.info(
+        `Upgrade payment: ${payment.id} for subscription: ${subscription.id} already processed, skipping`
+      )
+      return
+    }
 
     const planId = subscription.pendingPlanId as PlanId
+    this.logger.info(
+      `Complete upgrade for subscription: ${subscription.id} to plan: ${planId} payment: ${payment.id}`
+    )
     const pricing = calcMailboxPricing(
       subscription.mailboxQuantity,
       subscription.billingMonths,
@@ -471,6 +536,9 @@ export class SubscriptionService {
     payment: Payment,
     reason: string
   ): Promise<void> {
+    this.logger.warn(
+      `Upgrade payment: ${payment.id} failed for subscription: ${subscription.id} reason: ${reason}`
+    )
     await this.paymentRepository.update(payment, { status: 'failed', failureReason: reason })
     await this.repository.update(subscription, {
       pendingPlanId: null,
@@ -483,6 +551,9 @@ export class SubscriptionService {
     const payment = await this.paymentRepository.findById(subscription.pendingCheckoutPaymentId!)
     if (!payment || payment.status !== 'pending' || !payment.providerTransactionId) return
 
+    this.logger.info(
+      `Sync upgrade payment: ${payment.id} state for subscription: ${subscription.id} provider: ${payment.provider} transaction: ${payment.providerTransactionId}`
+    )
     if (payment.provider === 'stripe') {
       const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
         payment.providerTransactionId
@@ -499,7 +570,11 @@ export class SubscriptionService {
     if (live.status === 'completed') {
       await this.completeUpgrade(subscription, payment)
     } else if (live.status === 'failed') {
-      await this.failUpgrade(subscription, payment, 'Elgiopay payment failed')
+      await this.failUpgrade(
+        subscription,
+        payment,
+        live.failure_reason ?? 'Elgiopay payment failed'
+      )
     }
   }
 
@@ -510,6 +585,9 @@ export class SubscriptionService {
     if (subscription.status !== 'active') {
       throw httpError(409, 'Only an active subscription can be canceled')
     }
+    this.logger.info(
+      `Cancel subscription: ${subscription.id} for user: ${this.userId} provider: ${subscription.provider}`
+    )
 
     if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
       await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
@@ -527,6 +605,9 @@ export class SubscriptionService {
     if (subscription.status !== 'canceled') {
       throw httpError(409, 'Only a canceled subscription can be reactivated')
     }
+    this.logger.info(
+      `Reactivate subscription: ${subscription.id} for user: ${this.userId} provider: ${subscription.provider}`
+    )
 
     if (subscription.provider === 'stripe' && subscription.stripeSubscriptionId) {
       await this.stripeService.client.subscriptions.update(subscription.stripeSubscriptionId, {
@@ -551,11 +632,18 @@ export class SubscriptionService {
       return this.applyDueDowngradeIfNeeded(subscription)
     }
 
+    this.logger.info(
+      `Sync pending subscription: ${subscription.id} status with provider: ${subscription.provider}`
+    )
     if (subscription.provider === 'elgiopay') {
       const payment = await this.paymentRepository.findLatestForSubscription(subscription.id)
       if (payment?.providerTransactionId) {
         const live = await this.elgiopayService.getPayment(payment.providerTransactionId)
         await this.syncElgiopayPaymentState(subscription, live)
+      } else {
+        this.logger.warn(
+          `No Elgiopay payment with a transaction id found for pending subscription: ${subscription.id}`
+        )
       }
     } else if (subscription.stripeSubscriptionId) {
       const stripeSubscription = await this.stripeService.client.subscriptions.retrieve(
@@ -583,6 +671,7 @@ export class SubscriptionService {
     })
 
     if (validSubscriptions.length === 0) {
+      this.logger.warn(`Entitlement check failed for user: ${this.userId}: no active subscription`)
       throw httpError(402, 'An active subscription is required before creating mailboxes')
     }
 
@@ -592,6 +681,9 @@ export class SubscriptionService {
     )
 
     if (requestedTotalMailboxCount > totalEntitledMailboxes) {
+      this.logger.warn(
+        `Entitlement check failed for user: ${this.userId}: requested ${requestedTotalMailboxCount} mailboxes but entitled to ${totalEntitledMailboxes}`
+      )
       throw httpError(
         402,
         'This request exceeds the mailbox quantity included in your subscription'
@@ -600,6 +692,7 @@ export class SubscriptionService {
   }
 
   async applyStripeWebhookEvent(event: Stripe.Event): Promise<void> {
+    this.logger.info(`Handle Stripe webhook event: ${event.type} id: ${event.id}`)
     switch (event.type) {
       case 'invoice.paid':
       case 'invoice.payment_failed': {
@@ -608,10 +701,20 @@ export class SubscriptionService {
           typeof invoice.parent?.subscription_details?.subscription === 'string'
             ? invoice.parent.subscription_details.subscription
             : null
-        if (!stripeSubscriptionId) return
+        if (!stripeSubscriptionId) {
+          this.logger.warn(
+            `Ignore Stripe event: ${event.id}: invoice ${invoice.id} is not attached to a subscription`
+          )
+          return
+        }
 
         const subscription = await this.repository.findByStripeSubscriptionId(stripeSubscriptionId)
-        if (!subscription) return
+        if (!subscription) {
+          this.logger.warn(
+            `Ignore Stripe event: ${event.id}: no subscription found for Stripe subscription: ${stripeSubscriptionId}`
+          )
+          return
+        }
 
         const rawPaymentIntent = invoice.payments?.data?.[0]?.payment.payment_intent
         const paymentIntentId =
@@ -634,6 +737,9 @@ export class SubscriptionService {
             status: 'active',
             currentPeriodEnd: this.periodEndFromInvoice(invoice, subscription.billingMonths),
           })
+          this.logger.info(
+            `Subscription: ${subscription.id} activated from Stripe invoice: ${invoice.id} payment: ${existingPayment?.id ?? 'none'}`
+          )
         } else {
           if (existingPayment) {
             await this.paymentRepository.update(existingPayment, {
@@ -642,21 +748,37 @@ export class SubscriptionService {
             })
           }
           await this.repository.update(subscription, { status: 'past_due' })
+          this.logger.warn(
+            `Subscription: ${subscription.id} marked past_due: Stripe invoice: ${invoice.id} payment failed`
+          )
         }
         return
       }
       case 'customer.subscription.updated': {
         const stripeSubscription = event.data.object as Stripe.Subscription
         const subscription = await this.repository.findByStripeSubscriptionId(stripeSubscription.id)
-        if (!subscription) return
+        if (!subscription) {
+          this.logger.warn(
+            `Ignore Stripe event: ${event.id}: no subscription found for Stripe subscription: ${stripeSubscription.id}`
+          )
+          return
+        }
         await this.syncStripeSubscriptionState(subscription, stripeSubscription)
         return
       }
       case 'customer.subscription.deleted': {
         const stripeSubscription = event.data.object as Stripe.Subscription
         const subscription = await this.repository.findByStripeSubscriptionId(stripeSubscription.id)
-        if (!subscription) return
+        if (!subscription) {
+          this.logger.warn(
+            `Ignore Stripe event: ${event.id}: no subscription found for Stripe subscription: ${stripeSubscription.id}`
+          )
+          return
+        }
         await this.repository.update(subscription, { status: 'canceled' })
+        this.logger.info(
+          `Subscription: ${subscription.id} canceled: Stripe subscription: ${stripeSubscription.id} deleted`
+        )
         return
       }
       case 'payment_intent.succeeded':
@@ -678,36 +800,53 @@ export class SubscriptionService {
         return
       }
       default:
+        this.logger.info(`Ignore unhandled Stripe webhook event: ${event.type} id: ${event.id}`)
         return
     }
   }
 
   async applyElgiopayWebhookEvent(envelope: {
     event: string
-    data: { transaction_id?: string; id?: string; message?: string }
+    data: { transaction_id?: string; id?: string; message?: string; failure_reason?: string }
   }): Promise<void> {
     if (envelope.event !== 'payment.completed' && envelope.event !== 'payment.failed') {
+      this.logger.info(`Ignore unhandled Elgiopay webhook event: ${envelope.event}`)
       return
     }
 
     const transactionId = envelope.data.transaction_id ?? envelope.data.id
-    if (!transactionId) return
+    if (!transactionId) {
+      this.logger.warn(`Ignore Elgiopay webhook event: ${envelope.event}: missing transaction id`)
+      return
+    }
+    this.logger.info(
+      `Handle Elgiopay webhook event: ${envelope.event} transaction: ${transactionId}`
+    )
+
+    const failureReason =
+      envelope.data.failure_reason ?? envelope.data.message ?? 'Elgiopay payment failed'
 
     const payment = await this.paymentRepository.findByProviderTransactionId(transactionId)
-    if (!payment || !payment.subscriptionId) return
+    if (!payment || !payment.subscriptionId) {
+      this.logger.warn(
+        `Ignore Elgiopay webhook event: ${envelope.event}: no subscription payment found for transaction: ${transactionId}`
+      )
+      return
+    }
 
     const subscription = await this.repository.findById(payment.subscriptionId)
-    if (!subscription) return
+    if (!subscription) {
+      this.logger.warn(
+        `Ignore Elgiopay webhook event: ${envelope.event}: subscription: ${payment.subscriptionId} not found for payment: ${payment.id}`
+      )
+      return
+    }
 
     if (subscription.pendingCheckoutPaymentId === payment.id) {
       if (envelope.event === 'payment.completed') {
         await this.completeUpgrade(subscription, payment)
       } else {
-        await this.failUpgrade(
-          subscription,
-          payment,
-          envelope.data.message ?? 'Elgiopay payment failed'
-        )
+        await this.failUpgrade(subscription, payment, failureReason)
       }
       return
     }
@@ -721,12 +860,18 @@ export class SubscriptionService {
         status: 'active',
         currentPeriodEnd: DateTime.now().plus({ months: subscription.billingMonths }),
       })
+      this.logger.info(
+        `Subscription: ${subscription.id} activated from Elgiopay webhook payment: ${payment.id} transaction: ${transactionId}`
+      )
     } else {
       await this.paymentRepository.update(payment, {
         status: 'failed',
-        failureReason: envelope.data.message ?? 'Elgiopay payment failed',
+        failureReason,
       })
       await this.repository.update(subscription, { status: 'failed' })
+      this.logger.warn(
+        `Subscription: ${subscription.id} marked failed from Elgiopay webhook payment: ${payment.id} transaction: ${transactionId} reason: ${failureReason}`
+      )
     }
   }
 
@@ -737,6 +882,9 @@ export class SubscriptionService {
     const monthsLabel =
       subscription.billingMonths === 1 ? '1 month' : `${subscription.billingMonths} months`
 
+    this.logger.info(
+      `Send subscription invoice for subscription: ${subscription.id} payment: ${payment.id} amount: ${payment.amount} currency: ${payment.currency}`
+    )
     this.invoiceService.sendForPayment({
       paymentId: payment.id,
       recipient: () => this.invoiceService.userAsRecipient(subscription.userId),
@@ -753,9 +901,12 @@ export class SubscriptionService {
 
   private async syncElgiopayPaymentState(
     subscription: Subscription,
-    live: { status: string; transaction_id: string }
+    live: { status: string; transaction_id: string; failure_reason?: string }
   ) {
     const payment = await this.paymentRepository.findByProviderTransactionId(live.transaction_id)
+    this.logger.info(
+      `Elgiopay transaction: ${live.transaction_id} status: ${live.status} for subscription: ${subscription.id}`
+    )
 
     if (live.status === 'completed') {
       if (payment) {
@@ -763,14 +914,29 @@ export class SubscriptionService {
         if (justCompleted) {
           this.sendSubscriptionInvoice(subscription, payment)
         }
+      } else {
+        this.logger.warn(
+          `No payment record found for Elgiopay transaction: ${live.transaction_id} on subscription: ${subscription.id}`
+        )
       }
       await this.repository.update(subscription, {
         status: 'active',
         currentPeriodEnd: DateTime.now().plus({ months: subscription.billingMonths }),
       })
+      this.logger.info(
+        `Subscription: ${subscription.id} activated from Elgiopay transaction: ${live.transaction_id}`
+      )
     } else if (live.status === 'failed') {
-      if (payment) await this.paymentRepository.update(payment, { status: 'failed' })
+      if (payment) {
+        await this.paymentRepository.update(payment, {
+          status: 'failed',
+          failureReason: live.failure_reason ?? 'Elgiopay payment failed',
+        })
+      }
       await this.repository.update(subscription, { status: 'failed' })
+      this.logger.warn(
+        `Subscription: ${subscription.id} marked failed from Elgiopay transaction: ${live.transaction_id} reason: ${live.failure_reason ?? 'unknown'}`
+      )
     }
   }
 
@@ -788,6 +954,9 @@ export class SubscriptionService {
     }
     const status = statusMap[stripeSubscription.status] ?? subscription.status
     const currentPeriodItem = stripeSubscription.items.data[0]
+    this.logger.info(
+      `Sync subscription: ${subscription.id} from Stripe subscription: ${stripeSubscription.id} stripe status: ${stripeSubscription.status} status: ${subscription.status} -> ${status}`
+    )
 
     await this.repository.update(subscription, {
       status,

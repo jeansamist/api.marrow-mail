@@ -37,15 +37,31 @@ export class MailAccountProfileService {
   ) {}
 
   async getProfile(mailAccountId: number): Promise<MailAccountProfile> {
+    this.logger.info(
+      `Fetch profile for mail account: ${mailAccountId} user: ${this.ctx.auth.user?.id ?? 'unknown'}`
+    )
     const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
-    if (!mailAccount) throw httpError(404, 'Mail account not found')
+    if (!mailAccount) {
+      this.logger.warn(
+        `Profile fetch rejected for mail account: ${mailAccountId}: mail account not found`
+      )
+      throw httpError(404, 'Mail account not found')
+    }
 
     if (mailAccount.userId !== this.ctx.auth.user!.id) {
+      this.logger.warn(
+        `Profile fetch rejected for mail account: ${mailAccountId} user: ${this.ctx.auth.user!.id}: not owner`
+      )
       throw httpError(403, 'You are not allowed to access this mail account')
     }
 
     const profile = await this.repository.findByMailAccountId(mailAccountId)
-    if (!profile) throw httpError(404, 'Profile not found')
+    if (!profile) {
+      this.logger.warn(
+        `Profile fetch rejected for mail account: ${mailAccountId}: profile not found`
+      )
+      throw httpError(404, 'Profile not found')
+    }
 
     return profile
   }
@@ -54,6 +70,7 @@ export class MailAccountProfileService {
     mailAccount: MailAccount,
     data: SetupMailAccountProfilePayload
   ): Promise<MailAccountProfile> {
+    this.logger.info(`Set up profile for mail account: ${mailAccount.id}`)
     // destructre the data payload
     const { newPassword, ...profileData } = data
 
@@ -62,6 +79,7 @@ export class MailAccountProfileService {
       ...profileData,
       mailAccountId: mailAccount.id,
     })
+    this.logger.info(`Created profile: ${profile.id} for mail account: ${mailAccount.id}`)
 
     // hash the user new mail account password provided
     const hashedPassword = await hash.make(newPassword)
@@ -71,6 +89,7 @@ export class MailAccountProfileService {
       setuped: true,
       password: hashedPassword,
     })
+    this.logger.info(`Marked mail account: ${mailAccount.id} as setuped`)
 
     // Send setup notification email
     if (mailAccount.ownerEmail) {
@@ -83,8 +102,16 @@ export class MailAccountProfileService {
 
   async updateProfile(data: UpdateMailAccountProfilePayload): Promise<MailAccountProfile> {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(
+      `Update profile for mail account: ${mailAccount.id} fields: ${Object.keys(data).join(', ')}`
+    )
     const profile = await this.repository.findByMailAccountId(mailAccount.id)
-    if (!profile) throw httpError(404, 'Profile not found')
+    if (!profile) {
+      this.logger.warn(
+        `Profile update rejected for mail account: ${mailAccount.id}: profile not found`
+      )
+      throw httpError(404, 'Profile not found')
+    }
 
     return this.repository.update(profile, {
       ...(data.firstName !== undefined && { firstName: data.firstName }),
@@ -94,10 +121,12 @@ export class MailAccountProfileService {
   }
 
   async findByMailAccountId(mailAccountId: number): Promise<MailAccountProfile | null> {
+    this.logger.info(`Find profile for mail account: ${mailAccountId}`)
     return this.repository.findByMailAccountId(mailAccountId)
   }
 
   async deleteProfile(profile: MailAccountProfile): Promise<void> {
+    this.logger.info(`Delete profile: ${profile.id} for mail account: ${profile.mailAccountId}`)
     await this.repository.delete(profile)
   }
 
@@ -106,6 +135,9 @@ export class MailAccountProfileService {
     profile: MailAccountProfile
   ) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
+    this.logger.info(
+      `Queue profile setuped notification for mail account: ${mailAccountEmail} recipient: ${mailAccount.ownerEmail}`
+    )
     const notification = new MailAccountProfileSetupedNotification(
       mailAccount.ownerEmail!,
       mailAccountEmail,

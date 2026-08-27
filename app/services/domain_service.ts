@@ -56,6 +56,9 @@ export class DomainService {
 
   checkOwnership(domain: Domain) {
     if (domain.userId !== this.userId) {
+      this.logger.warn(
+        `[DomainService]: Domain access rejected for domain: ${domain.name} user: ${this.userId}: not the owner`
+      )
       throw httpError(403, 'You are not allowed to access this domain')
     }
   }
@@ -191,6 +194,7 @@ export class DomainService {
    * this is deliberately NOT part of setupDomain(), see its docstring.
    */
   async provisionSendingRecords(domainName: string): Promise<Record[]> {
+    this.logger.info(`[DomainService]: Provision sending records for domain: ${domainName}`)
     const domain = await this.findDomainByNameOrFail(domainName)
     this.checkOwnership(domain)
     return this.refreshDomainRecords(domain)
@@ -226,6 +230,9 @@ export class DomainService {
 
   private async storeFreshRecords(domain: Domain): Promise<Record[]> {
     const DNSrecords = await this.sesService.getAllRecordsForEmailIdentity(domain.name)
+    this.logger.info(
+      `[DomainService]: Store fresh DNS records for domain: ${domain.name} count: ${DNSrecords.length}`
+    )
     await this.recordService.deleteRecordsByDomainId(domain.id)
     const createManyRecordPayload = DNSrecords.map((record) => ({
       name: record.Name,
@@ -276,17 +283,28 @@ export class DomainService {
       // card in Settings > Domains) — CUSTOM_LOGIN_HOSTNAME_TARGET_IP must
       // match that value, it is not always the generic 76.76.21.21.
       return addresses.includes(env.get('CUSTOM_LOGIN_HOSTNAME_TARGET_IP', '76.76.21.21'))
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `[DomainService]: DNS lookup failed for custom login hostname: ${hostname}: ${error instanceof Error ? error.message : String(error)}`
+      )
       return false
     }
   }
 
   runAutomaticalyDomainVerification(domainName: string, domainId: number) {
+    this.logger.info(
+      `[DomainService]: Queue automatic verification for domain: ${domainName} id: ${domainId}`
+    )
     this.cronManager.addQueueJob(
       'verification',
       async () => {
         const verified = await this.sesService.verifyEmailIdentity(domainName)
-        if (!verified) throw new Error('Domain not verified')
+        if (!verified) {
+          this.logger.warn(
+            `[DomainService]: Automatic verification for domain: ${domainName} not verified yet, retrying`
+          )
+          throw new Error('Domain not verified')
+        }
         await this.changeDomainToVerify(domainId)
         // TODO: Broaddcast a transmit message to channel: domain/[domainName]/[domainId] to say that the domain is verified
       },

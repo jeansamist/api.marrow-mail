@@ -68,6 +68,7 @@ export class MailService {
 
   async sendMail(data: SendMailPayload) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Send mail from mail account: ${mailAccount.id} recipients: ${data.to.length}`)
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
     this.assertDomainVerified(mailAccount)
 
@@ -101,26 +102,31 @@ export class MailService {
 
   async fetchAllMail() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch all mail for mail account: ${mailAccount.id}`)
     return this.mailRepository.findByMailAccount(mailAccount.id)
   }
 
   async fetchAllSentMail() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch sent mail for mail account: ${mailAccount.id}`)
     return this.mailRepository.findByMailAccountAndDirection(mailAccount.id, 'sent')
   }
 
   async fetchAllReceivedMail() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch received mail for mail account: ${mailAccount.id}`)
     return this.mailRepository.findByMailAccountAndDirection(mailAccount.id, 'received')
   }
 
   async fetchDrafts() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch drafts for mail account: ${mailAccount.id}`)
     return this.mailRepository.findDraftsByMailAccount(mailAccount.id)
   }
 
   async saveDraft(data: DraftMailPayload) {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Save draft for mail account: ${mailAccount.id}`)
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
 
     return this.mailRepository.create({
@@ -149,6 +155,7 @@ export class MailService {
 
   async updateDraft(id: number, data: DraftMailPayload) {
     const { draft } = await this.getOwnedDraft(id)
+    this.logger.info(`Update draft: ${draft.id} for mail account: ${draft.mailAccountId}`)
 
     return this.mailRepository.update(draft, {
       ...(data.to !== undefined && { toAddresses: data.to }),
@@ -164,15 +171,23 @@ export class MailService {
 
   async deleteDraft(id: number) {
     const { draft } = await this.getOwnedDraft(id)
+    this.logger.info(`Delete draft: ${draft.id} for mail account: ${draft.mailAccountId}`)
     await this.mailRepository.delete(draft)
   }
 
   async sendDraft(id: number) {
     const { mailAccount, draft } = await this.getOwnedDraft(id)
+    this.logger.info(`Send draft: ${draft.id} for mail account: ${mailAccount.id}`)
 
     const to = Array.isArray(draft.toAddresses) ? (draft.toAddresses as string[]) : []
-    if (to.length === 0) throw httpError(422, 'Draft has no recipients')
-    if (!draft.subject) throw httpError(422, 'Draft has no subject')
+    if (to.length === 0) {
+      this.logger.warn(`Send draft rejected for draft: ${draft.id}: no recipients`)
+      throw httpError(422, 'Draft has no recipients')
+    }
+    if (!draft.subject) {
+      this.logger.warn(`Send draft rejected for draft: ${draft.id}: no subject`)
+      throw httpError(422, 'Draft has no subject')
+    }
 
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
     this.assertDomainVerified(mailAccount)
@@ -199,10 +214,16 @@ export class MailService {
 
   async moveToFolder(id: number, folderId: number | null) {
     const { mailAccount, mail } = await this.getOwnedMail(id)
+    this.logger.info(
+      `Move mail: ${mail.id} to folder: ${folderId} for mail account: ${mailAccount.id}`
+    )
 
     if (folderId !== null) {
       const folder = await this.folderRepository.findById(folderId)
       if (!folder || folder.mailAccountId !== mailAccount.id) {
+        this.logger.warn(
+          `Move mail rejected for mail: ${mail.id}: folder: ${folderId} not found for mail account: ${mailAccount.id}`
+        )
         throw httpError(404, 'Folder not found')
       }
     }
@@ -212,46 +233,55 @@ export class MailService {
 
   async markSpam(id: number, isSpam: boolean) {
     const { mail } = await this.getOwnedMail(id)
+    this.logger.info(`Mark mail: ${mail.id} spam: ${isSpam}`)
     return this.mailRepository.update(mail, { isSpam })
   }
 
   async markImportant(id: number, important: boolean) {
     const { mail } = await this.getOwnedMail(id)
+    this.logger.info(`Mark mail: ${mail.id} important: ${important}`)
     return this.mailRepository.update(mail, { important })
   }
 
   async markRead(id: number, isRead: boolean) {
     const { mail } = await this.getOwnedMail(id)
+    this.logger.info(`Mark mail: ${mail.id} read: ${isRead}`)
     return this.mailRepository.update(mail, { isRead })
   }
 
   async trashMail(id: number) {
     const { mail } = await this.getOwnedMail(id)
+    this.logger.info(`Trash mail: ${mail.id}`)
     return this.mailRepository.update(mail, { deleted: true })
   }
 
   async restoreMail(id: number) {
     const { mail } = await this.getOwnedTrashedMail(id)
+    this.logger.info(`Restore mail: ${mail.id} from trash`)
     return this.mailRepository.update(mail, { deleted: false })
   }
 
   async permanentlyDeleteMail(id: number) {
     const { mail } = await this.getOwnedTrashedMail(id)
+    this.logger.info(`Permanently delete mail: ${mail.id}`)
     await this.mailRepository.delete(mail)
   }
 
   async fetchTrash() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch trash for mail account: ${mailAccount.id}`)
     return this.mailRepository.findTrashByMailAccount(mailAccount.id)
   }
 
   async fetchSpam() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch spam for mail account: ${mailAccount.id}`)
     return this.mailRepository.findSpamByMailAccount(mailAccount.id)
   }
 
   async forwardMail(id: number, data: ForwardMailPayload) {
     const { mail: original } = await this.getOwnedMail(id)
+    this.logger.info(`Forward mail: ${original.id} recipients: ${data.to.length}`)
 
     const subject = original.subject?.trim().toLowerCase().startsWith('fwd:')
       ? original.subject
@@ -291,15 +321,22 @@ export class MailService {
 
   async fetchScheduledMails() {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Fetch scheduled mails for mail account: ${mailAccount.id}`)
     return this.mailRepository.findScheduledByMailAccount(mailAccount.id)
   }
 
   async scheduleMail(data: ScheduleMailPayload) {
     if (data.scheduledAt <= DateTime.now()) {
+      this.logger.warn(
+        `Schedule mail rejected: scheduledAt: ${data.scheduledAt.toISO()} is in the past`
+      )
       throw httpError(422, 'scheduledAt must be in the future')
     }
 
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(
+      `Schedule mail for mail account: ${mailAccount.id} recipients: ${data.to.length} scheduledAt: ${data.scheduledAt.toISO()}`
+    )
     const { fromDisplay } = await this.buildFromDisplay(mailAccount)
     this.assertDomainVerified(mailAccount)
 
@@ -329,15 +366,20 @@ export class MailService {
 
   async rescheduleMail(id: number, scheduledAt: DateTime) {
     if (scheduledAt <= DateTime.now()) {
+      this.logger.warn(
+        `Reschedule mail rejected for mail: ${id}: scheduledAt: ${scheduledAt.toISO()} is in the past`
+      )
       throw httpError(422, 'scheduledAt must be in the future')
     }
 
     const { scheduled } = await this.getOwnedScheduledMail(id)
+    this.logger.info(`Reschedule mail: ${scheduled.id} scheduledAt: ${scheduledAt.toISO()}`)
     return this.mailRepository.update(scheduled, { scheduledAt })
   }
 
   async cancelScheduledMail(id: number) {
     const { scheduled } = await this.getOwnedScheduledMail(id)
+    this.logger.info(`Cancel scheduled mail: ${scheduled.id}`)
     return this.mailRepository.update(scheduled, { status: 'draft', scheduledAt: null })
   }
 
@@ -346,7 +388,10 @@ export class MailService {
     scheduled: Mail
   }> {
     const { mailAccount, mail } = await this.getOwnedMail(id)
-    if (mail.status !== 'scheduled') throw httpError(404, 'Scheduled mail not found')
+    if (mail.status !== 'scheduled') {
+      this.logger.warn(`Scheduled mail not found for mail: ${mail.id} status: ${mail.status}`)
+      throw httpError(404, 'Scheduled mail not found')
+    }
     return { mailAccount, scheduled: mail }
   }
 
@@ -354,6 +399,7 @@ export class MailService {
   async getAttachments(id: number): Promise<File[]> {
     const { mail } = await this.getOwnedMail(id)
     const attachmentIds = (mail.attachmentIds as number[] | null) ?? []
+    this.logger.info(`Get attachments for mail: ${mail.id} count: ${attachmentIds.length}`)
     if (attachmentIds.length === 0) return []
 
     const files = await Promise.all(
@@ -366,6 +412,7 @@ export class MailService {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     const mail = await this.mailRepository.findById(id)
     if (!mail || mail.mailAccountId !== mailAccount.id) {
+      this.logger.warn(`Mail not found: ${id} for mail account: ${mailAccount.id}`)
       throw httpError(404, 'Mail not found')
     }
     return { mailAccount, mail }
@@ -373,7 +420,10 @@ export class MailService {
 
   private async getOwnedDraft(id: number): Promise<{ mailAccount: MailAccount; draft: Mail }> {
     const { mailAccount, mail } = await this.getOwnedMail(id)
-    if (mail.status !== 'draft') throw httpError(404, 'Draft not found')
+    if (mail.status !== 'draft') {
+      this.logger.warn(`Draft not found for mail: ${mail.id} status: ${mail.status}`)
+      throw httpError(404, 'Draft not found')
+    }
     return { mailAccount, draft: mail }
   }
 
@@ -381,6 +431,7 @@ export class MailService {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
     const mail = await this.mailRepository.findById(id)
     if (!mail || mail.mailAccountId !== mailAccount.id || !mail.deleted) {
+      this.logger.warn(`Mail not found in trash: ${id} for mail account: ${mailAccount.id}`)
       throw httpError(404, 'Mail not found in trash')
     }
     return { mailAccount, mail }
@@ -406,6 +457,9 @@ export class MailService {
    */
   private assertDomainVerified(mailAccount: MailAccount) {
     if (!mailAccount.domain.verified) {
+      this.logger.warn(
+        `Send rejected for mail account: ${mailAccount.id}: domain: ${mailAccount.domain.name} not verified`
+      )
       throw httpError(
         422,
         `The domain ${mailAccount.domain.name} is not verified for sending mail. Verify it before sending.`
@@ -424,6 +478,9 @@ export class MailService {
   }
 
   private queueSesSend(mail: Mail, fromDisplay: string, data: SendMailPayload) {
+    this.logger.info(
+      `Queue SES send for mail: ${mail.id} from mail account: ${mail.mailAccountId} recipients: ${data.to.length}`
+    )
     this.cronManager.addQueueJob(
       'mails',
       async () => {
@@ -440,6 +497,9 @@ export class MailService {
         )
         const bodyHtml = voiceNoteHtml ? `${data.bodyHtml ?? ''}${voiceNoteHtml}` : data.bodyHtml
 
+        this.logger.info(
+          `Send mail: ${mail.id} via SES recipients: ${data.to.length} attachments: ${attachments.length}`
+        )
         const response = await this.sesService.sendRichEmail({
           from: fromDisplay,
           to: data.to,
@@ -482,10 +542,21 @@ export class MailService {
    * background failure.
    */
   private async reconcileDomainVerification(mailAccountId: number) {
+    this.logger.info(
+      `Reconcile domain verification for mail account: ${mailAccountId} after send failure`
+    )
     const mailAccount = await this.mailAccountRepository.findById(mailAccountId)
-    if (!mailAccount) return
+    if (!mailAccount) {
+      this.logger.warn(`Skip domain reconciliation: mail account: ${mailAccountId} not found`)
+      return
+    }
     await mailAccount.load('domain')
-    if (!mailAccount.domain.verified) return
+    if (!mailAccount.domain.verified) {
+      this.logger.info(
+        `Skip domain reconciliation for mail account: ${mailAccount.id}: domain: ${mailAccount.domain.name} already unverified`
+      )
+      return
+    }
 
     this.logger.warn(
       `[MailService]: Marking domain ${mailAccount.domain.name} unverified after a send failure`

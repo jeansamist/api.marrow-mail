@@ -26,9 +26,17 @@ export class DomainRegistrationDispatchService {
 
   async pollPendingRegistrations(): Promise<void> {
     const pending = await this.domainRepository.findAllByRegistrationStatus('pending_registration')
+    if (pending.length > 0) {
+      this.logger.info(`Poll pending domain registrations: ${pending.length}`)
+    }
 
     for (const domain of pending) {
-      if (!domain.registrationOperationId) continue
+      if (!domain.registrationOperationId) {
+        this.logger.warn(
+          `Skipping registration poll for domain: ${domain.name}: no registration operation id`
+        )
+        continue
+      }
 
       try {
         const operation = await this.route53DomainsService.getOperationDetail(
@@ -54,12 +62,18 @@ export class DomainRegistrationDispatchService {
     name: string
     userId: number | null
   }): Promise<void> {
+    this.logger.info(
+      `Finish domain registration: ${domain.name} domain: ${domain.id} user: ${domain.userId}`
+    )
     const hostedZone = await this.route53Service.createHostedZone(domain.name)
     const hostedZoneId = hostedZone.HostedZone?.Id?.replace('/hostedzone/', '') ?? null
 
     await this.sesService.createEmailIdentity(domain.name)
     await this.sesService.putEmailIdentityMailFromAttributes(domain.name)
     const dnsRecords = await this.sesService.getAllRecordsForEmailIdentity(domain.name)
+    this.logger.info(
+      `Created SES identity for domain: ${domain.name} hostedZone: ${hostedZoneId} records: ${dnsRecords.length}`
+    )
 
     if (hostedZoneId) {
       await this.route53Service.upsertRecords(
@@ -70,6 +84,10 @@ export class DomainRegistrationDispatchService {
           value: record.Value,
           priority: record.Priority ?? null,
         }))
+      )
+    } else {
+      this.logger.warn(
+        `No hosted zone id returned for domain: ${domain.name}, skipping Route53 record upsert`
       )
     }
 
@@ -90,6 +108,10 @@ export class DomainRegistrationDispatchService {
         registrationStatus: 'registered',
         hostedZoneId,
       })
+    } else {
+      this.logger.warn(
+        `Domain: ${domain.id} not found after registration, registration status not updated`
+      )
     }
 
     this.logger.info(`Domain ${domain.name} registered and DNS auto-provisioned`)

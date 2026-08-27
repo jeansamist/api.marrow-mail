@@ -1,5 +1,6 @@
 import { ElgiopayService } from '#services/elgiopay_service'
 import env from '#start/env'
+import logger from '@adonisjs/core/services/logger'
 import { test } from '@japa/runner'
 import { createHmac } from 'node:crypto'
 
@@ -10,7 +11,7 @@ function signBody(t: number, rawBody: string) {
 }
 
 test.group('ElgiopayService.verifySignature', () => {
-  const elgiopayService = new ElgiopayService()
+  const elgiopayService = new ElgiopayService(logger)
   const rawBody = JSON.stringify({ id: 'evt_1', event: 'payment.completed', data: {} })
 
   test('accepts a correctly signed, fresh payload', ({ assert }) => {

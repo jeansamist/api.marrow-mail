@@ -1,5 +1,7 @@
 import env from '#start/env'
 import { httpError } from '#utils/http_error'
+import { inject } from '@adonisjs/core'
+import { Logger } from '@adonisjs/core/logger'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export interface CreateElgiopayPaymentPayload {
@@ -18,6 +20,7 @@ export interface ElgiopayPaymentResponse {
   transaction_id: string
   status: 'pending' | 'completed' | 'failed'
   payment_url: string | null
+  failure_reason?: string
   message: string
 }
 
@@ -28,16 +31,24 @@ export interface ElgiopayTransaction {
   amount: { total: number; currency: string; fees?: number; net_amount?: number }
   payment: { method: string }
   customer: { phone: string; name?: string; email?: string }
+  metadata?: Record<string, unknown>
+  failure_reason?: string
   created_at: string
   updated_at?: string
   completed_at?: string
+  failed_at?: string
 }
-
+@inject()
 export class ElgiopayService {
   private readonly baseUrl = env.get('ELGIOPAY_API_BASE_URL')
   private readonly secretKey = env.get('ELGIOPAY_SECRET_KEY')
 
+  constructor(private readonly logger: Logger) {}
+
   async createPayment(payload: CreateElgiopayPaymentPayload): Promise<ElgiopayPaymentResponse> {
+    this.logger.info(
+      `Create a new Elgiopay payment for customer: ${payload.customer_phone} amount: ${payload.amount} currency: ${payload.currency} method: ${payload.payment_method} reference: ${payload.reference}`
+    )
     const response = await fetch(`${this.baseUrl}/api/v1/payments`, {
       method: 'POST',
       headers: {
@@ -48,22 +59,45 @@ export class ElgiopayService {
     })
 
     if (!response.ok) {
+      this.logger.error(
+        `Elgiopay payment creation failed for reference: ${payload.reference} status: ${response.status} body: ${await this.readErrorBody(response)}`
+      )
       throw httpError(response.status, 'Elgiopay payment creation failed')
     }
 
-    return response.json() as Promise<ElgiopayPaymentResponse>
+    const result = (await response.json()) as ElgiopayPaymentResponse
+
+    if (result.success) {
+      this.logger.info(
+        `Elgiopay payment created for reference: ${payload.reference} transaction: ${result.transaction_id} status: ${result.status}`
+      )
+    } else {
+      this.logger.warn(
+        `Elgiopay payment not accepted for reference: ${payload.reference} transaction: ${result.transaction_id} status: ${result.status} reason: ${result.failure_reason ?? result.message}`
+      )
+    }
+
+    return result
   }
 
   async getPayment(transactionId: string): Promise<ElgiopayTransaction> {
+    this.logger.info(`Fetch Elgiopay transaction: ${transactionId}`)
     const response = await fetch(`${this.baseUrl}/api/v1/payments/${transactionId}`, {
       headers: { Authorization: `Bearer ${this.secretKey}` },
     })
-
     if (!response.ok) {
+      this.logger.error(
+        `Failed to fetch Elgiopay transaction: ${transactionId} status: ${response.status} body: ${await this.readErrorBody(response)}`
+      )
       throw httpError(response.status, 'Failed to fetch Elgiopay transaction')
     }
 
-    return response.json() as Promise<ElgiopayTransaction>
+    const transaction = (await response.json()) as ElgiopayTransaction
+    this.logger.info(
+      `Fetched Elgiopay transaction: ${transaction.transaction_id} status: ${transaction.status} amount: ${transaction.amount.total} currency: ${transaction.amount.currency}${transaction.failure_reason ? ` reason: ${transaction.failure_reason}` : ''}`
+    )
+
+    return transaction
   }
 
   verifySignature(rawBody: string, signatureHeader: string): boolean {
@@ -73,6 +107,9 @@ export class ElgiopayService {
 
     const t = Number(parts.t)
     if (!t || Math.abs(Date.now() / 1000 - t) > 300) {
+      this.logger.warn(
+        `Elgiopay webhook signature rejected: ${t ? `timestamp ${t} is outside the 5 minutes tolerance` : 'missing or invalid timestamp'}`
+      )
       return false
     }
 
@@ -84,9 +121,27 @@ export class ElgiopayService {
     const actualBuffer = Buffer.from(parts.v1 ?? '', 'hex')
 
     if (expectedBuffer.length !== actualBuffer.length) {
+      this.logger.warn(
+        `Elgiopay webhook signature rejected: ${parts.v1 ? 'signature length mismatch' : 'missing v1 signature'}`
+      )
       return false
     }
 
-    return timingSafeEqual(expectedBuffer, actualBuffer)
+    const valid = timingSafeEqual(expectedBuffer, actualBuffer)
+    if (valid) {
+      this.logger.info('Elgiopay webhook signature verified')
+    } else {
+      this.logger.warn('Elgiopay webhook signature rejected: signature mismatch')
+    }
+
+    return valid
+  }
+
+  private async readErrorBody(response: Response): Promise<string> {
+    try {
+      return await response.text()
+    } catch {
+      return '<unreadable>'
+    }
   }
 }

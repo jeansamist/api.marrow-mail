@@ -9,6 +9,9 @@ export interface ApiDefinition {
     publicBranding: typeof routes['public_domains.public_branding']
     byHostname: typeof routes['public_domains.by_hostname']
   }
+  voiceNotes: {
+    show: typeof routes['voice_notes.show']
+  }
   auth: {
     signUp: typeof routes['auth.sign_up']
     verifyEmail: typeof routes['auth.verify_email']
@@ -23,7 +26,6 @@ export interface ApiDefinition {
   mailAccounts: {
     index: typeof routes['mail_accounts.index']
     destroy: typeof routes['mail_accounts.destroy']
-    updateStorageQuota: typeof routes['mail_accounts.update_storage_quota']
     toggleActive: typeof routes['mail_accounts.toggle_active']
     resendInvite: typeof routes['mail_accounts.resend_invite']
   }
@@ -55,6 +57,7 @@ export interface ApiDefinition {
   subscriptions: {
     current: typeof routes['subscriptions.current']
     changePlan: typeof routes['subscriptions.change_plan']
+    upgradeCheckout: typeof routes['subscriptions.upgrade_checkout']
     cancel: typeof routes['subscriptions.cancel']
     reactivate: typeof routes['subscriptions.reactivate']
     checkout: typeof routes['subscriptions.checkout']
@@ -100,6 +103,7 @@ export interface ApiDefinition {
     index: typeof routes['mail.index']
     sent: typeof routes['mail.sent']
     received: typeof routes['mail.received']
+    attachments: typeof routes['mail.attachments']
     drafts: typeof routes['mail.drafts']
     saveDraft: typeof routes['mail.save_draft']
     updateDraft: typeof routes['mail.update_draft']

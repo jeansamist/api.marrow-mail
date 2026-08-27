@@ -36,6 +36,12 @@ const routes = {
     tokens: [{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"api","end":""},{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"domains","end":""},{"old":"/api/domains/by-hostname/:hostname","type":0,"val":"by-hostname","end":""},{"old":"/api/domains/by-hostname/:hostname","type":1,"val":"hostname","end":""}],
     types: placeholder as Registry['public_domains.by_hostname']['types'],
   },
+  'voice_notes.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/voice-notes/:token',
+    tokens: [{"old":"/api/voice-notes/:token","type":0,"val":"api","end":""},{"old":"/api/voice-notes/:token","type":0,"val":"voice-notes","end":""},{"old":"/api/voice-notes/:token","type":1,"val":"token","end":""}],
+    types: placeholder as Registry['voice_notes.show']['types'],
+  },
   'auth.sign_up': {
     methods: ["POST"],
     pattern: '/api/auth/sign-up',
@@ -107,12 +113,6 @@ const routes = {
     pattern: '/api/mail-accounts/:mailAccountId/profile',
     tokens: [{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":1,"val":"mailAccountId","end":""},{"old":"/api/mail-accounts/:mailAccountId/profile","type":0,"val":"profile","end":""}],
     types: placeholder as Registry['mail_account_profiles.show']['types'],
-  },
-  'mail_accounts.update_storage_quota': {
-    methods: ["PUT"],
-    pattern: '/api/mail-accounts/:id/storage-quota',
-    tokens: [{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"api","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"mail-accounts","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":1,"val":"id","end":""},{"old":"/api/mail-accounts/:id/storage-quota","type":0,"val":"storage-quota","end":""}],
-    types: placeholder as Registry['mail_accounts.update_storage_quota']['types'],
   },
   'mail_accounts.toggle_active': {
     methods: ["PUT"],
@@ -221,6 +221,12 @@ const routes = {
     pattern: '/api/subscriptions/:id/change-plan',
     tokens: [{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/change-plan","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/change-plan","type":0,"val":"change-plan","end":""}],
     types: placeholder as Registry['subscriptions.change_plan']['types'],
+  },
+  'subscriptions.upgrade_checkout': {
+    methods: ["POST"],
+    pattern: '/api/subscriptions/:id/upgrade-checkout',
+    tokens: [{"old":"/api/subscriptions/:id/upgrade-checkout","type":0,"val":"api","end":""},{"old":"/api/subscriptions/:id/upgrade-checkout","type":0,"val":"subscriptions","end":""},{"old":"/api/subscriptions/:id/upgrade-checkout","type":1,"val":"id","end":""},{"old":"/api/subscriptions/:id/upgrade-checkout","type":0,"val":"upgrade-checkout","end":""}],
+    types: placeholder as Registry['subscriptions.upgrade_checkout']['types'],
   },
   'subscriptions.cancel': {
     methods: ["POST"],
@@ -431,6 +437,12 @@ const routes = {
     pattern: '/api/mail/mails/received',
     tokens: [{"old":"/api/mail/mails/received","type":0,"val":"api","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/received","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/received","type":0,"val":"received","end":""}],
     types: placeholder as Registry['mail.received']['types'],
+  },
+  'mail.attachments': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/mail/mails/:id/attachments',
+    tokens: [{"old":"/api/mail/mails/:id/attachments","type":0,"val":"api","end":""},{"old":"/api/mail/mails/:id/attachments","type":0,"val":"mail","end":""},{"old":"/api/mail/mails/:id/attachments","type":0,"val":"mails","end":""},{"old":"/api/mail/mails/:id/attachments","type":1,"val":"id","end":""},{"old":"/api/mail/mails/:id/attachments","type":0,"val":"attachments","end":""}],
+    types: placeholder as Registry['mail.attachments']['types'],
   },
   'mail.drafts': {
     methods: ["GET","HEAD"],

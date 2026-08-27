@@ -9,6 +9,7 @@ export type ScannedRoutes = {
     'elgiopay_webhook': { paramsTuple?: []; params?: {} }
     'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
     'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
+    'voice_notes.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'auth.sign_up': { paramsTuple?: []; params?: {} }
     'auth.verify_email': { paramsTuple?: []; params?: {} }
     'auth.sign_in': { paramsTuple?: []; params?: {} }
@@ -21,7 +22,6 @@ export type ScannedRoutes = {
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_accounts.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
-    'mail_accounts.update_storage_quota': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_accounts.resend_invite': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.index': { paramsTuple?: []; params?: {} }
@@ -40,6 +40,7 @@ export type ScannedRoutes = {
     'role_aliases.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.current': { paramsTuple?: []; params?: {} }
     'subscriptions.change_plan': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'subscriptions.upgrade_checkout': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domain_purchase.search': { paramsTuple?: []; params?: {} }
@@ -75,6 +76,7 @@ export type ScannedRoutes = {
     'mail.index': { paramsTuple?: []; params?: {} }
     'mail.sent': { paramsTuple?: []; params?: {} }
     'mail.received': { paramsTuple?: []; params?: {} }
+    'mail.attachments': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'mail.save_draft': { paramsTuple?: []; params?: {} }
     'mail.update_draft': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -110,6 +112,7 @@ export type ScannedRoutes = {
   GET: {
     'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
     'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
+    'voice_notes.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'auth.profile': { paramsTuple?: []; params?: {} }
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
@@ -130,6 +133,7 @@ export type ScannedRoutes = {
     'mail.index': { paramsTuple?: []; params?: {} }
     'mail.sent': { paramsTuple?: []; params?: {} }
     'mail.received': { paramsTuple?: []; params?: {} }
+    'mail.attachments': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'mail.scheduled': { paramsTuple?: []; params?: {} }
     'mail.trash_list': { paramsTuple?: []; params?: {} }
@@ -143,6 +147,7 @@ export type ScannedRoutes = {
   HEAD: {
     'public_domains.public_branding': { paramsTuple: [ParamValue]; params: {'name': ParamValue} }
     'public_domains.by_hostname': { paramsTuple: [ParamValue]; params: {'hostname': ParamValue} }
+    'voice_notes.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'auth.profile': { paramsTuple?: []; params?: {} }
     'mail_accounts.index': { paramsTuple?: []; params?: {} }
     'mail_account_profiles.show': { paramsTuple: [ParamValue]; params: {'mailAccountId': ParamValue} }
@@ -163,6 +168,7 @@ export type ScannedRoutes = {
     'mail.index': { paramsTuple?: []; params?: {} }
     'mail.sent': { paramsTuple?: []; params?: {} }
     'mail.received': { paramsTuple?: []; params?: {} }
+    'mail.attachments': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail.drafts': { paramsTuple?: []; params?: {} }
     'mail.scheduled': { paramsTuple?: []; params?: {} }
     'mail.trash_list': { paramsTuple?: []; params?: {} }
@@ -190,6 +196,7 @@ export type ScannedRoutes = {
     'domains.verify_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'storage_overview.create_addon_checkout': { paramsTuple?: []; params?: {} }
     'role_aliases.store': { paramsTuple: [ParamValue]; params: {'domainId': ParamValue} }
+    'subscriptions.upgrade_checkout': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'subscriptions.reactivate': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domain_purchase.search': { paramsTuple?: []; params?: {} }
@@ -218,7 +225,6 @@ export type ScannedRoutes = {
   }
   PUT: {
     'auth.update_profile': { paramsTuple?: []; params?: {} }
-    'mail_accounts.update_storage_quota': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'mail_accounts.toggle_active': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.update_branding': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'domains.set_custom_login_hostname': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

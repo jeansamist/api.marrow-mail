@@ -84,6 +84,7 @@ export class Route53DomainsService {
 
     const price = response.Prices?.[0]?.RegistrationPrice
     if (!price?.Price || !price.Currency) {
+      this.logger.warn(`No registration price returned for tld: ${tld}`)
       throw new Error(`No registration price returned for .${tld}`)
     }
     return { amount: price.Price, currency: price.Currency }
@@ -122,6 +123,7 @@ export class Route53DomainsService {
       })
 
     if (!response.OperationId) {
+      this.logger.error(`RegisterDomain returned no operation id for domain: ${domainName}`)
       throw new Error(`RegisterDomain for ${domainName} did not return an OperationId`)
     }
     return response.OperationId

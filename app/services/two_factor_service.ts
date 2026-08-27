@@ -30,6 +30,7 @@ export class TwoFactorService {
   ) {}
 
   async setup(mailAccount: MailAccount): Promise<PendingTwoFactorSetup> {
+    this.logger.info(`Set up two-factor for mail account: ${mailAccount.id}`)
     await mailAccount.load('domain')
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
 
@@ -44,26 +45,45 @@ export class TwoFactorService {
       twoFactorSecret: encryption.encrypt(secret),
       twoFactorBackupCodes: hashedBackupCodes,
     })
+    this.logger.info(
+      `Stored pending two-factor secret for mail account: ${mailAccount.id} backup codes: ${backupCodes.length}`
+    )
 
     return { secret, otpauthUrl, backupCodes }
   }
 
   async enable(mailAccount: MailAccount, code: string): Promise<void> {
-    if (!mailAccount.twoFactorSecret) throw httpError(400, 'Run two-factor setup first')
+    this.logger.info(`Enable two-factor attempt for mail account: ${mailAccount.id}`)
+    if (!mailAccount.twoFactorSecret) {
+      this.logger.warn(
+        `Two-factor enable rejected for mail account: ${mailAccount.id}: setup not run`
+      )
+      throw httpError(400, 'Run two-factor setup first')
+    }
 
     const secret = encryption.decrypt<string>(mailAccount.twoFactorSecret)
     if (!secret || !(await this.verifyTotp(secret, code))) {
+      this.logger.warn(
+        `Two-factor enable rejected for mail account: ${mailAccount.id}: invalid verification code`
+      )
       throw httpError(400, 'Invalid verification code')
     }
 
     await this.repository.update(mailAccount, { twoFactorEnabled: true })
+    this.logger.info(`Enabled two-factor for mail account: ${mailAccount.id}`)
     await mailAccount.load('domain')
     this.queueStatusAlert(mailAccount, true)
   }
 
   async disable(mailAccount: MailAccount, currentPassword: string, code: string): Promise<void> {
+    this.logger.info(`Disable two-factor attempt for mail account: ${mailAccount.id}`)
     const isPasswordValid = await hash.verify(mailAccount.password, currentPassword)
-    if (!isPasswordValid) throw httpError(400, 'Current password is incorrect')
+    if (!isPasswordValid) {
+      this.logger.warn(
+        `Two-factor disable rejected for mail account: ${mailAccount.id}: incorrect password`
+      )
+      throw httpError(400, 'Current password is incorrect')
+    }
 
     await this.assertValidCode(mailAccount, code)
 
@@ -72,6 +92,7 @@ export class TwoFactorService {
       twoFactorSecret: null,
       twoFactorBackupCodes: null,
     })
+    this.logger.info(`Disabled two-factor for mail account: ${mailAccount.id}`)
     await mailAccount.load('domain')
     this.queueStatusAlert(mailAccount, false)
   }
@@ -82,11 +103,17 @@ export class TwoFactorService {
    */
   async assertValidCode(mailAccount: MailAccount, code: string): Promise<void> {
     if (!mailAccount.twoFactorSecret) {
+      this.logger.warn(
+        `Two-factor code rejected for mail account: ${mailAccount.id}: two-factor not enabled`
+      )
       throw httpError(400, 'Two-factor authentication is not enabled')
     }
 
     const secret = encryption.decrypt<string>(mailAccount.twoFactorSecret)
-    if (secret && (await this.verifyTotp(secret, code))) return
+    if (secret && (await this.verifyTotp(secret, code))) {
+      this.logger.info(`Two-factor code verified for mail account: ${mailAccount.id} method: totp`)
+      return
+    }
 
     const backupCodes = (mailAccount.twoFactorBackupCodes as string[] | null) ?? []
     for (let i = 0; i < backupCodes.length; i++) {
@@ -94,10 +121,16 @@ export class TwoFactorService {
         const remaining = [...backupCodes]
         remaining.splice(i, 1)
         await this.repository.update(mailAccount, { twoFactorBackupCodes: remaining })
+        this.logger.info(
+          `Two-factor code verified for mail account: ${mailAccount.id} method: backup code remaining: ${remaining.length}`
+        )
         return
       }
     }
 
+    this.logger.warn(
+      `Two-factor code rejected for mail account: ${mailAccount.id}: invalid verification code`
+    )
     throw httpError(400, 'Invalid verification code')
   }
 
@@ -128,6 +161,9 @@ export class TwoFactorService {
   private queueStatusAlert(mailAccount: MailAccount, enabled: boolean) {
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
     const recipient = mailAccount.ownerEmail ?? mailAccountEmail
+    this.logger.info(
+      `Queue two-factor ${enabled ? 'enabled' : 'disabled'} alert email for mail account: ${mailAccount.id} recipient: ${recipient}`
+    )
     const notification = new TwoFactorStatusAlertNotification(recipient, mailAccountEmail, enabled)
 
     this.cronManager.addQueueJob(

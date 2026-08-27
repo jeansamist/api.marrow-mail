@@ -29,35 +29,59 @@ export class AuthMailAccountService {
   async getRequestMailAccount(): Promise<MailAccount> {
     const authHeader = this.ctx.request.header('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.warn('Mail account request rejected: missing bearer token')
       throw httpError(401, 'Unauthorized')
     }
     const token = authHeader.slice(7)
     try {
       const payload = jwt.verify(token, env.get('JWT_SECRET', 'key')) as { id: number }
       const mailAccount = await this.repository.findById(payload.id)
-      if (!mailAccount) throw httpError(401, 'Unauthorized')
-      if (!mailAccount.active) throw httpError(403, 'This mailbox has been disabled')
+      if (!mailAccount) {
+        this.logger.warn(`Mail account request rejected for mail account: ${payload.id}: not found`)
+        throw httpError(401, 'Unauthorized')
+      }
+      if (!mailAccount.active) {
+        this.logger.warn(
+          `Mail account request rejected for mail account: ${mailAccount.id}: mailbox disabled`
+        )
+        throw httpError(403, 'This mailbox has been disabled')
+      }
       return mailAccount
     } catch (error) {
       if (error instanceof Error && 'status' in error) throw error
+      this.logger.warn(
+        `Mail account request rejected: invalid token: ${error instanceof Error ? error.message : String(error)}`
+      )
       throw httpError(401, 'Unauthorized')
     }
   }
 
   async login(data: { email: string; password: string }) {
+    this.logger.info(`Login attempt for mail account email: ${data.email}`)
     const [username, domain] = data.email.split('@')
     const mailAccount = await this.repository.findByUsernameAndDomain(username, domain)
-    if (!mailAccount) throw httpError(400, 'Invalid email or password')
+    if (!mailAccount) {
+      this.logger.warn(`Login rejected for email: ${data.email}: mail account not found`)
+      throw httpError(400, 'Invalid email or password')
+    }
 
     const isPasswordValid = await hash.verify(mailAccount.password, data.password)
-    if (!isPasswordValid) throw httpError(400, 'Invalid email or password')
+    if (!isPasswordValid) {
+      this.logger.warn(`Login rejected for mail account: ${mailAccount.id}: invalid password`)
+      throw httpError(400, 'Invalid email or password')
+    }
 
-    if (!mailAccount.active) throw httpError(403, 'This mailbox has been disabled')
+    if (!mailAccount.active) {
+      this.logger.warn(`Login rejected for mail account: ${mailAccount.id}: mailbox disabled`)
+      throw httpError(403, 'This mailbox has been disabled')
+    }
 
+    this.logger.info(`Logged in mail account: ${mailAccount.id}`)
     return mailAccount
   }
 
   async generateJWT(mailAccount: MailAccount) {
+    this.logger.info(`Generate JWT for mail account: ${mailAccount.id}`)
     const expiresAt = DateTime.now().plus({ day: 1 }).toISO()
     return {
       token: jwt.sign({ id: mailAccount.id }, env.get('JWT_SECRET', 'key'), { expiresIn: '1d' }),
@@ -66,6 +90,7 @@ export class AuthMailAccountService {
   }
 
   generateTwoFactorChallenge(mailAccount: MailAccount) {
+    this.logger.info(`Generate two-factor challenge for mail account: ${mailAccount.id}`)
     const expiresAt = DateTime.now().plus({ minutes: 5 }).toISO()
     return {
       challengeToken: jwt.sign(
@@ -82,31 +107,52 @@ export class AuthMailAccountService {
     try {
       payload = jwt.verify(challengeToken, env.get('JWT_SECRET', 'key')) as typeof payload
     } catch {
+      this.logger.warn('Two-factor challenge rejected: challenge token expired or invalid')
       throw httpError(401, 'Challenge expired or invalid, please sign in again')
     }
+    this.logger.info(`Verify two-factor challenge for mail account: ${payload.id}`)
     if (payload.purpose !== TWO_FACTOR_CHALLENGE_PURPOSE) {
+      this.logger.warn(
+        `Two-factor challenge rejected for mail account: ${payload.id}: invalid token purpose`
+      )
       throw httpError(401, 'Invalid challenge token')
     }
 
     const mailAccount = await this.repository.findById(payload.id)
-    if (!mailAccount) throw httpError(401, 'Invalid challenge token')
+    if (!mailAccount) {
+      this.logger.warn(`Two-factor challenge rejected for mail account: ${payload.id}: not found`)
+      throw httpError(401, 'Invalid challenge token')
+    }
 
     await this.twoFactorService.assertValidCode(mailAccount, code)
 
+    this.logger.info(`Two-factor challenge passed for mail account: ${mailAccount.id}`)
     return this.generateJWT(mailAccount)
   }
 
   async forgotPassword(email: string) {
     const [username, domainName] = email.toLowerCase().trim().split('@')
+    this.logger.info(`Forgot password request for mail account email: ${username}@${domainName}`)
     const mailAccount = await this.repository.findByUsernameAndDomain(username, domainName)
-    if (!mailAccount) throw httpError(400, 'Mail account does not exist')
+    if (!mailAccount) {
+      this.logger.warn(
+        `Forgot password rejected for email: ${username}@${domainName}: mail account not found`
+      )
+      throw httpError(400, 'Mail account does not exist')
+    }
 
     const recipient = mailAccount.ownerEmail
-    if (!recipient) throw httpError(400, 'No recovery email is associated with this mail account')
+    if (!recipient) {
+      this.logger.warn(
+        `Forgot password rejected for mail account: ${mailAccount.id}: no recovery email`
+      )
+      throw httpError(400, 'No recovery email is associated with this mail account')
+    }
 
     const resetPasswordToken = this.generateResetPasswordToken()
     const resetPasswordTokenExpiresAt = DateTime.now().plus({ hours: 1 })
 
+    this.logger.info(`Issue reset password token for mail account: ${mailAccount.id}`)
     await this.repository.update(mailAccount, {
       resetPasswordToken,
       resetPasswordTokenExpiresAt,
@@ -123,16 +169,23 @@ export class AuthMailAccountService {
 
   async resetPassword(data: { email: string; resetPasswordToken: string; newPassword: string }) {
     const [username, domainName] = data.email.toLowerCase().trim().split('@')
+    this.logger.info(`Reset password attempt for mail account email: ${username}@${domainName}`)
     const mailAccount = await this.repository.findByUsernameAndDomainAndResetPasswordToken(
       username,
       domainName,
       data.resetPasswordToken
     )
-    if (!mailAccount) return false
+    if (!mailAccount) {
+      this.logger.warn(
+        `Reset password rejected for email: ${username}@${domainName}: invalid token`
+      )
+      return false
+    }
     if (
       mailAccount.resetPasswordTokenExpiresAt &&
       mailAccount.resetPasswordTokenExpiresAt < DateTime.now()
     ) {
+      this.logger.warn(`Reset password rejected for mail account: ${mailAccount.id}: token expired`)
       return false
     }
 
@@ -141,6 +194,7 @@ export class AuthMailAccountService {
       resetPasswordToken: null,
       resetPasswordTokenExpiresAt: null,
     })
+    this.logger.info(`Reset password for mail account: ${mailAccount.id}`)
 
     await mailAccount.load('domain')
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
@@ -152,13 +206,20 @@ export class AuthMailAccountService {
 
   async changePassword(currentPassword: string, newPassword: string) {
     const mailAccount = await this.getRequestMailAccount()
+    this.logger.info(`Change password attempt for mail account: ${mailAccount.id}`)
 
     const isCurrentPasswordValid = await hash.verify(mailAccount.password, currentPassword)
-    if (!isCurrentPasswordValid) throw httpError(400, 'Current password is incorrect')
+    if (!isCurrentPasswordValid) {
+      this.logger.warn(
+        `Change password rejected for mail account: ${mailAccount.id}: incorrect current password`
+      )
+      throw httpError(400, 'Current password is incorrect')
+    }
 
     await this.repository.update(mailAccount, {
       password: await hash.make(newPassword),
     })
+    this.logger.info(`Changed password for mail account: ${mailAccount.id}`)
 
     await mailAccount.load('domain')
     const mailAccountEmail = `${mailAccount.username}@${mailAccount.domain.name}`
@@ -168,6 +229,7 @@ export class AuthMailAccountService {
 
   async profile() {
     const mailAccount = await this.getRequestMailAccount()
+    this.logger.info(`Fetch profile for mail account: ${mailAccount.id}`)
     await mailAccount.load('profile')
     if (!mailAccount.profile) return null
 
@@ -194,6 +256,9 @@ export class AuthMailAccountService {
     mailAccountEmail: string,
     resetPasswordLink: string
   ) {
+    this.logger.info(
+      `Queue password reset email for mail account: ${mailAccountEmail} recipient: ${recipient}`
+    )
     const notification = new MailAccountPasswordResetNotification(
       recipient,
       mailAccountEmail,
@@ -210,6 +275,9 @@ export class AuthMailAccountService {
   }
 
   private sendPasswordResetAlertNotification(recipient: string, mailAccountEmail: string) {
+    this.logger.info(
+      `Queue password reset alert email for mail account: ${mailAccountEmail} recipient: ${recipient}`
+    )
     const notification = new MailAccountPasswordResetAlertNotification(
       recipient,
       mailAccountEmail,

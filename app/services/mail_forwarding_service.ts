@@ -19,6 +19,7 @@ export class MailForwardingService {
 
   async setForwardingEmail(forwardingEmail: string): Promise<void> {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(`Set forwarding email: ${forwardingEmail} for mail account: ${mailAccount.id}`)
 
     const verificationToken = this.generateVerificationToken()
     const verificationTokenExpiresAt = DateTime.now().plus({ hours: 1 })
@@ -41,11 +42,17 @@ export class MailForwardingService {
 
   async verifyForwardingEmail(token: string): Promise<boolean> {
     const mailAccount = await this.repository.findByForwardingVerificationToken(token)
-    if (!mailAccount) return false
+    if (!mailAccount) {
+      this.logger.warn('Forwarding verification rejected: no mail account matches the token')
+      return false
+    }
     if (
       mailAccount.forwardingVerificationTokenExpiresAt &&
       mailAccount.forwardingVerificationTokenExpiresAt < DateTime.now()
     ) {
+      this.logger.warn(
+        `Forwarding verification rejected for mail account: ${mailAccount.id}: token expired`
+      )
       return false
     }
 
@@ -55,11 +62,17 @@ export class MailForwardingService {
       forwardingVerificationTokenExpiresAt: null,
     })
 
+    this.logger.info(
+      `Verified forwarding email: ${mailAccount.forwardingEmail} for mail account: ${mailAccount.id}`
+    )
     return true
   }
 
   async updatePreferences(keepForwardedCopy: boolean): Promise<void> {
     const mailAccount = await this.authMailAccountService.getRequestMailAccount()
+    this.logger.info(
+      `Update forwarding preferences for mail account: ${mailAccount.id} keep forwarded copy: ${keepForwardedCopy}`
+    )
     await this.repository.update(mailAccount, { keepForwardedCopy })
   }
 
@@ -81,6 +94,9 @@ export class MailForwardingService {
       forwardingEmail,
       mailAccountEmail,
       verificationLink
+    )
+    this.logger.info(
+      `Queue forwarding verification email to: ${forwardingEmail} for mail account: ${mailAccountEmail}`
     )
     this.cronManager.addQueueJob(
       'emails',

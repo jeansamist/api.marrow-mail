@@ -67,6 +67,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/public_domains_controller').default['byHostname']>>>
     }
   }
+  'voice_notes.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/voice-notes/:token'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { token: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/voice_notes_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/voice_notes_controller').default['show']>>>
+    }
+  }
   'auth.sign_up': {
     methods: ["POST"]
     pattern: '/api/auth/sign-up'
@@ -209,18 +221,6 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_account_profiles_controller').default['show']>>>
-    }
-  }
-  'mail_accounts.update_storage_quota': {
-    methods: ["PUT"]
-    pattern: '/api/mail-accounts/:id/storage-quota'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/storage').updateStorageQuotaValidator)>>
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: ExtractQuery<InferInput<(typeof import('#validators/storage').updateStorageQuotaValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['updateStorageQuota']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_accounts_controller').default['updateStorageQuota']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'mail_accounts.toggle_active': {
@@ -437,6 +437,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/subscription').changeSubscriptionPlanValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['changePlan']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'subscriptions.upgrade_checkout': {
+    methods: ["POST"]
+    pattern: '/api/subscriptions/:id/upgrade-checkout'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/subscription').upgradeSubscriptionValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/subscription').upgradeSubscriptionValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['upgradeCheckout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/subscriptions_controller').default['upgradeCheckout']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'subscriptions.cancel': {
@@ -857,6 +869,18 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['received']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['received']>>>
+    }
+  }
+  'mail.attachments': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/mail/mails/:id/attachments'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['attachments']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/mail_controller').default['attachments']>>>
     }
   }
   'mail.drafts': {

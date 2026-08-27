@@ -42,8 +42,12 @@ export class InvoiceService {
   ) {}
 
   async userAsRecipient(userId: number): Promise<InvoiceRecipient | null> {
+    this.logger.info(`Resolve invoice recipient for user: ${userId}`)
     const user = await this.userRepository.findById(userId)
-    if (!user) return null
+    if (!user) {
+      this.logger.warn(`Invoice recipient not found for user: ${userId}`)
+      return null
+    }
     return {
       email: user.email,
       firstName: user.firstName,
@@ -64,13 +68,24 @@ export class InvoiceService {
   sendForPayment(params: SendInvoiceParams): void {
     const invoiceNumber = `INV-${params.paymentId}`
     const total = params.items.reduce((sum, item) => sum + item.amount, 0)
+    this.logger.info(
+      `Queue invoice: ${invoiceNumber} for payment: ${params.paymentId} items: ${params.items.length} total: ${total} currency: ${params.currency}`
+    )
 
     this.cronManager.addQueueJob(
       'invoices',
       async () => {
         const recipient =
           typeof params.recipient === 'function' ? await params.recipient() : params.recipient
-        if (!recipient) return
+        if (!recipient) {
+          this.logger.warn(
+            `Skip invoice: ${invoiceNumber} for payment: ${params.paymentId}: recipient not found`
+          )
+          return
+        }
+        this.logger.info(
+          `Send invoice: ${invoiceNumber} for payment: ${params.paymentId} to: ${recipient.email}`
+        )
 
         const data: InvoiceData = {
           invoiceNumber,
@@ -96,6 +111,9 @@ export class InvoiceService {
             formatInvoiceMoney(total, params.currency),
             pdfBuffer
           )
+        )
+        this.logger.info(
+          `Sent invoice: ${invoiceNumber} for payment: ${params.paymentId} to: ${recipient.email}`
         )
       },
       {

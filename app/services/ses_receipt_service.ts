@@ -31,6 +31,9 @@ export class SesReceiptService {
         this.logger.info(`SES receipt rule set "${ruleSetName}" already exists`)
         return
       }
+      this.logger.error(
+        `Failed to create SES receipt rule set: ${ruleSetName}: ${error instanceof Error ? error.message : String(error)}`
+      )
       throw error
     }
   }
@@ -76,6 +79,9 @@ export class SesReceiptService {
         this.logger.info(`SES receipt rule "${ruleName}" already exists`)
         return
       }
+      this.logger.error(
+        `Failed to create SES receipt rule: ${ruleName} for domain: ${params.domainName}: ${error instanceof Error ? error.message : String(error)}`
+      )
       throw error
     }
   }

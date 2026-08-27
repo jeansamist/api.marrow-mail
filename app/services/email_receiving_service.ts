@@ -55,7 +55,12 @@ export class EmailReceivingService {
 
     for (const recipientEmail of receipt.recipients) {
       const atIndex = recipientEmail.lastIndexOf('@')
-      if (atIndex === -1) continue
+      if (atIndex === -1) {
+        this.logger.warn(
+          `Skip malformed recipient: ${recipientEmail} message id: ${mail.messageId}`
+        )
+        continue
+      }
 
       const username = recipientEmail.substring(0, atIndex)
       const domainName = recipientEmail.substring(atIndex + 1)

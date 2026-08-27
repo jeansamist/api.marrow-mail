@@ -18,7 +18,10 @@ export class SnsService {
   // CreateTopicCommand is idempotent — returns the same ARN if the topic already exists
   async ensureTopic(topicName: string): Promise<string> {
     const result = await this.client.send(new CreateTopicCommand({ Name: topicName }))
-    if (!result.TopicArn) throw new Error('SNS CreateTopic returned no ARN')
+    if (!result.TopicArn) {
+      this.logger.error(`Failed to create SNS topic: ${topicName}: no ARN returned`)
+      throw new Error('SNS CreateTopic returned no ARN')
+    }
     this.logger.info(`SNS topic "${topicName}" ready: ${result.TopicArn}`)
     return result.TopicArn
   }
