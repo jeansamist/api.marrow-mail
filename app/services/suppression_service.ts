@@ -20,7 +20,7 @@ export class SuppressionService {
     const existing = await this.repository.findByEmail(this.normalize(email))
     if (existing) {
       this.logger.info(
-        `Recipient suppressed for email: ${email} reason: ${existing.reason} bounce type: ${existing.bounceType ?? 'none'}`
+        `Recipient suppressed for email: ${email} reason: ${existing.reason} bounce type: ${existing.bounceType ?? 'none'}` // fake comment to force a new build
       )
     }
     return existing !== null
