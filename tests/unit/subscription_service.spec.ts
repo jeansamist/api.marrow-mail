@@ -113,6 +113,27 @@ test.group('SubscriptionService', (group) => {
     .timeout(15000)
     .retry(2)
 
+  test('getStatusWithFailureReason exposes why an Elgiopay payment failed', async ({ assert }) => {
+    // Same documented sandbox failure number as above (error_code 9201).
+    const result = await subscriptionService.checkout(
+      {
+        planId: 'core',
+        mailboxQuantity: 1,
+        billingMonths: 1,
+        paymentMethod: 'orange_money',
+        customerPhone: '699000201',
+      },
+      '41.202.219.1'
+    )
+
+    const status = await subscriptionService.getStatusWithFailureReason(result.subscription.id)
+    assert.equal(status.subscription.status, 'failed')
+    assert.isString(status.failureReason)
+    assert.isNotEmpty(status.failureReason)
+  })
+    .timeout(15000)
+    .retry(2)
+
   test('assertActiveEntitlement rejects when the user has no subscription', async ({ assert }) => {
     const otherUser = await User.create({
       firstName: 'NoSub',

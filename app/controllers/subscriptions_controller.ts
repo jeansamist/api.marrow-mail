@@ -23,9 +23,12 @@ export default class SubscriptionsController {
   }
 
   async status({ params, response, serialize }: HttpContext) {
-    const subscription = await this.subscriptionService.getStatus(Number(params.id))
+    const { subscription, failureReason } =
+      await this.subscriptionService.getStatusWithFailureReason(Number(params.id))
     const serialized = await serialize(SubscriptionTransformer.transform(subscription))
-    return response.ok(ApiResponse.success(serialized.data, 'Subscription status'))
+    return response.ok(
+      ApiResponse.success({ ...serialized.data, failureReason }, 'Subscription status')
+    )
   }
 
   async current({ response, serialize }: HttpContext) {

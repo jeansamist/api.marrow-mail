@@ -656,6 +656,19 @@ export class SubscriptionService {
     return (await this.repository.findById(subscriptionId))!
   }
 
+  /**
+   * Status endpoint payload: the synced subscription plus the latest payment's
+   * failure reason, so the UI can tell the user why a payment was declined
+   * instead of showing a generic message.
+   */
+  async getStatusWithFailureReason(
+    subscriptionId: number
+  ): Promise<{ subscription: Subscription; failureReason: string | null }> {
+    const subscription = await this.getStatus(subscriptionId)
+    const payment = await this.paymentRepository.findLatestForSubscription(subscription.id)
+    return { subscription, failureReason: payment?.failureReason ?? null }
+  }
+
   async assertActiveEntitlement(requestedTotalMailboxCount: number): Promise<void> {
     const subscriptions = await this.repository.findAllActiveForUser(this.userId)
 
